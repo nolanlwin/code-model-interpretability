@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "C:\\Users\\micha\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+  "workbench.editorAssociations": {
+    "*.ipynb": "jupyter-notebook"
+  },
+  "notebook.output.textLineLimit": 1000,
+  "jupyter.askForKernelRestart": false
+}

@@ -1,0 +1,2049 @@
+code
+"'''Python3 implementation of tree using array
+numbering starting from 0 to n-1.'''
+
+tree = [None] * 10
+
+'''create root'''
+
+def root(key):
+    if tree[0] != None:
+        print(""Tree already had root"")
+    else:
+        tree[0] = key
+
+'''create left son of root'''
+
+def set_left(key, parent):
+    if tree[parent] == None:
+        print(""Can't set child at"", (parent * 2) + 1, "", no parent found"")
+    else:
+        tree[(parent * 2) + 1] = key
+
+'''create right son of root'''
+
+def set_right(key, parent):
+    if tree[parent] == None:
+        print(""Can't set child at"", (parent * 2) + 2, "", no parent found"")
+    else:
+        tree[(parent * 2) + 2] = key
+
+'''Print tree'''
+
+def print_tree():
+    for i in range(10):
+        if tree[i] != None:
+            print(tree[i], end="""")
+        else:
+            print(""-"", end="""")
+    print()
+
+'''Driver Code'''
+
+root('A')
+set_right('C', 0)
+set_left('D', 1)
+set_right('E', 1)
+set_right('F', 2)
+print_tree()"
+"'''Python3 program to represent undirected
+and weighted graph. The program basically
+prints adjacency list representation of graph'''
+
+'''To add an edge'''
+
+def addEdge(adj, u, v, wt):
+    adj[u].append([v, wt])
+    adj[v].append([u, wt])
+    return adj
+
+'''Print adjacency list representaion ot graph'''
+
+def printGraph(adj, V):
+    v, w = 0, 0
+    for u in range(V):
+        print(""Node"", u, ""makes an edge with"")
+        for it in adj[u]:
+            v = it[0]
+            w = it[1]
+            print(""\tNode"", v, ""with edge weight ="", w)
+        print()
+
+'''Driver code'''
+
+if __name__ == '__main__':
+    V = 5
+    adj = [[] for i in range(V)]
+    adj = addEdge(adj, 0, 1, 10)
+    adj = addEdge(adj, 0, 4, 20)
+    adj = addEdge(adj, 1, 2, 30)
+    adj = addEdge(adj, 1, 3, 40)
+    adj = addEdge(adj, 1, 4, 50)
+    adj = addEdge(adj, 2, 3, 60)
+    adj = addEdge(adj, 3, 4, 70)
+    printGraph(adj, V)"
+"'''Check if each internal
+node of BST has only one child'''
+
+def hasOnlyOneChild (pre, size):
+    nextDiff=0; lastDiff=0
+    for i in range(size-1):
+        nextDiff = pre[i] - pre[i+1]
+        lastDiff = pre[i] - pre[size-1]
+        if nextDiff*lastDiff < 0:
+            return False
+    return True
+
+'''driver program to
+test above function'''
+
+if __name__ == ""__main__"":
+    pre = [8, 3, 5, 7, 6]
+    size= len(pre)
+    if (hasOnlyOneChild(pre,size) == True):
+        print(""Yes"")
+    else:
+        print(""No"")"
+"'''Python3 program to find rank of an
+element in a stream.'''
+
+'''Driver code'''
+
+if __name__ == '__main__':
+    a = [5, 1, 14, 4, 15,
+            9, 7, 20, 11]
+    key = 20
+    arraySize = len(a)
+    count = 0
+    for i in range(arraySize):
+        if a[i] <= key:
+            count += 1
+    print(""Rank of"", key,
+          ""in stream is:"", count - 1)"
+"'''Python3 Program to check
+lower triangular matrix.'''
+
+'''Function to check matrix
+is in lower triangular'''
+
+def islowertriangular(M):
+    for i in range(0, len(M)):
+        for j in range(i + 1, len(M)):
+            if(M[i][j] != 0):
+                    return False
+    return True
+
+'''Driver function.'''
+
+M = [[1,0,0,0],
+     [1,4,0,0],
+     [4,6,2,0],
+     [0,4,7,6]]
+
+'''Function call'''
+
+if islowertriangular(M):
+    print (""Yes"")
+else:
+    print (""No"")"
+"'''Python3 Program to check upper
+triangular matrix.
+ '''
+
+'''Function to check matrix
+is in upper triangular'''
+
+def isuppertriangular(M):
+    for i in range(1, len(M)):
+        for j in range(0, i):
+            if(M[i][j] != 0):
+                    return False
+    return True
+
+'''Driver function.'''
+
+M = [[1,3,5,3],
+    [0,4,6,2],
+    [0,0,2,5],
+    [0,0,0,6]]
+if isuppertriangular(M):
+    print (""Yes"")
+else:
+    print (""No"")"
+"'''Python3 program to check
+if a given matrix is identity'''
+
+MAX = 100;
+def isIdentity(mat, N):
+    for row in range(N):
+        for col in range(N):
+            if (row == col and
+                mat[row][col] != 1):
+                return False;
+            elif (row != col and
+                  mat[row][col] != 0):
+                return False;
+    return True;
+
+'''Driver Code'''
+
+N = 4;
+mat = [[1, 0, 0, 0],
+       [0, 1, 0, 0],
+       [0, 0, 1, 0],
+       [0, 0, 0, 1]];
+if (isIdentity(mat, N)):
+    print(""Yes "");
+else:
+    print(""No "");"
+"'''Python3 program to find common
+elements in two diagonals.'''
+
+Max = 100
+
+'''Returns count of row wise same
+elements in two diagonals of
+mat[n][n]'''
+
+def countCommon(mat, n):
+    res = 0
+    for i in range(n):
+        if mat[i][i] == mat[i][n-i-1] :
+            res = res + 1
+    return res
+
+'''Driver Code'''
+
+mat = [[1, 2, 3],
+       [4, 5, 6],
+       [7, 8, 9]]
+print(countCommon(mat, 3))"
+"'''Python3 program to check the if
+sum of a row is same as
+corresponding column'''
+
+MAX = 100;
+
+'''Function to check the if sum
+of a row is same as
+corresponding column'''
+
+def areSumSame(a, n, m):
+    sum1 = 0
+    sum2 = 0
+    for i in range(0, n):
+        sum1 = 0
+        sum2 = 0
+        for j in range(0, m):
+            sum1 += a[i][j]
+            sum2 += a[j][i]
+        if (sum1 == sum2):
+            return 1
+    return 0
+
+'''Driver Code'''
+
+'''number of rows'''
+
+n = 4;
+
+'''number of columns'''
+
+m = 4; 
+M = [ [ 1, 2, 3, 4 ],
+      [ 9, 5, 3, 1 ],
+      [ 0, 3, 5, 6 ],
+      [ 0, 4, 5, 6 ] ]
+print(areSumSame(M, n, m))"
+"'''Python3 program to pra
+square matrix in Z form'''
+
+def diag(arr, n):
+    for i in range(n):
+        for j in range(n):
+            if(i == 0):
+                print(arr[i][j], end = "" "")
+            elif(i == j):
+                print(arr[i][j], end = "" "")
+            elif(i == n - 1):
+                print(arr[i][j], end = "" "")
+
+'''Driver code'''
+
+if __name__ == '__main__':
+    a= [ [ 4, 5, 6, 8 ],
+        [ 1, 2, 3, 1 ],
+        [ 7, 8, 9, 4 ],
+        [ 1, 8, 7, 5 ] ]
+    diag(a, 4)"
+"'''A simple Python3 program to find
+sum of diagonals'''
+
+MAX = 100
+def printDiagonalSums(mat, n):
+    principal = 0
+    secondary = 0
+    for i in range(0, n):
+        principal += mat[i][i]
+        secondary += mat[i][n - i - 1]
+    print(""Principal Diagonal:"", principal)
+    print(""Secondary Diagonal:"", secondary)
+
+'''Driver code'''
+
+a = [[ 1, 2, 3, 4 ],
+     [ 5, 6, 7, 8 ],
+     [ 1, 2, 3, 4 ],
+     [ 5, 6, 7, 8 ]]
+printDiagonalSums(a, 4)"
+"'''Python3 program to find trace and
+normal of given matrix'''
+
+import math
+
+'''Size of given matrix'''
+
+MAX = 100;
+
+'''Returns Normal of a matrix
+of size n x n'''
+
+def findNormal(mat, n):
+    sum = 0;
+    for i in range(n):
+        for j in range(n):
+            sum += mat[i][j] * mat[i][j];
+    return math.floor(math.sqrt(sum));
+
+'''Returns trace of a matrix of
+size n x n'''
+
+def findTrace(mat, n):
+    sum = 0;
+    for i in range(n):
+        sum += mat[i][i];
+    return sum;
+
+'''Driver Code'''
+
+mat = [[1, 1, 1, 1, 1],
+       [2, 2, 2, 2, 2],
+       [3, 3, 3, 3, 3],
+       [4, 4, 4, 4, 4],
+       [5, 5, 5, 5, 5]];
+print(""Trace of Matrix ="", findTrace(mat, 5));
+print(""Normal of Matrix ="", findNormal(mat, 5));"
+"'''Python 3 program to check
+whether given matrix
+is skew-symmetric or not'''
+
+ROW=3
+COL=3
+
+'''Utility function to
+create transpose matrix'''
+
+def transpose(transpose_matrix,matrix):
+    for i in range (ROW):
+        for j in range(COL):
+            transpose_matrix[j][i] = matrix[i][j]
+
+'''Utility function to
+check skew - symmetric
+matrix condition'''
+
+def check(transpose_matrix,matrix):
+    for i in range(ROW):
+        for j in range(COL):
+            if (matrix[i][j] != -transpose_matrix[i][j]):
+                return False
+    return True
+
+'''Utility function to print a matrix'''
+
+def printMatrix(matrix):
+    for i in range (ROW):
+        for j in range(COL):
+            print(matrix[i][j],"" "",end="""")
+        print()
+
+'''Driver program to test above functions'''
+
+matrix= [
+            [0, 5, -4],
+            [-5, 0, 1],
+            [4, -1, 0],
+        ]
+transpose_matrix=[[0 for i in range(3)] for j in range(3)]
+
+'''Function create transpose matrix'''
+
+transpose(transpose_matrix, matrix)
+print(""Transpose matrix:"")
+printMatrix(transpose_matrix)
+
+'''Check whether matrix is
+skew-symmetric or not'''
+
+if (check(transpose_matrix, matrix)):
+    print(""Skew Symmetric Matrix"")
+else:
+    print(""Not Skew Symmetric Matrix"")"
+"'''Python 3 program to find sum
+of matrix in which each element
+is absolute difference of its
+corresponding row and column
+number row.'''
+
+'''Return the sum of matrix in
+which each element is absolute
+difference of its corresponding
+row and column number row'''
+
+def findSum(n):
+    sum = 0
+    for i in range(n):
+        sum += i * (n - i)
+    return 2 * sum
+
+'''Driver code'''
+
+n = 3
+print(findSum(n))"
+"'''Python3 program to prmatrix in diagonal order'''
+
+'''Driver Code'''
+
+'''Initialize matrix'''
+
+mat = [[ 1, 2, 3, 4 ],
+       [ 5, 6, 7, 8 ],
+       [ 9, 10, 11, 12 ],
+       [ 13, 14, 15, 16 ]];
+
+'''n - size
+mode - switch to derive up/down traversal
+it - iterator count - increases until it
+reaches n and then decreases'''
+
+n = 4
+mode = 0
+it = 0
+lower = 0
+
+'''2n will be the number of iterations'''
+
+for t in range(2 * n - 1):
+    t1 = t
+    if (t1 >= n):
+        mode += 1
+        t1 = n - 1
+        it -= 1
+        lower += 1
+    else:
+        lower = 0
+        it += 1
+    for i in range(t1, lower - 1, -1):
+        if ((t1 + mode) % 2 == 0):
+            print((mat[i][t1 + lower - i]))
+        else:
+            print(mat[t1 + lower - i][i])"
+"'''Python3 code to print unique row in a
+given binary matrix'''
+
+def printArray(matrix):
+    rowCount = len(matrix)
+    if rowCount == 0:
+        return
+    columnCount = len(matrix[0])
+    if columnCount == 0:
+        return
+    row_output_format = "" "".join([""%s""] * columnCount)
+    printed = {}
+    for row in matrix:
+        routput = row_output_format % tuple(row)
+        if routput not in printed:
+            printed[routput] = True
+            print(routput)
+
+'''Driver Code'''
+
+mat = [[0, 1, 0, 0, 1],
+       [1, 0, 1, 1, 0],
+       [0, 1, 0, 0, 1],
+       [1, 1, 1, 0, 0]]
+printArray(mat)"
+"'''Python3 Program to find
+transpose of a matrix'''
+
+M = 3
+N = 4
+
+'''This function stores
+transpose of A[][] in B[][]'''
+
+def transpose(A, B):
+    for i in range(N):
+        for j in range(M):
+            B[i][j] = A[j][i]
+
+'''driver code'''
+
+A = [ [1, 1, 1, 1],
+    [2, 2, 2, 2],
+    [3, 3, 3, 3]]
+B = [[0 for x in range(M)] for y in range(N)]
+transpose(A, B)
+print(""Result matrix is"")
+for i in range(N):
+    for j in range(M):
+        print(B[i][j], "" "", end='')
+    print()
+
+'''To store result'''"
+"'''Python3 Program to find
+transpose of a matrix'''
+
+N = 4
+
+'''Finds transpose of A[][] in-place'''
+
+def transpose(A):
+    for i in range(N):
+        for j in range(i+1, N):
+            A[i][j], A[j][i] = A[j][i], A[i][j]
+
+'''driver code'''
+
+A = [ [1, 1, 1, 1],
+    [2, 2, 2, 2],
+    [3, 3, 3, 3],
+    [4, 4, 4, 4]]
+transpose(A)
+print(""Modified matrix is"")
+for i in range(N):
+    for j in range(N):
+        print(A[i][j], "" "", end='')
+    print()"
+"'''Python3 program for addition
+of two matrices'''
+
+N = 4
+
+'''This function adds A[][]
+and B[][], and stores
+the result in C[][]'''
+
+def add(A,B,C):
+    for i in range(N):
+        for j in range(N):
+            C[i][j] = A[i][j] + B[i][j]
+
+'''driver code'''
+
+A = [ [1, 1, 1, 1],
+    [2, 2, 2, 2],
+    [3, 3, 3, 3],
+    [4, 4, 4, 4]]
+B= [ [1, 1, 1, 1],
+    [2, 2, 2, 2],
+    [3, 3, 3, 3],
+    [4, 4, 4, 4]]
+C=A[:][:] 
+add(A, B, C)
+print(""Result matrix is"")
+for i in range(N):
+    for j in range(N):
+        print(C[i][j], "" "", end='')
+    print()"
+"'''Python 3 program for subtraction
+of matrices'''
+
+N = 4
+
+'''This function returns 1
+if A[][] and B[][] are identical
+otherwise returns 0'''
+
+def subtract(A, B, C):
+    for i in range(N):
+        for j in range(N):
+            C[i][j] = A[i][j] - B[i][j]
+
+'''Driver Code'''
+
+A = [ [1, 1, 1, 1],
+      [2, 2, 2, 2],
+      [3, 3, 3, 3],
+      [4, 4, 4, 4]]
+B = [ [1, 1, 1, 1],
+      [2, 2, 2, 2],
+      [3, 3, 3, 3],
+      [4, 4, 4, 4]]
+
+C = A[:][:] 
+subtract(A, B, C)
+print(""Result matrix is"")
+for i in range(N):
+    for j in range(N):
+        print(C[i][j], "" "", end = '')
+    print()"
+"'''Function to print element and NGE pair for all elements of list'''
+
+def printNGE(arr):
+    for i in range(0, len(arr), 1):
+        next = -1
+        for j in range(i+1, len(arr), 1):
+            if arr[i] < arr[j]:
+                next = arr[j]
+                break
+        print(str(arr[i]) + "" -- "" + str(next))
+
+'''Driver program to test above function'''
+
+arr = [11,13,21,3]
+printNGE(arr)"
+"'''Python 3 implementation of above approach'''
+
+n = 7
+def minheapify(a, index):
+    small = index
+    l = 2 * index + 1
+    r = 2 * index + 2
+    if (l < n and a[l] < a[small]):
+        small = l
+    if (r < n and a[r] < a[small]):
+        small = r
+    if (small != index):
+        (a[small], a[index]) = (a[index], a[small])
+        minheapify(a, small)
+
+'''Driver Code'''
+
+i = 0
+k1 = 3
+k2 = 6
+a = [ 20, 8, 22, 4, 12, 10, 14 ]
+ans = 0
+for i in range((n //2) - 1, -1, -1):
+    minheapify(a, i)
+
+'''decreasing value by 1 because we want
+min heapifying k times and it starts
+from 0 so we have to decrease it 1 time'''
+
+k1 -= 1
+k2 -= 1
+
+'''Step 1: Do extract minimum k1 times
+(This step takes O(K1 Log n) time)'''
+
+for i in range(0, k1 + 1):
+    a[0] = a[n - 1]
+    n -= 1
+    minheapify(a, 0)
+
+'''Step 2: Do extract minimum k2 – k1 – 1 times and
+sum all extracted elements.
+(This step takes O ((K2 – k1) * Log n) time)*/'''
+
+for i in range(k1 + 1, k2) :
+    ans += a[0]
+    a[0] = a[n - 1]
+    n -= 1
+    minheapify(a, 0)
+print (ans)"
+"'''Python 3 simple program to find elements
+which are not present in second array
+ '''
+
+'''Function for finding elements which
+are there in a[] but not in b[].'''
+
+def findMissing(a, b, n, m):
+    for i in range(n):
+        for j in range(m):
+            if (a[i] == b[j]):
+                break
+        if (j == m - 1):
+            print(a[i], end = "" "")
+
+'''Driver code'''
+
+if __name__ == ""__main__"":
+    a = [ 1, 2, 6, 3, 4, 5 ]
+    b = [ 2, 4, 3, 1, 0 ]
+    n = len(a)
+    m = len(b)
+    findMissing(a, b, n, m)"
+"'''Python 3 program to find a pair
+with product in given array.'''
+
+'''Function to find greatest number'''
+
+def findGreatest( arr , n):
+    result = -1
+    for i in range(n):
+        for j in range(n - 1):
+            for k in range(j + 1, n):
+                if (arr[j] * arr[k] == arr[i]):
+                    result = max(result, arr[i])
+    return result
+
+'''Driver code'''
+
+if __name__ == ""__main__"":
+    arr = [ 30, 10, 9, 3, 35]
+    n = len(arr)
+    print(findGreatest(arr, n))"
+"'''Python 3 program to find all 
+pairs in both arrays whose 
+sum is equal to given value x
+ '''
+
+'''Function to print all pairs 
+in both arrays whose sum is
+equal to given value x'''
+
+def findPairs(arr1, arr2, n, m, x):
+    for i in range(0, n):
+        for j in range(0, m):
+            if (arr1[i] + arr2[j] == x):
+                print(arr1[i], arr2[j])
+
+'''Driver code'''
+
+arr1 = [1, 2, 3, 7, 5, 4]
+arr2 = [0, 7, 4, 3, 2, 1]
+n = len(arr1)
+m = len(arr2)
+x = 8
+findPairs(arr1, arr2, n, m, x)"
+"'''A simple python program to find pair
+whose sum already exists in array
+ '''
+
+'''Function to find pair whose sum
+exists in arr[]'''
+
+def findPair(arr, n):
+    found = False
+    for i in range(0, n):
+        for j in range(i + 1, n):
+            for k in range(0, n):
+                if (arr[i] + arr[j] == arr[k]):
+                    print(arr[i], arr[j])
+                    found = True
+    if (found == False):
+        print(""Not exist"")
+
+'''Driver code'''
+
+if __name__ == '__main__':
+    arr = [ 10, 4, 8, 13, 5 ]
+    n = len(arr)
+    findPair(arr, n)"
+"'''Python3 program to find first 
+non-repeating element.'''
+
+def firstNonRepeating(arr, n):
+    for i in range(n):
+        j = 0
+        while(j < n):
+            if (i != j and arr[i] == arr[j]):
+                break
+            j += 1
+        if (j == n):
+            return arr[i]
+    return -1
+
+'''Driver code'''
+
+arr = [ 9, 4, 9, 6, 7, 4 ]
+n = len(arr)
+print(firstNonRepeating(arr, n))"
+"'''Python3 program to find
+three element from different
+three arrays such that
+a + b + c is equal to
+given sum
+ '''
+
+'''Function to check if there
+is an element from each
+array such that sum of the
+three elements is equal to
+given sum.'''
+
+def findTriplet(a1, a2, a3,
+                n1, n2, n3, sum):
+    for i in range(0 , n1):
+        for j in range(0 , n2):
+            for k in range(0 , n3):
+                if (a1[i] + a2[j] +
+                    a3[k] == sum):
+                    return True
+    return False
+
+'''Driver Code'''
+
+a1 = [ 1 , 2 , 3 , 4 , 5 ]
+a2 = [ 2 , 3 , 6 , 1 , 2 ]
+a3 = [ 3 , 2 , 4 , 5 , 6 ]
+sum = 9
+n1 = len(a1)
+n2 = len(a2)
+n3 = len(a3)
+print(""Yes"") if findTriplet(a1, a2, a3,
+                            n1, n2, n3,
+                            sum) else print(""No"")"
+"'''Python3 program to rotate an array by
+d elements'''
+
+'''Function to left Rotate arr[] of size n by 1*/'''
+
+def leftRotatebyOne(arr, n):
+    temp = arr[0]
+    for i in range(n-1):
+        arr[i] = arr[i + 1]
+    arr[n-1] = temp
+
+'''Function to left rotate arr[] of size n by d*/'''
+
+def leftRotate(arr, d, n):
+    for i in range(d):
+        leftRotatebyOne(arr, n)
+
+'''utility function to print an array */'''
+
+def printArray(arr, size):
+    for i in range(size):
+        print (""% d""% arr[i], end ="" "")
+
+'''Driver program to test above functions */'''
+
+arr = [1, 2, 3, 4, 5, 6, 7]
+leftRotate(arr, 2, 7)
+printArray(arr, 7)"
+"'''i and j pointing to first and last element respectively'''
+
+def rotate(arr, n):
+    i = 0
+    j = n - 1
+    while i != j:
+      arr[i], arr[j] = arr[j], arr[i]
+      i = i + 1
+    pass
+
+'''Driver function'''
+
+arr= [1, 2, 3, 4, 5]
+n = len(arr)
+print (""Given array is"")
+for i in range(0, n):
+    print (arr[i], end = ' ')
+rotate(arr, n)
+print (""\nRotated array is"")
+for i in range(0, n):
+    print (arr[i], end = ' ')"
+"'''Python3 program for right rotation of
+an array (Reversal Algorithm)'''
+
+'''Function to reverse arr
+from index start to end'''
+
+def reverseArray( arr, start, end):
+    while (start < end):
+        arr[start], arr[end] = arr[end], arr[start]
+        start = start + 1
+        end = end - 1
+
+'''Function to right rotate arr
+of size n by d'''
+
+def rightRotate( arr, d, n):
+    reverseArray(arr, 0, n - 1);
+    reverseArray(arr, 0, d - 1);
+    reverseArray(arr, d, n - 1);
+
+'''function to pr an array'''
+
+def prArray( arr, size):
+    for i in range(0, size):
+        print (arr[i], end = ' ')
+
+'''Driver code'''
+
+arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+n = len(arr)
+k = 3
+rightRotate(arr, k, n)
+prArray(arr, n)"
+"'''Python code to rearrange
+an array such that
+even index elements
+are smaller and odd
+index elements are
+greater than their
+next.'''
+
+'''Rearrange'''
+
+def rearrange(arr, n):
+    for i in range(n - 1):
+        if (i % 2 == 0 and arr[i] > arr[i + 1]):
+            temp = arr[i]
+            arr[i]= arr[i + 1]
+            arr[i + 1]= temp
+        if (i % 2 != 0 and arr[i] < arr[i + 1]):
+            temp = arr[i]
+            arr[i]= arr[i + 1]
+            arr[i + 1]= temp
+
+'''Utility that prints out an array in
+a line'''
+
+def printArray(arr, size):
+    for i in range(size):
+        print(arr[i], "" "", end ="""")
+    print()
+
+'''Driver code'''
+
+arr = [ 6, 4, 2, 1, 8, 3 ]
+n = len(arr)
+print(""Before rearranging: "")
+printArray(arr, n)
+rearrange(arr, n)
+print(""After rearranging:"")
+printArray(arr, n);"
+"'''Python3 implementation of the above approach'''
+
+def arrayEvenAndOdd(arr,  n):
+    ind = 0;
+    a = [0 for i in range(n)]
+    for i in range(n):
+        if (arr[i] % 2 == 0):
+            a[ind] = arr[i]
+            ind += 1
+    for i in range(n):
+        if (arr[i] % 2 != 0):
+            a[ind] = arr[i]
+            ind += 1
+    for i in range(n):
+        print(a[i], end = "" "")
+    print()
+
+'''Driver code'''
+
+arr = [ 1, 3, 2, 4, 7, 6, 9, 10 ]
+n = len(arr)
+
+'''Function call'''
+
+arrayEvenAndOdd(arr, n)"
+"'''Sorting based Python 3 program
+to find all elements in array
+which have atleast two greater
+elements itself.'''
+
+def findElements(arr, n):
+    arr.sort()
+    for i in range(0, n-2):
+        print(arr[i], end ="" "")
+
+'''Driven source'''
+
+arr = [2, -6, 3, 5, 1]
+n = len(arr)
+findElements(arr, n)"
+"'''Function to find the maximum contiguous subarray
+and print its starting and end index'''
+
+from sys import maxsize
+def maxSubArraySum(a,size):
+    max_so_far = -maxsize - 1
+    max_ending_here = 0
+    start = 0
+    end = 0
+    s = 0
+    for i in range(0,size):
+        max_ending_here += a[i]
+        if max_so_far < max_ending_here:
+            max_so_far = max_ending_here
+            start = s
+            end = i
+        if max_ending_here < 0:
+            max_ending_here = 0
+            s = i+1
+    print (""Maximum contiguous sum is %d""%(max_so_far))
+    print (""Starting Index %d""%(start))
+    print (""Ending Index %d""%(end))
+
+'''Driver program to test maxSubArraySum'''
+
+a = [-2, -3, 4, -1, -2, 1, 5, -3]
+maxSubArraySum(a,len(a))"
+"'''Python3 program to print largest contiguous array sum'''
+
+from sys import maxsize
+
+'''Function to find the maximum contiguous subarray
+and print its starting and end index'''
+
+def maxSubArraySum(a,size):
+    max_so_far = -maxsize - 1
+    max_ending_here = 0
+    start = 0
+    end = 0
+    s = 0
+    for i in range(0,size):
+        max_ending_here += a[i]
+        if max_so_far < max_ending_here:
+            max_so_far = max_ending_here
+            start = s
+            end = i
+        if max_ending_here < 0:
+            max_ending_here = 0
+            s = i+1
+    return (end - start + 1)
+
+'''Driver program to test maxSubArraySum'''
+
+a = [-2, -3, 4, -1, -2, 1, 5, -3]
+print(maxSubArraySum(a,len(a)))"
+"'''Python3 program to mark numbers
+as multiple of 2 or 5'''
+
+import math
+
+'''Driver code'''
+
+a = 2
+b = 10
+size = abs(b - a) + 1
+array = [0] * size
+
+'''Iterate through a to b,
+If it is a multiple of 2
+or 5 Mark index in array as 1'''
+
+for i in range(a, b + 1):
+    if (i % 2 == 0 or i % 5 == 0):
+            array[i - a] = 1
+print(""MULTIPLES of 2 and 5:"")
+for i in range(a, b + 1):
+    if (array[i - a] == 1):
+            print(i, end="" "")"
+"'''Python3 code to for marking multiples'''
+
+import math
+
+'''index >> 5 corresponds to dividing index by 32
+index & 31 corresponds to modulo operation of
+index by 32
+Function to check value of bit position whether
+it is zero or one'''
+
+def checkbit( array, index):
+    return array[index >> 5] & (1 << (index & 31))
+
+'''Sets value of bit for corresponding index'''
+
+def setbit( array, index):
+    array[index >> 5] |= (1 << (index & 31))
+
+'''Driver code'''
+
+a = 2
+b = 10
+size = abs(b - a)
+
+'''Size that will be used is actual_size/32
+ceil is used to initialize the array with
+positive number'''
+
+size = math.ceil(size / 32)
+
+'''Array is dynamically initialized as
+we are calculating size at run time'''
+
+array = [0 for i in range(size)]
+
+'''Iterate through every index from a to b and
+call setbit() if it is a multiple of 2 or 5'''
+
+for i in range(a, b + 1):
+    if (i % 2 == 0 or i % 5 == 0):
+        setbit(array, i - a)
+print(""MULTIPLES of 2 and 5:"")
+for i in range(a, b + 1):
+    if (checkbit(array, i - a)):
+        print(i, end = "" "")"
+"'''Python3 program to sort an array with
+two types of values in one traversal.'''
+
+'''Method for segregation 0 and
+1 given input array'''
+
+def segregate0and1(arr, n):
+    type0 = 0; type1 = n - 1
+    while (type0 < type1):
+        if (arr[type0] == 1):
+            arr[type0], arr[type1] = arr[type1], arr[type0]
+            type1 -= 1
+        else:
+            type0 += 1
+
+'''Driver Code'''
+
+arr = [1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1]
+n = len(arr)
+segregate0and1(arr, n)
+for i in range(0, n):
+    print(arr[i], end = "" "")"
+"'''Python3 program to count
+inversions in an array'''
+
+def getInvCount(arr, n):
+    inv_count = 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            if (arr[i] > arr[j]):
+                inv_count += 1
+    return inv_count
+
+'''Driver Code'''
+
+arr = [1, 20, 6, 4, 5]
+n = len(arr)
+print(""Number of inversions are"",
+      getInvCount(arr, n))"
+"'''Python program to find union and intersection
+using sets'''
+
+'''Prints union of arr1[0..n1-1] and arr2[0..n2-1]'''
+
+def printUnion(arr1, arr2, n1, n2):
+    hs = set()
+    for i in range(0, n1):
+        hs.add(arr1[i])
+    for i in range(0, n2):
+        hs.add(arr2[i])
+    print(""Union:"")
+    for i in hs:
+        print(i, end="" "")
+    print(""\n"")
+
+'''    Prints intersection of arr1[0..n1-1] and
+    arr2[0..n2-1]'''
+
+def printIntersection(arr1, arr2, n1, n2):
+    hs = set()
+    for i in range(0, n1):
+        hs.add(arr1[i])
+    print(""Intersection:"")
+    for i in range(0, n2):
+        if arr2[i] in hs:
+            print(arr2[i], end="" "")
+
+'''Driver Program'''
+
+arr1 = [7, 1, 5, 2, 3, 6]
+arr2 = [3, 8, 6, 20, 7]
+n1 = len(arr1)
+n2 = len(arr2)
+
+'''Function call'''
+
+printUnion(arr1, arr2, n1, n2)
+printIntersection(arr1, arr2, n1, n2)"
+"def countPairsBruteForce(X, Y, m, n):
+    ans = 0
+    for i in range(m):
+        for j in range(n):
+            if (pow(X[i], Y[j]) > pow(Y[j], X[i])):
+                ans += 1
+    return ans"
+"'''Fills element in arr[] from its
+pair sum array pair[].
+n is size of arr[]'''
+
+def constructArr(arr,pair,n):
+    arr [0] = (pair[0]+pair[1]-pair[n-1])//2
+    for i in range(1,n):
+        arr[i] = pair[i-1]-arr[0]
+
+'''Driver code'''
+
+if __name__=='__main__':
+    pair = [15, 13, 11, 10, 12, 10, 9, 8, 7, 5]
+    n =5
+    arr = [0]*n
+    constructArr(arr,pair,n)
+    for i in range(n):
+        print(arr[i],end ="" "")"
+"'''Python program for searching in
+unsorted array'''
+
+'''Function to implement
+    search operation'''
+
+def findElement(arr, n, key):
+    for i in range (n):
+        if (arr[i] == key):
+            return i
+    return -1
+
+'''Driver Code'''
+
+arr = [12, 34, 10, 6, 40]
+n = len(arr)
+
+'''Using a last element as search element'''
+
+key = 40
+index = findElement(arr, n, key)
+if index != -1:
+    print (""element found at position: "" + str(index + 1 ))
+else:
+    print (""element not found"")"
+"'''Python 3 program to find maximum
+equilibrium sum.'''
+
+import sys
+
+'''Function to find maximum equilibrium sum.'''
+
+def findMaxSum(arr, n):
+    res = -sys.maxsize - 1
+    for i in range(n):
+        prefix_sum = arr[i]
+        for j in range(i):
+            prefix_sum += arr[j]
+        suffix_sum = arr[i]
+        j = n - 1
+        while(j > i):
+            suffix_sum += arr[j]
+            j -= 1
+        if (prefix_sum == suffix_sum):
+            res = max(res, prefix_sum)
+    return res
+
+'''Driver Code'''
+
+if __name__ == '__main__':
+    arr = [-2, 5, 3, 1, 2, 6, -4, 2]
+    n = len(arr)
+    print(findMaxSum(arr, n))"
+"'''Python3 program to find
+maximum equilibrium sum.'''
+
+import sys
+
+'''Function to find
+maximum equilibrium sum.'''
+
+def findMaxSum(arr,n):
+    ss = sum(arr)
+    prefix_sum = 0
+    res = -sys.maxsize
+    for i in range(n):
+        prefix_sum += arr[i]
+        if prefix_sum == ss:
+            res = max(res, prefix_sum);
+        ss -= arr[i];
+    return res
+
+'''Driver code  '''
+
+if __name__==""__main__"":
+    arr = [ -2, 5, 3, 1,
+             2, 6, -4, 2 ]
+    n = len(arr)
+    print(findMaxSum(arr, n))"
+"'''Python3 program for finding out majority
+element in an array'''
+
+def findMajority(arr, size):
+    m = {}
+    for i in range(size):
+        if arr[i] in m:
+            m[arr[i]] += 1
+        else:
+            m[arr[i]] = 1
+    count = 0
+    for key in m:
+        if m[key] > size / 2:
+            count = 1
+            print(""Majority found :-"",key)
+            break
+    if(count == 0):
+        print(""No Majority element"")
+
+'''Driver code'''
+
+arr = [2, 2, 2, 2, 5, 5, 2, 3, 3]
+n = len(arr)
+
+'''Function calling'''
+
+findMajority(arr, n)"
+"'''Python3 program to Find the two
+repeating elements in a given array'''
+
+'''Print Repeating function'''
+
+def printRepeating(arr, size):
+    print(""Repeating elements are "",
+                         end = '')
+    for i in range (0, size):
+        for j in range (i + 1, size):
+            if arr[i] == arr[j]:
+                print(arr[i], end = ' ')
+
+'''Driver code'''
+
+arr = [4, 2, 4, 5, 2, 3, 1]
+arr_size = len(arr)
+printRepeating(arr, arr_size)"
+"'''Python3 code for Find the two repeating
+elements in a given array'''
+
+'''Function'''
+
+def printRepeating(arr,size) :
+    count = [0] * size
+    print("" Repeating elements are "",end = """")
+    for i in range(0, size) :
+        if(count[arr[i]] == 1) :
+            print(arr[i], end = "" "")
+        else :
+            count[arr[i]] = count[arr[i]] + 1
+
+'''Driver code'''
+
+arr = [4, 2, 4, 5, 2, 3, 1]
+arr_size = len(arr)
+printRepeating(arr, arr_size)"
+"'''Python3 code for Find the two repeating
+elements in a given array'''
+
+'''Function to print repeating'''
+
+def printRepeating(arr, size) :
+    print("" The repeating elements are"",end="" "")
+    for i in range(0,size) :
+        if(arr[abs(arr[i])] > 0) :
+            arr[abs(arr[i])] = (-1) * arr[abs(arr[i])]
+        else :
+            print(abs(arr[i]),end = "" "")
+
+'''Driver code'''
+
+arr = [4, 2, 4, 5, 2, 3, 1]
+arr_size = len(arr)
+printRepeating(arr, arr_size)"
+"'''Python 3 implementation of the approach
+ '''
+
+'''Linearly search x in arr[]. If x is present
+then return the index, otherwise return -1'''
+
+def search(arr, x):
+    for index, value in enumerate(arr):
+        if value == x:
+            return index
+    return -1
+
+'''Driver Code'''
+
+arr = [1, 10, 30, 15]
+x = 30
+print(x, ""is present at index"",
+      search(arr, x))"
+"'''Python3 code to linearly search x in arr[].
+If x is present then return its location,
+otherwise return -1'''
+
+def search(arr, n, x):
+    for i in range(0, n):
+        if (arr[i] == x):
+            return i
+    return -1
+
+'''Driver Code'''
+
+arr = [2, 3, 4, 10, 40]
+x = 10
+n = len(arr)
+
+'''Function call'''
+
+result = search(arr, n, x)
+if(result == -1):
+    print(""Element is not present in array"")
+else:
+    print(""Element is present at index"", result)"
+"'''Python program for counting sort
+which takes negative numbers as well'''
+
+'''The function that sorts the given arr[]'''
+
+def count_sort(arr):
+    max_element = int(max(arr))
+    min_element = int(min(arr))
+    range_of_elements = max_element - min_element + 1
+    count_arr = [0 for _ in range(range_of_elements)]
+    output_arr = [0 for _ in range(len(arr))]
+    for i in range(0, len(arr)):
+        count_arr[arr[i]-min_element] += 1
+    for i in range(1, len(count_arr)):
+        count_arr[i] += count_arr[i-1]
+    for i in range(len(arr)-1, -1, -1):
+        output_arr[count_arr[arr[i] - min_element] - 1] = arr[i]
+        count_arr[arr[i] - min_element] -= 1
+    for i in range(0, len(arr)):
+        arr[i] = output_arr[i]
+    return arr
+
+'''Driver program to test above function'''
+
+arr = [-5, -10, 0, -3, 8, 5, -1, 10]
+ans = count_sort(arr)
+print(""Sorted character array is "" + str(ans))"
+"'''Python program using memoization'''
+
+import sys
+dp = [[-1 for i in range(100)] for j in range(100)]
+
+'''Function for matrix chain multiplication'''
+
+def matrixChainMemoised(p, i, j):
+    if(i == j):
+        return 0
+    if(dp[i][j] != -1):
+        return dp[i][j]
+    dp[i][j] = sys.maxsize
+    for k in range(i,j):
+        dp[i][j] = min(dp[i][j], matrixChainMemoised(p, i, k) + matrixChainMemoised(p, k + 1, j)+ p[i - 1] * p[k] * p[j])
+    return dp[i][j]
+def MatrixChainOrder(p,n):
+    i = 1
+    j = n - 1   
+    return matrixChainMemoised(p, i, j)
+
+'''Driver Code'''
+
+arr = [1, 2, 3, 4]
+n = len(arr)
+print(""Minimum number of multiplications is"",MatrixChainOrder(arr, n))"
+"'''Python code for implementation of Naive Recursive
+approach'''
+
+def isPalindrome(x):
+    return x == x[::-1]
+def minPalPartion(string, i, j):
+    if i >= j or isPalindrome(string[i:j + 1]):
+        return 0
+    ans = float('inf')
+    for k in range(i, j):
+        count = (
+            1 + minPalPartion(string, i, k)
+            + minPalPartion(string, k + 1, j)
+        )
+        ans = min(ans, count)
+    return ans
+
+'''Driver code'''
+
+def main():
+    string = ""ababbbabbababa""
+    print(
+     ""Min cuts needed for Palindrome Partitioning is "",
+     minPalPartion(string, 0, len(string) - 1),
+    )
+if __name__ == ""__main__"":
+    main()"
+"'''minCut function'''
+
+def minCut(a):
+    cut = [0 for i in range(len(a))]
+    palindrome = [[False for i in range(len(a))] for j in range(len(a))]
+    for i in range(len(a)):
+        minCut = i;
+        for j in range(i + 1):
+            if (a[i] == a[j] and (i - j < 2 or palindrome[j + 1][i - 1])):      
+                palindrome[j][i] = True;
+                minCut = min(minCut,0 if  j == 0 else (cut[j - 1] + 1));
+        cut[i] = minCut;  
+    return cut[len(a) - 1];
+
+'''Driver code'''
+
+if __name__=='__main__':
+    print(minCut(""aab""))
+    print(minCut(""aabababaxx""))"
+"'''Python program to compute sum of digits
+in numbers from 1 to n'''
+
+import math
+
+'''Function to computer sum of digits in
+numbers from 1 to n'''
+def sumOfDigitsFrom1ToNUtil(n, a):
+    if (n < 10):
+        return (n * (n + 1)) // 2
+    d = int(math.log(n,10))
+    p = int(math.ceil(pow(10, d)))
+    msd = n // p
+    return (msd * a[d] + (msd * (msd - 1) // 2) * p +
+    msd * (1 + n % p) + sumOfDigitsFrom1ToNUtil(n % p, a))
+def sumOfDigitsFrom1ToN(n):
+    d = int(math.log(n, 10))
+    a = [0]*(d + 1)
+    a[0] = 0
+    a[1] = 45
+    for i in range(2, d + 1):
+        a[i] = a[i - 1] * 10 + 45 * \
+                int(math.ceil(pow(10, i - 1)))
+    return sumOfDigitsFrom1ToNUtil(n, a)
+
+'''Driver code'''
+
+n = 328
+print(""Sum of digits in numbers from 1 to"",n,""is"",sumOfDigitsFrom1ToN(n))"
+"'''Python 3 code for power
+function
+ '''
+
+'''Works only if a >= 0 and b >= 0'''
+
+def pow(a,b):
+    if(b==0):
+        return 1
+    answer=a
+    increment=a
+    for i in range(1,b):
+        for j in range (1,a):
+            answer+=increment
+        increment=answer
+    return answer
+
+'''driver code'''
+
+print(pow(5,3))"
+"'''Returns the new average
+after including x'''
+
+def getAvg(prev_avg, x, n):
+    return ((prev_avg *
+             n + x) /
+            (n + 1));
+
+'''Prints average of
+a stream of numbers'''
+
+def streamAvg(arr, n):
+    avg = 0;
+    for i in range(n):
+        avg = getAvg(avg, arr[i], i);
+        print(""Average of "", i + 1,
+              "" numbers is "", avg);
+
+'''Driver Code'''
+
+arr = [10, 20, 30,
+       40, 50, 60];
+n = len(arr);
+streamAvg(arr, n);"
+"'''Returns the new average
+after including x'''
+
+def getAvg(x, n, sum):
+    sum = sum + x;
+    return float(sum) / n;
+
+'''Prints average of a
+stream of numbers'''
+
+def streamAvg(arr, n):
+    avg = 0;
+    sum = 0;
+    for i in range(n):
+        avg = getAvg(arr[i], i + 1, sum);
+        sum = avg * (i + 1);
+        print(""Average of "", end = """");
+        print(i + 1, end = """");
+        print("" numbers is "", end = """");
+        print(avg);
+    return;
+
+'''Driver Code'''
+
+arr= [ 10, 20, 30,
+       40, 50, 60 ];
+n = len(arr);
+streamAvg(arr,n);"
+"'''Python program to find the element occurring
+odd number of times'''
+
+'''function to find the element occurring odd
+number of times'''
+
+def getOddOccurrence(arr, arr_size):
+    for i in range(0,arr_size):
+        count = 0
+        for j in range(0, arr_size):
+            if arr[i] == arr[j]:
+                count+=1
+        if (count % 2 != 0):
+            return arr[i]
+    return -1
+
+'''driver code'''
+
+arr = [2, 3, 5, 4, 5, 2, 4, 3, 5, 2, 4, 4, 2 ]
+n = len(arr)
+
+'''        Function calling'''
+
+print(getOddOccurrence(arr, n))"
+"'''Python program to sort a
+binary array in one pass'''
+
+'''Function to put all 0s on
+left and all 1s on right'''
+
+def segregate0and1(arr, size):
+ 
+    type0 = 0
+    type1 = size - 1
+     
+    while(type0 < type1):
+        if(arr[type0] == 1):
+            (arr[type0],
+             arr[type1]) = (arr[type1],
+                            arr[type0])
+            type1 -= 1
+        else:
+            type0 += 1
+
+'''Driver Code'''
+
+arr = [0, 1, 0, 1, 1, 1]
+arr_size = len(arr)
+segregate0and1(arr, arr_size)
+print(""Array after segregation is"",
+                         end = "" "")
+for i in range(0, arr_size):
+        print(arr[i], end = "" "")"
+"'''Python 3 code to find Maximum difference
+between two elements such that larger
+element appears after the smaller number'''
+
+'''The function assumes that there are at
+least two elements in array. The function
+returns a negative value if the array is
+sorted in decreasing order. Returns 0
+if elements are equal'''
+
+def maxDiff(arr, arr_size):
+    max_diff = arr[1] - arr[0]
+     
+    for i in range( 0, arr_size ):
+        for j in range( i+1, arr_size ):
+            if(arr[j] - arr[i] > max_diff):
+                max_diff = arr[j] - arr[i]
+     
+    return max_diff
+
+'''Driver program to test above function'''
+
+arr = [1, 2, 90, 10, 110]
+size = len(arr)
+
+''' Function calling'''
+
+
+print (""Maximum difference is"", maxDiff(arr, size))"
+"'''Python3 program to find the maximum
+j â€“ i such that arr[j] > arr[i]'''
+
+'''For a given array arr[], returns
+the maximum j â€“ i such that
+arr[j] > arr[i]'''
+
+ 
+ 
+def maxIndexDiff(arr, n):
+    maxDiff = -1
+    for i in range(0, n):
+        j = n - 1
+        while(j > i):
+            if arr[j] > arr[i] and maxDiff < (j - i):
+                maxDiff = j - i
+            j -= 1
+ 
+    return maxDiff
+
+'''driver code'''
+
+arr = [9, 2, 3, 4, 5, 6, 7, 8, 18, 0]
+n = len(arr)
+maxDiff = maxIndexDiff(arr, n)
+print(maxDiff)"
+"'''Python3 program to find
+maximum element'''
+
+ 
+def findMaximum(arr, low, high):
+    max = arr[low]
+    i = low
+    for i in range(high+1):
+        if arr[i] > max:
+            max = arr[i]
+    return max
+
+'''Driver program to check above functions */'''
+
+arr = [1, 30, 40, 50, 60, 70, 23, 20]
+n = len(arr)
+print (""The maximum element is %d""%
+        findMaximum(arr, 0, n-1))"
+"'''Efficient Python3 program to
+find smallest greater element
+in whole array for every element'''
+
+def smallestGreater(arr, n):
+     
+    s = set()
+     
+    for i in range(n):
+        s.add(arr[i])
+         
+    newAr = []
+     
+    for p in s:
+        newAr.append(p)
+ 
+    for i in range(n):
+        temp = lowerBound(newAr, 0, len(newAr),
+                          arr[i])
+                           
+        if (temp < n):
+            print(newAr[temp], end = "" "")
+        else:
+            print(""_ "", end = """")
+
+'''lowerbound function'''
+
+def lowerBound(vec, low, high, element):
+     
+    array = [0] * (len(vec))
+     
+    k = 0
+     
+    for val in vec:
+        array[k] = val
+        k += 1
+    while (low < high):
+        middle = low + int((high - low) / 2)
+         
+        if (element > array[middle]):
+            low = middle + 1
+        else:
+            high = middle
+ 
+    return low + 1
+
+'''Driver code'''
+
+if __name__ == '__main__':
+     
+    ar = [ 6, 3, 9, 8, 10, 2, 1, 15, 7 ]
+    n = len(ar)
+     
+    smallestGreater(ar, n)"
+"def minswaps(arr):
+    count = 0
+    num_unplaced_zeros = 0
+ 
+    for index in range(len(arr)-1, -1, -1):
+        if arr[index] == 0:
+            num_unplaced_zeros += 1
+        else:
+            count += num_unplaced_zeros
+    return count
+
+'''Driver Code'''
+
+
+arr = [0, 0, 1, 0, 1, 0, 1, 1]
+print(minswaps(arr))"
+"'''Python3 code to find count of Pairs 
+with difference less than K.'''
+
+'''    Function to count pairs'''
+
+
+def countPairs(a, n, k):
+    res = 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            if (abs(a[j] - a[i]) < k):
+                res += 1
+ 
+    return res
+
+'''Driver code'''
+
+a = [1, 10, 4, 2]
+k = 3
+n = len(a)
+print(countPairs(a, n, k), end = """")"
+"'''a represents the array
+n : Number of elements in array a'''
+
+def getMissingNo(a, n):
+    i, total = 0, 1
+ 
+    for i in range(2, n + 2):
+        total += i
+        total -= a[i - 2]
+    return total
+
+'''Driver Code'''
+
+arr = [1, 2, 3, 5]
+print(getMissingNo(arr, len(arr)))"
+"'''Python3 program to count
+occurrences of an element'''
+
+'''Returns number of times x
+occurs in arr[0..n-1]'''
+
+def countOccurrences(arr, n, x):
+    res = 0
+    for i in range(n):
+        if x == arr[i]:
+            res += 1
+    return res
+
+'''Driver code'''
+
+arr = [1, 2, 2, 2, 2, 3, 4, 7 ,8 ,8]
+n = len(arr)
+x = 2
+print (countOccurrences(arr, n, x))"
+"'''Python3 code to Find the repeating
+and the missing elements'''
+
+ 
+def printTwoElements( arr, size):
+    for i in range(size):
+        if arr[abs(arr[i])-1] > 0:
+            arr[abs(arr[i])-1] = -arr[abs(arr[i])-1]
+        else:
+            print(""The repeating element is"", abs(arr[i]))
+             
+    for i in range(size):
+        if arr[i]>0:
+            print(""and the missing element is"", i + 1)
+
+'''Driver program to test above function */'''
+
+arr = [7, 3, 4, 5, 5, 6, 2]
+n = len(arr)
+printTwoElements(arr, n)"
+"'''Python3 program to find the
+repeating and missing elements
+using Maps'''
+
+def main():
+     
+    arr = [ 4, 3, 6, 2, 1, 1 ]
+     
+    numberMap = {}
+     
+    max = len(arr)
+    for i in arr:
+        if not i in numberMap:
+            numberMap[i] = True
+             
+        else:
+            print(""Repeating ="", i)
+     
+    for i in range(1, max + 1):
+        if not i in numberMap:
+            print(""Missing ="", i)
+main()"
+"'''Python3 program for the above approach'''
+
+'''Function to left rotate'''
+
+def left_rotate(arr):
+     
+    last = arr[1];
+    for i in range(3, len(arr), 2):
+        arr[i - 2] = arr[i]
+         
+    arr[len(arr) - 1] = last
+
+'''Function to right rotate'''
+
+def right_rotate(arr):
+     
+    start = arr[len(arr) - 2]
+    for i in range(len(arr) - 4, -1, -2):
+        arr[i + 2] = arr[i]
+         
+    arr[0] = start
+
+'''Function to rotate the array'''
+
+def rotate(arr):
+     
+    left_rotate(arr)
+    right_rotate(arr)
+    for i in range(len(arr)):
+        print(arr[i], end = "" "")
+
+'''Driver code'''
+
+arr = [ 1, 2, 3, 4, 5, 6 ]
+ 
+rotate(arr);"
+"'''Python program to print
+all possible rotations
+of the given array'''
+
+'''Function to reverse array
+between indices s and e'''
+
+def reverse(arr, s, e):
+    while s < e:
+        tem = arr[s]
+        arr[s] = arr[e]
+        arr[e] = tem
+        s = s + 1
+        e = e - 1
+
+'''Function to generate all
+possible rotations of array'''
+
+def fun(arr, k):
+    n = len(arr)-1
+    v = n - k
+    if v>= 0:
+        reverse(arr, 0, v)
+        reverse(arr, v + 1, n)
+        reverse(arr, 0, n)
+        return arr
+
+'''Driver Code'''
+
+arr = [1, 2, 3, 4]
+for i in range(0, len(arr)):
+    count = 0
+    p = fun(arr, i)
+    print(p, end ="" "")"
+"'''Python program to Generating numbers that are
+divisor of their right-rotations'''
+
+ 
+from math import log10
+
+'''Function to check if N is a
+divisor of its right-rotation'''
+
+def rightRotationDivisor(N):
+    lastDigit = N % 10
+    rightRotation = (lastDigit * 10 ** int(log10(N))
+                    + N // 10)
+    return rightRotation % N == 0
+
+'''Function to generate m-digit
+numbers which are divisor of
+their right-rotation'''
+
+def generateNumbers(m):
+    for i in range(10 ** (m - 1), 10 ** m):
+        if rightRotationDivisor(i):
+            print(i)
+
+'''Driver code'''
+
+m = 3
+generateNumbers(m)"
+"'''Python program to Generating numbers that
+are divisor of their right-rotations'''
+
+from math import log10
+
+'''Function to generate m-digit
+numbers which are divisor of
+their right-rotation'''
+
+def generateNumbers(m):
+    numbers = []
+     
+    for y in range(1, 10):
+        k_max = ((10 ** (m - 2) *
+                (10 * y + 1)) //
+                (10 ** (m - 1) + y))
+         
+        for k in range(1, k_max + 1):
+            x = ((y * (10 ** (m - 1) - k))
+                // (10 * k - 1))
+             
+            if ((y * (10 ** (m - 1) - k))
+                % (10 * k - 1) == 0):
+                numbers.append(10 * x + y)
+     
+    for n in sorted(numbers):
+        print(n)
+
+'''Driver code'''
+
+m = 3
+generateNumbers(m)"
+"'''Python3 program to Split the array
+and add the first part to the end'''
+
+'''Function to reverse arr[]
+from index start to end*/'''
+
+def rvereseArray(arr, start, end):
+    while start < end :
+        temp = arr[start]
+        arr[start] = arr[end]
+        arr[end] =temp
+        start += 1
+        end -= 1
+
+'''Function to print an array'''
+
+def printArray(arr, n) :
+    for i in range(n):
+        print(arr[i], end = "" "")
+
+'''Function to left rotate
+arr[] of size n by k */'''
+
+def splitArr(arr, k, n):
+    rvereseArray(arr, 0, n - 1)
+    rvereseArray(arr, 0, n - k - 1)
+    rvereseArray(arr, n - k, n - 1)
+
+'''Driver Code'''
+
+arr = [12, 10, 5, 6, 52, 36]
+n = len(arr)
+k = 2
+
+'''   Function calling'''
+
+
+splitArr(arr, k, n)
+printArray(arr, n)"
