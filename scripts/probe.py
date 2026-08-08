@@ -210,20 +210,38 @@ def run_probe_one_seed(
     tr_classes = set(y[tr].tolist())
     absent = [c for c in labels if c not in tr_classes]
 
-    val_f1, test_f1, test_acc = [], [], []
-    per_layer_models = []
-    for layer in range(n_layers):
+    import time
+
+    from joblib import Parallel, delayed
+
+    def fit_layer(layer: int):
         scaler = StandardScaler().fit(X_all[tr, layer])
         Xtr, Xval, Xte = (
             scaler.transform(X_all[s, layer]) for s in (tr, val, test)
         )
-        clf = LogisticRegression(max_iter=2000, C=c_reg, random_state=seed)
+        clf = LogisticRegression(max_iter=1000, C=c_reg, random_state=seed)
         clf.fit(Xtr, y[tr])
-        val_f1.append(macro_f1_stat(y[val], clf.predict(Xval), labels))
         pred_te = clf.predict(Xte)
-        test_f1.append(macro_f1_stat(y[test], pred_te, labels))
-        test_acc.append(float(accuracy_score(y[test], pred_te)))
-        per_layer_models.append(pred_te)
+        return (
+            macro_f1_stat(y[val], clf.predict(Xval), labels),
+            macro_f1_stat(y[test], pred_te, labels),
+            float(accuracy_score(y[test], pred_te)),
+            pred_te,
+        )
+
+    t0 = time.time()
+    results = Parallel(n_jobs=-1, prefer="threads")(
+        delayed(fit_layer)(layer) for layer in range(n_layers)
+    )
+    val_f1 = [r[0] for r in results]
+    test_f1 = [r[1] for r in results]
+    test_acc = [r[2] for r in results]
+    per_layer_models = [r[3] for r in results]
+    print(
+        f"  seed {seed}: {n_layers} layers fitted in {time.time() - t0:.0f}s "
+        f"(train n={len(tr)})",
+        flush=True,
+    )
 
     best = int(np.argmax(val_f1))
     pred = per_layer_models[best]
@@ -273,6 +291,39 @@ def cmd_run(args: argparse.Namespace) -> int:
         source_desc = args.manifest
     if not records:
         raise SystemExit("no usable records after join/dedup")
+    print(f"loaded {len(records)} records from {source_desc}", flush=True)
+
+    # PROTOCOL §1: occurrence cap, sampled ONCE by problem with a FIXED seed
+    # (independent of probe seeds), so every renaming condition can reuse the
+    # identical occurrence set. The sampled id list is written next to the
+    # results file for that purpose.
+    sample_info = {"occurrence_cap": args.occurrence_cap, "cap_applied": False}
+    if args.occurrence_cap and len(records) > args.occurrence_cap:
+        rng = np.random.default_rng(1234)
+        problems = sorted({r["repo"] for r in records})
+        rng.shuffle(problems)
+        by_problem: dict = {}
+        for r in records:
+            by_problem.setdefault(r["repo"], []).append(r)
+        sampled, n_acc = [], 0
+        for p in problems:
+            if n_acc >= args.occurrence_cap:
+                break
+            sampled.extend(by_problem[p])
+            n_acc += len(by_problem[p])
+        records = sampled
+        sample_info.update(
+            cap_applied=True,
+            sampling_seed=1234,
+            n_after_cap=len(records),
+            n_problems_sampled=len({r["repo"] for r in records}),
+        )
+        print(
+            f"occurrence cap {args.occurrence_cap}: sampled {len(records)} occurrences "
+            f"from {sample_info['n_problems_sampled']} problems (fixed seed 1234)",
+            flush=True,
+        )
+
     records, class_stats = apply_class_policy(
         records, args.min_class_count, args.allow_class_drop
     )
@@ -306,6 +357,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         "seeds": seeds,
         "C": args.C,
         "load_stats": load_stats,
+        "sample_info": sample_info,
         **class_stats,
         "classes_used": labels,
         "majority_baseline_acc": max(Counter(y.tolist()).values()) / len(y),
@@ -327,6 +379,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     }
 
     if args.control_task:
+        print("control task (Hewitt): refitting all layers on permuted labels...", flush=True)
         y_ctrl = control_labels(records, seed=1234)
         ctrl_labels_used = sorted(set(y_ctrl.tolist()))
         ctrl = [
@@ -361,6 +414,9 @@ def cmd_run(args: argparse.Namespace) -> int:
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=1), encoding="utf-8")
+    Path(str(out) + ".sample_ids.json").write_text(
+        json.dumps(sorted(occ_ids)), encoding="utf-8"
+    )
 
     agg = result["aggregate"]
     print(f"records={len(records)} repos={result['n_repos']} "
@@ -411,6 +467,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--allow-class-drop", action="store_true")
     r.add_argument("--control-task", action="store_true",
                    help="also run the Hewitt control task and report selectivity")
+    r.add_argument("--occurrence-cap", type=int, default=2000,
+                   help="PROTOCOL cap per (role, language); 0 disables")
     r.add_argument("--n-boot", type=int, default=1000)
     r.add_argument("--output", required=True)
     sub.add_parser("verify", help="synthetic self-check")
