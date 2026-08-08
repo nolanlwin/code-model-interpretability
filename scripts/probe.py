@@ -182,13 +182,21 @@ def three_way_split(
             stratify=y[trval],
         )
         return tr, val, test
-    gss = GroupShuffleSplit(n_splits=1, test_size=f_test, random_state=seed)
-    trval, test = next(gss.split(idx, y, groups=groups))
-    gss2 = GroupShuffleSplit(
-        n_splits=1, test_size=f_val / (f_train + f_val), random_state=seed
-    )
-    tr_rel, val_rel = next(gss2.split(trval, y[trval], groups=groups[trval]))
-    return trval[tr_rel], trval[val_rel], test
+    # Deterministic HASH bucketing per group (not GroupShuffleSplit): every
+    # group lands in the same fold for a given seed REGARDLESS of which other
+    # groups are present. Renamed corpora drop a few programs; a shuffle-based
+    # split would diverge wholesale and leave paired deltas with only an
+    # accidental sliver of shared test items (observed: 76 of ~400).
+    import hashlib as _hl
+
+    def bucket(g: str) -> float:
+        return int(_hl.sha1(f"{g}:{seed}".encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+
+    fracs = np.array([bucket(str(g)) for g in groups])
+    test = idx[fracs < f_test]
+    val = idx[(fracs >= f_test) & (fracs < f_test + f_val)]
+    tr = idx[fracs >= f_test + f_val]
+    return tr, val, test
 
 
 def run_probe_one_seed(
@@ -351,6 +359,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         "pooling": args.pooling,
         "split_policy": args.split_policy,
         "split_ratio": [0.7, 0.1, 0.2],
+        "split_method": "hash_bucket_per_group",
         "ci_cluster_unit": "repo",
         "layer_indexing": "0 = embedding layer (pre-transformer); label axes 'embed,1..L'",
         "layer_selected_on": "validation",

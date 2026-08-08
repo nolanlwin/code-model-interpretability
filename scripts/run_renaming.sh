@@ -22,9 +22,14 @@ OCC=outputs/xlcost_occ/${slug}_${SPLIT}.jsonl
 C0_PROBE=outputs/probe_results/${slug}_${SPLIT}_${mslug}_problem.json
 SAMPLE=${C0_PROBE}.sample_ids.json
 
-for f in "$CANON" "$OCC" "$C0_PROBE" "$SAMPLE"; do
+C0_STORE=outputs/activations_xlcost/${slug}_${SPLIT}_${mslug}
+for f in "$CANON" "$OCC" "$C0_STORE/index.jsonl"; do
   [ -s "$f" ] || { echo "MISSING $f — run: bash scripts/run_language.sh $LANGUAGE $MODEL_ID $SPLIT"; exit 1; }
 done
+
+echo "=== [C0] re-probe under the frozen hash split (anchors every delta)"
+python scripts/probe.py run --store "$C0_STORE" \
+  --split-policy repo --allow-class-drop --control-task --output "$C0_PROBE"
 
 for c in C1 C2 C3 C4 C5; do
   RC=data/xlcost_renamed/$c/${slug}_${SPLIT}.jsonl
