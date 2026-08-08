@@ -100,6 +100,28 @@ def span_gate(rows: list[dict], code: str) -> tuple[list[dict], int]:
     return kept, dropped
 
 
+def program_occurrence_rows(
+    language: str, code: str, problem_id: str, tokenizer=None, max_length: int = 2048
+) -> tuple[list[dict], dict]:
+    """The full per-program pipeline: extract -> span gate -> conflict dedupe ->
+    sort -> stable occurrence ids. Single source of truth — the renamer's
+    id-preservation check calls this on renamed code, so both sides always
+    apply identical rules."""
+    rows, err = extract_rows(language, code, tokenizer, max_length)
+    if err is not None:
+        return [], {"parse_error": True, "span_dropped": 0}
+    rows, dropped = span_gate(rows, code)
+    by_span: dict = {}
+    for r in rows:
+        by_span.setdefault(
+            (r.get("function"), r.get("variable"), tuple(r["source_span"])), []
+        ).append(r)
+    clean = [g[0] for g in by_span.values() if len({x["occurrence_type"] for x in g}) == 1]
+    rows = sorted(clean, key=lambda r: (r["line"], r.get("col_offset") or 0))
+    rows = assign_occurrence_ids(rows, problem_id, language)
+    return rows, {"parse_error": False, "span_dropped": dropped}
+
+
 def cmd_extract(args: argparse.Namespace) -> int:
     tokenizer = None
     if args.model_id:
@@ -119,24 +141,13 @@ def cmd_extract(args: argparse.Namespace) -> int:
             code, language = rec["code"], rec["language"]
             problem_id = rec["problem_id"]
             n_prog += 1
-            rows, err = extract_rows(language, code, tokenizer, args.max_length)
-            if err is not None:
+            rows, pstats = program_occurrence_rows(
+                language, code, problem_id, tokenizer, args.max_length
+            )
+            if pstats["parse_error"]:
                 n_parse_err += 1
                 continue
-            rows, dropped = span_gate(rows, code)
-            n_span_dropped += dropped
-            # Same-span duplicates with conflicting labels: drop all copies.
-            by_span: dict = {}
-            for r in rows:
-                by_span.setdefault(
-                    (r.get("function"), r.get("variable"), tuple(r["source_span"])), []
-                ).append(r)
-            clean = []
-            for group in by_span.values():
-                if len({g["occurrence_type"] for g in group}) == 1:
-                    clean.append(group[0])
-            rows = sorted(clean, key=lambda r: (r["line"], r.get("col_offset") or 0))
-            rows = assign_occurrence_ids(rows, problem_id, language)
+            n_span_dropped += pstats["span_dropped"]
             for r in rows:
                 if r["occurrence_id"] in dedup:
                     continue
