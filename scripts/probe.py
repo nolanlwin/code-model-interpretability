@@ -112,6 +112,42 @@ def load_records(manifest: Path, npz_dir: Path, pooling: str) -> tuple[list[dict
     return records, stats
 
 
+def load_records_from_store(store_dir: Path) -> tuple[list[dict], dict]:
+    """Load an extract_activations.py memmap store (index.jsonl + shard.npy).
+
+    XLCoST has no repositories; the cluster/grouping unit is the PROBLEM, so
+    ``problem_id`` fills the record's "repo" slot (the ``repo`` split policy
+    therefore groups by problem — the protocol's split unit).
+    """
+    meta = json.loads((store_dir / "meta.json").read_text(encoding="utf-8"))
+    shard = np.load(store_dir / "shard.npy", mmap_mode="r")
+    records, skipped = [], 0
+    for ln in (store_dir / "index.jsonl").read_text(encoding="utf-8").splitlines():
+        if not ln.strip():
+            continue
+        r = json.loads(ln)
+        if r.get("skip"):
+            skipped += 1
+            continue
+        records.append(
+            {
+                "occurrence_id": r["occurrence_id"],
+                "y": r["occurrence_type"],
+                "X": np.asarray(shard[r["row"]], dtype=np.float32),
+                "repo": str(r["problem_id"]),
+                "function": f'{r["problem_id"]}::{r.get("function")}',
+                "variable": str(r.get("variable") or "?"),
+            }
+        )
+    stats = {
+        "store": str(store_dir),
+        "model_id": meta.get("model_id"),
+        "index_skipped_rows": skipped,
+        "records": len(records),
+    }
+    return records, stats
+
+
 def apply_class_policy(
     records: list[dict], min_class_count: int, allow_drop: bool
 ) -> tuple[list[dict], dict]:
@@ -229,8 +265,12 @@ def control_labels(records: list[dict], seed: int) -> np.ndarray:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    manifest, npz_dir = Path(args.manifest), Path(args.npz_dir)
-    records, load_stats = load_records(manifest, npz_dir, args.pooling)
+    if args.store:
+        records, load_stats = load_records_from_store(Path(args.store))
+        source_desc = args.store
+    else:
+        records, load_stats = load_records(Path(args.manifest), Path(args.npz_dir), args.pooling)
+        source_desc = args.manifest
     if not records:
         raise SystemExit("no usable records after join/dedup")
     records, class_stats = apply_class_policy(
@@ -256,7 +296,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     result: dict = {
         "protocol_version": PROTOCOL_VERSION,
         "task": "occurrence_type",
-        "manifest": str(manifest),
+        "source": source_desc,
         "pooling": args.pooling,
         "split_policy": args.split_policy,
         "split_ratio": [0.7, 0.1, 0.2],
@@ -360,8 +400,9 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="probe cached activations")
-    r.add_argument("--manifest", required=True)
-    r.add_argument("--npz-dir", required=True)
+    r.add_argument("--store", help="extract_activations.py output dir (index.jsonl + shard.npy)")
+    r.add_argument("--manifest")
+    r.add_argument("--npz-dir")
     r.add_argument("--pooling", default="mean", choices=["first", "last", "mean"])
     r.add_argument("--split-policy", default="repo", choices=["random", "function", "repo"])
     r.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])

@@ -71,24 +71,33 @@ def load_from_manifest(path: Path) -> list[dict]:
 
 
 def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list[dict]:
-    canon = [json.loads(ln).get("code", "") for ln in canon_path.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    canon_rows = _read_jsonl(canon_path)
+    # XLCoST canonical rows join by problem_id; CodeSearchNet by 1-based line index.
+    by_problem = {r["problem_id"]: r.get("code", "") for r in canon_rows if "problem_id" in r}
+    by_index = [r.get("code", "") for r in canon_rows]
     out = []
     for r in _read_jsonl(occ_path):
         if not r.get("occurrence_type"):
             continue
-        i = int(r.get("source_row", 0)) - 1
-        code = canon[i] if 0 <= i < len(canon) else ""
+        if r.get("problem_id") is not None:
+            code = by_problem.get(r["problem_id"], "")
+        else:
+            i = int(r.get("source_row", 0)) - 1
+            code = by_index[i] if 0 <= i < len(by_index) else ""
+        if not code:
+            continue
         span = r.get("source_span") or [0, 0]
         var = str(r.get("variable", ""))
         s = code.rfind("\n", 0, span[0]) + 1
         e = code.find("\n", span[1])
         e = len(code) if e < 0 else e
+        group = r.get("problem_id") or r.get("repo") or "?"
         out.append(
             {
                 "y": r["occurrence_type"],
                 "variable": var,
-                "repo": str(r.get("repo") or "?"),
-                "function": f'{r.get("repo")}::{r.get("path")}::{r.get("source_row")}::{r.get("function")}',
+                "repo": str(group),
+                "function": f'{group}::{r.get("function")}',
                 "covariates": [float(len(code)), float(span[0]), 0.0],
                 "line_masked": code[s:e].replace(var, " VAR "),
                 "window_masked": code[max(0, span[0] - window): span[1] + window].replace(var, " VAR "),
