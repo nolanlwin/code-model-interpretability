@@ -94,6 +94,7 @@ def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list
         group = r.get("problem_id") or r.get("repo") or "?"
         out.append(
             {
+                "occurrence_id": r.get("occurrence_id"),
                 "y": r["occurrence_type"],
                 "variable": var,
                 "repo": str(group),
@@ -143,6 +144,19 @@ def cmd_run(args: argparse.Namespace) -> int:
     if not recs:
         raise SystemExit("no records")
 
+    if args.sample_ids:
+        wanted = set(json.loads(Path(args.sample_ids).read_text(encoding="utf-8")))
+        before = len(recs)
+        recs = [r for r in recs if r.get("occurrence_id") in wanted]
+        matched = len(recs)
+        print(f"sample filter: {matched}/{before} occurrences match "
+              f"{len(wanted)} sampled ids ({args.sample_ids})")
+        if matched < 0.9 * len(wanted):
+            raise SystemExit(
+                "fewer than 90% of sampled ids matched - wrong occurrence file "
+                "or wrong sample file; refusing to report incomparable numbers"
+            )
+
     counts = Counter(r["y"] for r in recs)
     keep = {k for k, v in counts.items() if v >= args.min_class_count}
     dropped = {k: v for k, v in counts.items() if k not in keep}
@@ -182,6 +196,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     keys = ["majority", "name_only", "covariates_only"] + (["line_masked", "window_masked"] if have_text else [])
     result = {
         "source": source,
+        "sample_ids": args.sample_ids,
         "split_policy": args.split_policy,
         "n_records": len(recs),
         "classes_used": labels,
@@ -210,6 +225,8 @@ def main(argv: list[str] | None = None) -> int:
     src.add_argument("--manifest")
     src.add_argument("--occurrences")
     r.add_argument("--canonical", help="canonical JSONL (required with --occurrences)")
+    r.add_argument("--sample-ids",
+                   help="probe.py <output>.sample_ids.json - restrict to the probe's exact occurrence set")
     r.add_argument("--window", type=int, default=120)
     r.add_argument("--split-policy", default="repo", choices=["random", "function", "repo"])
     r.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
