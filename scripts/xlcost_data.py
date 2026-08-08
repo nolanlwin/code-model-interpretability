@@ -33,15 +33,26 @@ FORMATTED_REPO = "giulio98/xlcost-formatted"  # Python, C++ (detokenized)
 TOKENIZED_REPO = "codeparrot/xlcost-text-to-code"  # all 7 (tokenized)
 FORMATTED_LANGS = {"Python", "C++"}
 ALL_LANGS = ["Python", "Java", "C++", "C#", "Javascript", "PHP", "C"]
+# The codeparrot mirror names the C# directory "Csharp".
+_MIRROR_DIRNAME = {"C#": "Csharp"}
 SPLITS = ["train", "valid", "test"]
 
 
-def detok_brace(s: str) -> str:
+def detok_brace(s: str, language: str = "") -> str:
     """Undo TransCoder spacing for brace languages (whitespace not semantic)."""
     s = s.replace(" NEW_LINE ", "\n").replace("NEW_LINE", "\n")
     # Member-access / float chains first, with lookarounds so `a . b . c` joins
     # fully in one pass (a capturing group would consume the shared letter).
     s = re.sub(r"(?<=\w)\s*\.\s*(?=\w)", ".", s)
+    # Multi-char operators the tokenizer split. None of the joined forms can
+    # arise from validly-spaced code (`a - > b` / `a = > b` parse nowhere).
+    s = re.sub(r"-\s+>", "->", s)  # member deref (C/C++/PHP)
+    s = re.sub(r"=\s+>", "=>", s)  # JS arrow fns, PHP array arrows
+    if language == "PHP":
+        s = re.sub(r"<\s*\?\s*php", "<?php", s)
+        s = re.sub(r"\?\s*>", "?>", s)
+        s = re.sub(r"\$\s+(?=\w)", "$", s)  # `$ arr` -> `$arr`
+        s = re.sub(r"::\s+", "::", s)
     s = re.sub(r"\s+([;,)\]}])", r"\1", s)
     s = re.sub(r"([(\[{])\s+", r"\1", s)
     s = re.sub(r"(\w)\s*\(", r"\1(", s)  # call spacing
@@ -58,7 +69,8 @@ def fetch_split(language: str, split: str) -> list[dict]:
     from huggingface_hub import hf_hub_download
 
     repo = FORMATTED_REPO if language in FORMATTED_LANGS else TOKENIZED_REPO
-    fname = f"data/{language}-program-level/{split}.json"
+    dirname = _MIRROR_DIRNAME.get(language, language)
+    fname = f"data/{dirname}-program-level/{split}.json"
     local = hf_hub_download(repo_id=repo, filename=fname, repo_type="dataset")
     raw = Path(local).read_text(encoding="utf-8")
     try:
@@ -99,7 +111,7 @@ def build_split(language: str, split: str, out_dir: Path) -> dict:
     for r in recs:
         code, text = r.get("code", ""), r.get("text", "")
         if needs_detok:
-            code = detok_brace(code)
+            code = detok_brace(code, language)
         if not code.strip() or not validate(language, code):
             failed += 1
             continue
@@ -137,14 +149,20 @@ def cmd_build(args: argparse.Namespace) -> int:
     out_dir = Path(args.out_dir)
     splits = SPLITS if args.split == "all" else [args.split]
     langs = ALL_LANGS if args.language == "all" else [args.language]
-    manifest = []
+    manifest, failures = [], 0
     for lang in langs:
         for sp in splits:
-            manifest.append(build_split(lang, sp, out_dir))
+            try:
+                manifest.append(build_split(lang, sp, out_dir))
+            except Exception as e:  # keep building; record the failure
+                failures += 1
+                entry = {"language": lang, "split": sp, "error": f"{type(e).__name__}: {e}"}
+                print(json.dumps(entry), file=sys.stderr)
+                manifest.append(entry)
     (out_dir / "build_manifest.json").write_text(
         json.dumps(manifest, indent=1), encoding="utf-8"
     )
-    return 0
+    return 1 if failures else 0
 
 
 def cmd_verify(_args: argparse.Namespace) -> int:
