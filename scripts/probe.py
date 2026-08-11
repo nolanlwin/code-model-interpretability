@@ -405,19 +405,22 @@ def cmd_run(args: argparse.Namespace) -> int:
         }
         result["selectivity_macro_f1"] = float(np.mean(f1s) - np.mean(cf1))
 
-    # First-seed predictions embedded for paired deltas downstream.
-    first = per_seed[0]
+    # Per-seed test predictions embedded for paired deltas downstream —
+    # deltas must aggregate over the same seeds as the headline metric, not
+    # describe seed 0 alone.
     result["test_predictions"] = [
         {
             "occurrence_id": occ_ids[i],
+            "seed": sd["seed"],
             "y_true": str(y[i]),
-            "y_pred": str(first["_test_pred"][j]),
+            "y_pred": str(sd["_test_pred"][j]),
             "cluster": str(clusters[i]),
         }
-        for j, i in enumerate(first["_test_idx"])
+        for sd in per_seed
+        for j, i in enumerate(sd["_test_idx"])
     ]
-    for s in per_seed:
-        s.pop("_test_idx"), s.pop("_test_pred")
+    for sd in per_seed:
+        sd.pop("_test_idx"), sd.pop("_test_pred")
     result["per_seed"] = per_seed
 
     out = Path(args.output)

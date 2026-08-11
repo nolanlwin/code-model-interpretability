@@ -26,6 +26,7 @@ under transformers 5.8.0 deletes whitespace and corrupts every offset).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -61,6 +62,14 @@ def load_model_and_tokenizer(model_id: str, device: str, dtype_flag: str):
     return model, tok, device
 
 
+def file_sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def read_jsonl(path: Path):
     for ln in path.read_text(encoding="utf-8").splitlines():
         ln = ln.strip()
@@ -89,18 +98,42 @@ def cmd_run(args: argparse.Namespace) -> int:
     n_layers = model.config.num_hidden_layers
     hidden = model.config.hidden_size
 
+    canon_sha = file_sha256(Path(args.canonical))
+    occ_sha = file_sha256(Path(args.occurrences))
     if meta_path.is_file():
         meta = json.loads(meta_path.read_text())
-        if meta["model_id"] != args.model_id or meta["n_occurrences"] != n_total:
+        expected = {
+            "model_id": args.model_id,
+            "n_occurrences": n_total,
+            "canonical_sha256": canon_sha,
+            "occurrences_sha256": occ_sha,
+            "max_length": args.max_length,
+        }
+        legacy = [k for k in ("canonical_sha256", "occurrences_sha256") if k not in meta]
+        mismatch = {
+            k: (meta.get(k), v)
+            for k, v in expected.items()
+            if k in meta and meta.get(k) != v
+        }
+        if mismatch:
             raise SystemExit(
-                f"store at {out_dir} was created for {meta['model_id']} / "
-                f"{meta['n_occurrences']} occurrences — refusing to mix; use a new --out-dir"
+                f"store at {out_dir} was built from different inputs — refusing to "
+                f"resume into a stale shard. Mismatches: {mismatch}. Use a new "
+                "--out-dir (or delete the store) if the inputs legitimately changed."
+            )
+        if legacy:
+            print(
+                f"WARNING: legacy store (no input hashes recorded: {legacy}) — "
+                "input identity cannot be verified; resuming on model+count only.",
+                flush=True,
             )
     else:
         meta = {
             "model_id": args.model_id,
             "canonical": str(args.canonical),
             "occurrences": str(args.occurrences),
+            "canonical_sha256": canon_sha,
+            "occurrences_sha256": occ_sha,
             "n_occurrences": n_total,
             "shape": [n_total, n_layers + 1, hidden],
             "dtype": "float16",
