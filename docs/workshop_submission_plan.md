@@ -232,7 +232,9 @@ NeurIPS 2025 → **ICML 2026** (Seoul, 10 July; deadline was 8 May). Verified li
 |---|---|---|---|
 | **InterpScience** — *Interpretability as a Science* (NeurIPS, Sydney) | **28 Aug 2026 AoE** | 5 / 9 | Best topical fit: measurement validity, causal claims, falsifiability. **Prohibits papers under review at any other workshop.** |
 | **Interp4Discovery** (NeurIPS, Atlanta) | **29 Aug 2026 AoE** | 5 (6 CR) | Double-blind; "failure cases and negative results are welcome"; concurrent ICLR/NeurIPS permitted |
-| **XAI4Science** (NeurIPS, Sydney) | **29 Aug 2026 AoE** | 8 / 5 | Anonymity optional; concurrent submission to other venues explicitly allowed |
+| ~~XAI4Science~~ (NeurIPS, Sydney) | 29 Aug 2026 AoE | 8 / 5 | **RULED OUT 2026-08-09: scoped to weather/climate foundation models** (all invited speakers are Earth-science researchers; "physics-consistent explanations" means validation against physical laws). A code-LLM paper is off-topic there. |
+| **NewInML** (NeurIPS) | **29 Aug 2026 AoE** | 2–8 | For authors not yet published at NeurIPS/ICML/ICLR; non-archival; "work may be submitted to other venues concurrently"; reviewers act as mentors |
+| **NeurReps** (NeurIPS) | **24 Aug 2026 AoE** | 4 (extended abstract, non-archival) | Optional spin-out home for the PCA language-geometry section ("representational geometry", "geometric structure in language") |
 | **ICLR 2027** | abstract 18 Sep / paper **25 Sep 2026** | full | The real target once B5 exists |
 
 NeurIPS-wide: mandatory workshop notification 29 Sep 2026. BlackboxNLP 2026 direct (17 Jul) and its
@@ -242,15 +244,21 @@ artifact venue for the dataset and the six-language extractors.
 **Recommended path.** You have **22 days** to 28 Aug and a paper that already exists. That is enough
 for B1+B2+B3+B6 and the paper-level tidy-up, but **not** for B5 done properly.
 
-1. **28/29 Aug — resubmit the revised paper without new causal work.** Target **XAI4Science** (8 pages,
-   concurrent submission allowed, so it does not block ICLR). The revision is: unified dissociation
-   framing (§3), boolean promoted to a full role with B1–B4, controls and CIs everywhere, PCA to
-   appendix, iterator fixed or dropped. That addresses asks 2–7 — five of the seven — and two weak
-   accepts with those closed is a different conversation.
+1. **29 Aug — resubmit the revised paper without new causal work.** *(Retargeted 2026-08-09 after
+   XAI4Science turned out to be climate-scoped.)* Target **Interp4Discovery + NewInML with the same
+   paper**: Interp4Discovery's CFP welcomes work "using interpretability to uncover new knowledge,"
+   accepts concurrent review at other venues, and explicitly welcomes negative results; NewInML
+   explicitly allows concurrent submission. Interp4Discovery is **double-blind**, so its variant needs
+   an anonymized PDF and an anonymized code mirror (anonymous.4open.science) — the named GitHub link
+   goes only in the NewInML variant. Optional insurance: one-line email to Interp4Discovery organizers
+   confirming the NewInML pairing. The revision itself is unchanged: unified dissociation framing
+   (§3), boolean promoted to a full role with B1–B4, controls and CIs everywhere, PCA to appendix,
+   iterator fixed or dropped.
 2. **25 Sep — ICLR 2027** with B5 added. Four weeks after the workshop, which is exactly the right
    amount of time for one patching experiment.
-3. Do **not** submit to InterpScience if you want the XAI4Science option — it forbids concurrent
-   workshop review. Pick one.
+3. Do **not** submit to InterpScience alongside the pair — it forbids concurrent workshop review.
+   It remains the fallback if the team prefers one exclusive, best-fit bet (deadline 28 Aug, one day
+   earlier).
 
 ### 22-day sketch
 
