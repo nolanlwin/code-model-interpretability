@@ -1,0 +1,73 @@
+% ============================================================
+% PASTE THIS INSIDE \subsection{Accumulator Variables}
+% Replace the single placeholder line:
+%   "Describe the accumulator role, the evidence supporting..."
+% ============================================================
+
+\label{sec:accum}
+For accumulator variables, we probe Qwen2.5-1.5B residual activations on XLCoST
+programs: 500 Python and 300 each of Java, C++, C, and C\#. We identify
+accumulator variables via Python's \texttt{ast} module and language-specific
+regex patterns, detecting variables targeted by \texttt{+=}/\texttt{-=} or
+\texttt{.append()}/\texttt{.extend()} inside loop bodies. Hidden states are
+mean-pooled over each variable's token span and fed to a layer-wise logistic
+regression probe (class-balanced, $C{=}1.0$, 80/20 split).
+
+To separate lexical from structural signal, we apply six variable-naming
+strategies to the same 500 Python programs; results are in
+Table~\ref{tab:accum-perturbation} and
+Figures~\ref{fig:appendix-sree-accum-probe}--\ref{fig:appendix-sree-accum-delta}.
+The baseline achieves F1~$= 0.893$ at L9, lower than the index role ($0.959$)
+because accumulator names (\texttt{total}, \texttt{count}, \texttt{result})
+overlap heavily with non-accumulator identifiers. Counterintuitively, removing
+or adversarially swapping names \emph{improves} accuracy: all-same naming
+($+0.076$) and misleading index-like names ($+0.079$) both exceed the baseline,
+as the structural cue---being the \texttt{+=} target inside a loop---becomes the
+only signal left. This is the \emph{opposite} of the index role. The numeric
+strategy peaks at L3, far earlier than other conditions (L5--L10), suggesting
+opaque naming pushes role encoding into shallower layers.
+
+\begin{table}[t]
+\centering
+\caption{Accumulator probe results under six naming strategies, Python XLCoST,
+Qwen2.5-1.5B.}
+\label{tab:accum-perturbation}
+\begin{tabular}{lcccc}
+\toprule
+Strategy & Best Layer & Test Acc & Test F1 & $\Delta$ F1 \\
+\midrule
+Baseline (original names)           & L9  & 0.984 & 0.893 & ---     \\
+Random nouns                        & L10 & 0.979 & 0.870 & $-$0.023 \\
+Single chars (\texttt{a, b, c\ldots}) & L9  & 0.971 & 0.840 & $-$0.053 \\
+All same (\texttt{x})               & L5  & 0.986 & 0.969 & $+$0.076 \\
+Numeric (\texttt{v1, v2\ldots})     & L3  & 0.999 & 0.986 & $+$0.093 \\
+Misleading (index-style names)      & L9  & 0.996 & 0.972 & $+$0.079 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Cross-language transfer confirms the representation is language-agnostic
+(Table~\ref{tab:accum-crosslang}, Figure~\ref{fig:appendix-sree-accum-crosslang}).
+A Python-trained probe (L9) achieves $0.943$--$0.948$ accuracy on Java, C++, C,
+and C\# without seeing any compiled-language programs. In-domain F1 for those
+languages ($0.939$--$0.970$) consistently exceeds Python ($0.893$), likely
+because \texttt{+=} in a compiled-language loop body is less syntactically
+ambiguous than Python's mix of \texttt{+=} and \texttt{.append()} idioms.
+
+\begin{table}[t]
+\centering
+\caption{Cross-language accumulator probe. Python-trained probe (L9) applied
+to four additional languages.}
+\label{tab:accum-crosslang}
+\begin{tabular}{lcccc}
+\toprule
+Language & Programs & In-Domain F1 & Cross-Lang Acc \\
+\midrule
+Python     & 181 / 500 & 0.893 (L9)  & ---   \\
+Java       & 208 / 300 & 0.952 (L9)  & 0.948 \\
+C++        & 204 / 300 & 0.939 (L7)  & 0.948 \\
+C          & 165 / 300 & 0.970 (L11) & 0.943 \\
+C\#        & 207 / 300 & 0.950 (L9)  & 0.945 \\
+\bottomrule
+\end{tabular}
+\end{table}
