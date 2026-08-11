@@ -18,10 +18,11 @@ Optional: set **`HF_TOKEN`** when using the Hugging Face Hub so downloads are fa
 
 | Path | Purpose |
 |------|--------|
-| `scripts/` | Pipelines (data, labels, dataset v0) plus **Qwen inference** utilities |
+| `scripts/` | Pipelines (data, labels, dataset v0, **CoST structure probing**) plus **Qwen inference** utilities |
 | `data/codesearchnet_python/` | Canonical `python_{train,validation,test}.jsonl` (gitignored when large) |
 | `outputs/` | AST parses, labels, dataset v0 shards, manifests (gitignored) |
-| `docs/` | Dataset documentation (`dataset_v0.md`) |
+| `notebooks/` | `state_probing_variable_roles.ipynb` (boolean), `structure_probing_cost.ipynb` (Colab syntactic-class + cross-lingual) |
+| `docs/` | Dataset + experiment docs (`dataset_v0.md`, `structure_probing.md`, `colab_pro_setup.md`) |
 
 ## Scripts (in order)
 
@@ -36,6 +37,8 @@ Optional: set **`HF_TOKEN`** when using the Hugging Face Hub so downloads are fa
 | `token_alignment.py` | Map UTF-8 **`[start, end)`** spans to token indices via **`offset_mapping`** (same tokenizer settings as Qwen forward). **`verify`** checks `fixtures/token_alignment_cases.json`. **`align`** can default spans to **`stem_align_spans.json`** beside the code file; **`align-bundle`** reads one JSON body. |
 | `variable_occurrences.py` | One JSONL row per **boolean-flag Name site** (`occurrence_type`, `source_span`, optional **`token_positions`** with **`--model-id`**). **`verify`** uses `fixtures/boolean_occurrence_sample.py`. **`extract`** accepts canonical JSONL or **`--code-file`**. |
 | `activation_pipeline.py` | One forward per canonical row; **`.npz`** per occurrence (`first` / `last` / **`mean`** pooling, shape **`[num_layers+1, hidden_size]`**) plus **`manifest.jsonl`** (`activation_path`, `token_len`, `function_len_chars`, `occurrence_frequency`, …). **`verify`** runs one fixture row in a temp dir. |
+| `cost_dataset.py` | **CoST** loader: read local `consolidated_data.csv`, keep the **1,417** problems with both **Java + Python**, write canonical `{problem_id, language, code}` JSONL. **`build`** / **`verify`**. |
+| `structure_labels.py` | **tree-sitter** syntactic-class labels (shared Java/Python): one record per leaf with char `source_span`, `node_type`, and coarse `structural_class`. **`verify`** / **`extract`**. |
 
 ## End-to-end pipeline (train example)
 
@@ -174,3 +177,25 @@ uv run python scripts/activation_pipeline.py extract --input data/codesearchnet_
 ```
 
 `qwen_inference.py` exposes **`load_causal_lm_tokenizer`** and **`forward_hidden_cached`** for reuse (hidden-only forwards omit eager attention by default).
+
+## Structure probing on CoST (Java + Python)
+
+A second probing experiment asks **where in Qwen each code token's *syntactic class* (identifier / keyword / operator / string / number / punctuation / bool-null) is linearly decodable**, and whether a probe trained on Python transfers to Java (cross-lingual). It reuses the boolean probe's layer-by-layer `LogisticRegression` method but with multi-class tree-sitter labels over the parallel **CoST** corpus (`consolidated_data.csv`).
+
+- **Notebook (primary, Colab-ready):** [`notebooks/structure_probing_cost.ipynb`](notebooks/structure_probing_cost.ipynb) — install deps, load `consolidated_data.csv`, load Qwen on a T4, build labels, extract per-layer activations (program cap + balanced token subsampling), train within- and cross-lingual probes, and plot macro-F1 vs layer + a confusion matrix.
+- **Docs:** [`docs/structure_probing.md`](docs/structure_probing.md) (label space, protocol, limitations) and [`docs/colab_pro_setup.md`](docs/colab_pro_setup.md) (Colab billing/GPU walkthrough — a **T4 is sufficient**; Pay-As-You-Go recommended).
+
+Headless reproduction of the canonical + label artifacts:
+
+```bash
+uv run python scripts/cost_dataset.py verify
+uv run python scripts/cost_dataset.py build --output data/cost/java_python.jsonl
+uv run python scripts/structure_labels.py verify
+uv run python scripts/structure_labels.py extract \
+  --input data/cost/java_python.jsonl -o outputs/structure_labels/leaves.jsonl
+
+# Optional: headless per-token activations (.npz + manifest), generalizing activation_pipeline.py
+uv run python scripts/structure_activations.py verify
+uv run python scripts/structure_activations.py extract \
+  --input data/cost/java_python.jsonl --max-rows 200 --model-id Qwen/Qwen2.5-1.5B
+```
