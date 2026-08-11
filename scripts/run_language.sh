@@ -15,7 +15,7 @@ CANON=data/xlcost/${slug}_${SPLIT}.jsonl
 OCC=outputs/xlcost_occ/${slug}_${SPLIT}.jsonl
 STORE=outputs/activations_xlcost/${slug}_${SPLIT}_${mslug}
 PROBE=outputs/probe_results/${slug}_${SPLIT}_${mslug}_problem.json
-BASE=outputs/probe_results/${slug}_${SPLIT}_baselines_capped.json
+BASE=outputs/probe_results/${slug}_${SPLIT}_${mslug}_baselines_capped.json
 
 echo "=== [1/6] tokenizer gate: $MODEL_ID"
 python scripts/tokenizer_gate.py run --models "$MODEL_ID"
