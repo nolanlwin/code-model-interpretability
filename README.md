@@ -1,176 +1,82 @@
-# Mechanistic interpretability for variable roles in code LLMs
+# Variable Roles in Transformer Code Models
 
-This repository builds a **boolean-control-variable** label set over Python from CodeSearchNet: names that tend to act as conditional signals (`if` / `while` tests, bool-related assignments, and related patterns). Everything is driven by small CLIs and JSONL on disk so you can reproduce or subset runs easily.
+Code for **"When Names Matter and When They Don't: Variable Roles and Language
+Structure in Transformer Code Models"** — probing whether code LLMs represent
+variables by their *program role* (boolean control, accumulator, index,
+iterator, class/struct reference) or by surface token identity.
+
+This repository holds the **boolean-control-variable** workstream and the
+team-wide shared pipeline: corpus construction, occurrence extraction with
+stable identities, activation extraction, protocol-grade probing (grouped
+splits, control tasks, bootstrap CIs), model-free baselines, and the C1–C5
+identifier-renaming experiment. The experimental contract every role follows
+is frozen in [PROTOCOL.md](PROTOCOL.md).
 
 ## Environment
 
-- **Python** 3.11 or newer  
-- **[uv](https://docs.astral.sh/uv/)** for environments and runs
+- Python ≥ 3.11, [uv](https://docs.astral.sh/uv/), `transformers==5.8.0`
+  (pinned — tokenizer behavior is gate-validated on this version)
 
 ```bash
 uv sync
-uv run python scripts/<script>.py ...
+uv run python scripts/<script>.py --help
 ```
 
-Optional: set **`HF_TOKEN`** when using the Hugging Face Hub so downloads are faster and less rate-limited.
+Optional `HF_TOKEN` in `.env` speeds up Hub downloads.
 
-## Layout
+## Reproduce the results
 
-| Path | Purpose |
-|------|--------|
-| `scripts/` | Pipelines (data, labels, dataset v0) plus **Qwen inference** utilities |
-| `data/codesearchnet_python/` | Canonical `python_{train,validation,test}.jsonl` (gitignored when large) |
-| `outputs/` | AST parses, labels, dataset v0 shards, manifests (gitignored) |
-| `docs/` | Dataset documentation (`dataset_v0.md`) |
+Two commands per (language, model) pair — every step is idempotent or
+resumable, and every number lands in `outputs/probe_results/*.json`:
 
-## Scripts (in order)
+```bash
+bash scripts/run_language.sh Python Qwen/Qwen2.5-Coder-1.5B train   # corpus → probe → baselines
+bash scripts/run_renaming.sh Python Qwen/Qwen2.5-Coder-1.5B train   # C1–C5 renaming experiment
+```
+
+On Colab, use [notebooks/colab_python_results.ipynb](notebooks/colab_python_results.ipynb)
+(Runtime → GPU → Run all): it wraps the same two scripts, restores prior work
+from Google Drive, sweeps multiple models, and prints the consolidated
+results table.
+
+## Pipeline
 
 | Script | Role |
-|--------|------|
-| `codesearchnet_python.py` | Stream CodeSearchNet Python from the Hub into canonical JSONL (`repo`, `path`, `code`). |
-| `csn_function_ast.py` | Optional: parse each snippet to AST-shaped JSONL for analysis. |
-| `boolean_flag_roles.py` | Heuristic **boolean_flag** labels; writes one JSON line per variable (and parse-error lines). |
-| `clean_boolean_labels.py` | Join labels to the **same** canonical file, dedupe, filter noise, write cleaned JSONL + stats. |
-| `dataset_v0.py` | **`split-repo`:** repository-level train/validation/test assignment. **`freeze`:** frozen split JSONL, `freeze_manifest.json`, and `docs/dataset_v0.md`. |
-| `qwen_inference.py` | **`verify`:** load **Qwen2.5-1.5B**, forward text (default **`fixtures/minimal_forward.py`**, or **`--code-file` / `-` for stdin**) with hidden states and attentions; writes `outputs/qwen_inference/forward_verify.json`. |
-| `token_alignment.py` | Map UTF-8 **`[start, end)`** spans to token indices via **`offset_mapping`** (same tokenizer settings as Qwen forward). **`verify`** checks `fixtures/token_alignment_cases.json`. **`align`** can default spans to **`stem_align_spans.json`** beside the code file; **`align-bundle`** reads one JSON body. |
-| `variable_occurrences.py` | One JSONL row per **boolean-flag Name site** (`occurrence_type`, `source_span`, optional **`token_positions`** with **`--model-id`**). **`verify`** uses `fixtures/boolean_occurrence_sample.py`. **`extract`** accepts canonical JSONL or **`--code-file`**. |
-| `activation_pipeline.py` | One forward per canonical row; **`.npz`** per occurrence (`first` / `last` / **`mean`** pooling, shape **`[num_layers+1, hidden_size]`**) plus **`manifest.jsonl`** (`activation_path`, `token_len`, `function_len_chars`, `occurrence_frequency`, …). **`verify`** runs one fixture row in a temp dir. |
+|---|---|
+| `xlcost_data.py` | XLCoST acquisition from usable mirrors (the official release is TransCoder-tokenized and does not parse), detokenization, per-language parse validation, canonical JSONL keyed by cross-language `problem_id` |
+| `xlcost_occurrences.py` | Boolean-flag occurrence extraction; stamps the protocol identity `problem:language:fN:bN:oN` and enforces the span-integrity gate |
+| `tokenizer_gate.py` | Per-token offset verification for every model before extraction (a roundtrip check is not sufficient; DeepSeek-Coder requires the fast-tokenizer override under the pinned transformers) |
+| `extract_activations.py` | One forward per program → mean-pooled residual streams in a float16 memmap store, resumable across sessions |
+| `probe.py` | Layer-wise linear probing: problem-grouped frozen-hash splits, validation-selected layer, 5 seeds, explicit class handling, Hewitt control task (selectivity), cluster-BCa CIs, embedded per-item predictions |
+| `baselines.py` | Model-free baselines (majority, name-only, masked source line, context window, scalar covariates) on the probe's exact occurrence sample |
+| `rename_corpus.py` | Scope-correct C1–C5 identifier renaming (span edits, never `ast.unparse`); occurrence ids carried by span mapping so paired deltas join exactly |
+| `bootstrap_ci.py` | Cluster bootstrap (percentile + BCa) and the paired clustered delta CI between conditions |
+| `run_language.sh`, `run_renaming.sh` | The two entry points chaining everything above |
 
-## End-to-end pipeline (train example)
+Supporting: `token_alignment.py` (char-span → token indices, invariant-tested),
+`qwen_inference.py` (model loading / forwards), per-language occurrence
+extractors (`variable_occurrences.py` for Python; `java_*`, `go_*`,
+`javascript_*`, `php_*`, `ruby_*` via tree-sitter).
 
-1. **Canonical snippets** (same split for steps 2–5):
+## Protocol highlights
 
-   ```bash
-   uv run python scripts/codesearchnet_python.py download --split train
-   ```
+- **Grouped, frozen splits.** Problems are assigned to train/val/test by a
+  per-problem hash, so every renaming condition tests on the same fold and
+  paired deltas use identical occurrence sets (`occurrence_id`-joined).
+- **Baselines on the identical sample.** Probe numbers are reported against
+  the strongest model-free baseline computed on the same occurrences and fold.
+- **Gates before numbers.** Tokenizer offsets, span integrity, re-parse after
+  renaming, and occurrence-id preservation are asserted, and failures are
+  counted — never silently dropped.
 
-   Default: `data/codesearchnet_python/python_train.jsonl`. Use `--max-rows N` for a tiny sample.
+See [PROTOCOL.md](PROTOCOL.md) for the frozen decisions and
+[docs/dataset_comparison.md](docs/dataset_comparison.md) for the corpus
+analysis (MuST-CoST vs XLCoST, per-language).
 
-2. **Boolean labels** — must use the **same** canonical path and order as in step 1 so each row gets a stable **`source_row`** (1-based line index). That index disambiguates duplicate `(repo, path)` rows in CodeSearchNet.
+## Legacy pipeline
 
-   ```bash
-   uv run python scripts/boolean_flag_roles.py extract \
-     --input data/codesearchnet_python/python_train.jsonl \
-     --output outputs/labeled/boolean_flags.jsonl
-   ```
-
-   Successful rows include `variable`, `role`, `line`, `code`, `function`, `repo`, `path`, `source_row`. Failed parses are still emitted as one object per bad snippet with `parse_error` (and `source_row` when known).
-
-3. **Clean** — canonical file must be the **identical** train JSONL as in step 1:
-
-   ```bash
-   uv run python scripts/clean_boolean_labels.py \
-     --labels outputs/labeled/boolean_flags.jsonl \
-     --canonical data/codesearchnet_python/python_train.jsonl \
-     --output outputs/labeled/boolean_flags_clean.jsonl \
-     --stats-output outputs/labeled/boolean_flags_clean.stats.json
-   ```
-
-   Use `--max-label-rows` / `--max-canonical-rows` only for quick experiments (truncated canonical makes many rows `missing_canonical` unless you built labels from that same prefix).
-
-4. **Repository split** — each GitHub `repo` string is assigned to exactly one of **train** (80%), **validation** (10%), or **test** (10%) by default, using a seeded shuffle (not a per-row random split):
-
-   ```bash
-   uv run python scripts/dataset_v0.py split-repo \
-     --labels outputs/labeled/boolean_flags_clean.jsonl \
-     --output-dir outputs/dataset_v0 \
-     --seed 42
-   ```
-
-   Writes `repo_split.jsonl` (`{"repo","split"}` per line) and `split_manifest.json`. Fractions are configurable (`--train-fraction`, `--val-fraction`, `--test-fraction`; must sum to 1).
-
-5. **Freeze Dataset v0** — requires **`repo_split.jsonl` from step 4** (same `--output-dir` as `split-repo`). Rejoin cleaned labels to canonical `code`, attach sorted **`occurrences`**, and emit one JSONL per split plus reproducibility metadata:
-
-   ```bash
-   uv run python scripts/dataset_v0.py freeze \
-     --labels outputs/labeled/boolean_flags_clean.jsonl \
-     --canonical data/codesearchnet_python/python_train.jsonl \
-     --repo-split outputs/dataset_v0/repo_split.jsonl \
-     --output-dir outputs/dataset_v0
-   ```
-
-   Outputs `boolean_flags_v0_train.jsonl`, `boolean_flags_v0_validation.jsonl`, `boolean_flags_v0_test.jsonl`, and `freeze_manifest.json` (SHA-256 of inputs, outputs, and pipeline scripts; `git_revision` when available). Regenerates **`docs/dataset_v0.md`** with role rules, cleaning exclusions, split policy, and known limitations.
-
-## What the cleaner removes
-
-- `parse_error` rows and non–`boolean_flag` lines  
-- **Duplicates** — `(source_row, function, variable)` when `source_row` is present; otherwise `(repo, path, function, variable)`  
-- **Autogenerated**-looking snippets (regex on an early slice of source)  
-- **Notebook-style** paths or obvious IPython hooks  
-- **Short** snippets: fewer than five non-empty lines in joined `code`  
-- **Invalid** Python on the canonical snippet  
-- **Name not in function** — no top-level `def` / `async def` whose name matches `function`  
-- **Rare names** — fewer than two occurrences of the variable in that function’s AST (`ast.Name` and `ast.arg`)
-
-The **`.stats.json`** next to the clean file reports `input_label_lines_read`, `output_label_lines`, per-reason `dropped`, `role_counts`, and top-*K* variable and repository counts over **kept** rows.
-
-### Reference scale (full Python train, one run)
-
-Indexing **412,178** canonical lines and **197,444** label file lines (including **4,011** parse-error records) produced **188,597** cleaned labels. Drops included **3,550** low occurrence count, **920** autogenerated heuristic, **189** notebook-style, **177** short function, plus the parse-error lines. Your numbers will match this only when the same split and filters are used.
-
-## AST parsing (optional)
-
-```bash
-uv run python scripts/csn_function_ast.py parse \
-  --input data/codesearchnet_python/python_train.jsonl \
-  --output outputs/ast_parsed/python_train_ast.jsonl
-```
-
-`--max-rows N` limits input lines.
-
-## Dependencies
-
-Listed in `pyproject.toml` (`datasets`, `transformers`, **`torch`**, `pandas`, `numpy`, `scikit-learn`, `tqdm`, `tree-sitter`, …). Parsing uses the standard library **`ast`** module unless you extend the project with Tree-sitter grammars.
-
-## Qwen 2.5 inference (activation prep)
-
-Load **`Qwen/Qwen2.5-1.5B`** with Transformers, run one causal forward with `output_hidden_states=True` and `output_attentions=True`, and save a JSON summary (input token ids, `convert_ids_to_tokens` pieces, per-layer **hidden** and **attention** shapes, optional **char offset** mapping from the fast tokenizer, and a check that `len(hidden_states) == num_hidden_layers + 1`).
-
-```bash
-uv run python scripts/qwen_inference.py verify
-# same as:
-uv run python scripts/qwen_inference.py verify --code-file fixtures/minimal_forward.py
-# or pipe source:
-echo 'x = 1' | uv run python scripts/qwen_inference.py verify --code-file -
-```
-
-Default **`--code-file`** is a tiny neutral **`fixtures/minimal_forward.py`**. Override with any UTF-8 path, or **`--code-file -`** to read stdin. Optional: `--device cuda|mps|cpu`, `--dtype bf16|fp16|fp32` (defaults favor GPU bf16 when supported; CPU uses fp32). First run downloads model weights from the Hub.
-
-### Token alignment
-
-Spans are **half-open** character indices in the same string you pass to the tokenizer (as in `ast`’s `end_col_offset`). **`token_alignment.py verify`** runs overlap + coverage checks on **`fixtures/token_alignment_cases.json`** (snake_case, camelCase, repeats, `def` params, attribute base span).
-
-```bash
-uv run python scripts/token_alignment.py verify
-# default spans: fixtures/minimal_forward_align_spans.json (same dir/stem as code)
-uv run python scripts/token_alignment.py align fixtures/minimal_forward.py -o outputs/align.json
-uv run python scripts/token_alignment.py align fixtures/minimal_forward.py --spans fixtures/minimal_forward_align_spans.json -o outputs/align.json
-# stdin for spans only (code from file):
-echo '[{"variable":"f","source_span":[4,5]}]' | uv run python scripts/token_alignment.py align fixtures/minimal_forward.py --spans -
-```
-
-Use **`align-bundle`** with one JSON body `{"code":"...","occurrences":[...]}` if you need a single stdin pipe.
-
-### Variable occurrences
-
-Per-occurrence boolean-flag records (definition / assignment / conditional / loop / return, plus **`indexing_use`** when the name’s parent is a **`Subscript`**). **`--model-id`** fills **`token_positions`**; **`--no-tokens`** skips the Hub tokenizer.
-
-```bash
-uv run python scripts/variable_occurrences.py verify
-uv run python scripts/variable_occurrences.py extract --code-file fixtures/boolean_occurrence_sample.py -o - --no-tokens
-uv run python scripts/variable_occurrences.py extract --input data/codesearchnet_python/python_train.jsonl --output outputs/occurrences/boolean_flag_occurrences.jsonl --max-rows 100 --model-id Qwen/Qwen2.5-1.5B
-```
-
-### Activations
-
-**`activation_pipeline.py extract`** reads canonical JSONL (`repo`, `path`, `code`), recomputes boolean occurrences with the Qwen tokenizer, runs **one** causal forward per input line (hidden states only), and writes **`--tensor-dir`** / `row_XXXXXXXX_occ_YYY.npz` plus **`--manifest`** JSONL. Use **`--max-rows 1000`** for a small validation slice. Each **`.npz`** holds float32 **`first`**, **`last`**, and **`mean`** activations of shape **`[num_layers+1, hidden_size]`** (full residual stack; slice a layer downstream). Manifest rows include **`activation_path`**, **`token_len`**, **`function_len_chars`**, **`occurrence_frequency`**, and **`layer`: null** (full tensor on disk).
-
-```bash
-uv run python scripts/activation_pipeline.py verify
-uv run python scripts/activation_pipeline.py extract --input data/codesearchnet_python/python_train.jsonl \
-  --manifest outputs/activations_v0/manifest.jsonl --tensor-dir outputs/activations_v0/npz \
-  --max-rows 1000 --model-id Qwen/Qwen2.5-1.5B
-```
-
-`qwen_inference.py` exposes **`load_causal_lm_tokenizer`** and **`forward_hidden_cached`** for reuse (hidden-only forwards omit eager attention by default).
+The pre-revision CodeSearchNet pipeline (`codesearchnet*.py`,
+`boolean_flag_roles.py`, `clean_boolean_labels.py`, `dataset_v0.py`,
+`activation_pipeline.py`, `notebooks/colab_activations_and_probing.ipynb`)
+is retained for provenance of the original submission's Table 4 and the
+frozen dataset v0 manifests. New work should use the XLCoST pipeline above.
