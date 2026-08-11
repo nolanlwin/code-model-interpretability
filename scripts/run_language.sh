@@ -18,7 +18,7 @@ PROBE=outputs/probe_results/${slug}_${SPLIT}_${mslug}_problem.json
 BASE=outputs/probe_results/${slug}_${SPLIT}_${mslug}_baselines_capped.json
 
 echo "=== [1/6] tokenizer gate: $MODEL_ID"
-python scripts/tokenizer_gate.py run --models "$MODEL_ID"
+python scripts/tokenizer_gate.py run --models "$MODEL_ID" --strict-version
 
 echo "=== [2/6] corpus: $LANGUAGE/$SPLIT"
 [ -s "$CANON" ] || python scripts/xlcost_data.py build \
