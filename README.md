@@ -1,115 +1,140 @@
-# Probing Code LLMs - Variable Role Detection
+# Probing Code LLMs — Variable Roles, Unified Pipeline
 
-Investigates whether large language models encode syntactic variable roles (e.g. index/key variables) in their hidden states, using the [XLCoST](https://github.com/reddy-lab-code-research/XLCoST) dataset across 7 programming languages.
+Investigates whether code LLMs encode **variable roles** in their hidden
+states — using structural labels (AST/regex), never the variable's name —
+across the 7 languages of [XLCoST](https://github.com/reddy-lab-code-research/XLCoST).
 
----
+This branch (`unified-pipeline`) replaces the per-role notebooks with one
+common dataset and one set of scripts:
 
-## Setup
+- **5 roles**: `index_key`, `accumulator`, `iterator`, `boolean`, `class_struct`
+- **10 naming strategies**: `baseline`, `random_nouns`, `single_chars`,
+  `all_same`, `numeric_vars`, and `misleading_<role>` for each role
+- **7 languages**: C++, Java, Python, C#, Javascript, PHP, C
+- **Any model**: token labels are derived per tokenizer at experiment time
 
-```bash
-
-# create and activate a virtual environment
-python3 -m venv algoverse
-source algoverse/bin/activate
-
-# install dependencies
-pip install -r requirements.txt
-```
-
-**Download the dataset** — get `XLCoST_data.zip` and unzip it into the repo root:
-
-```bash
-unzip XLCoST_data.zip
-```
+The dataset is published on the Hugging Face Hub as
+[`dhyuti-n/xlcost-variable-roles`](https://huggingface.co/datasets/dhyuti-n/xlcost-variable-roles)
+(see `dataset_card/README.md` for fields, labeling method, and XLCoST credits).
 
 ---
 
-## How to Use
+## 1. Environment
 
-All experiments are in `notebooks/`. Run them in order or independently — each is self-contained.
-
-### 1. Baseline probing (original variable names)
-
-```bash
-jupyter notebook notebooks/probing_variable_roles.ipynb
-```
-
-Trains a logistic regression probe on hidden states of `Qwen2.5-1.5B` to detect index/key variables in Python code. Also evaluates cross-language transfer to Java, C++, C, C#, JavaScript.
-
-### 2. Renamed variable probing
+Python ≥ 3.10. Create a virtual environment and install the pipeline
+dependencies:
 
 ```bash
-jupyter notebook notebooks/probing_renamed_variables.ipynb
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+
+pip install -r pipeline/requirements.txt
 ```
 
-Same experiment but all variable names are replaced with random nouns (e.g. `i` → `drum`, `key` → `leaf`). Tests whether the model relies on surface names or syntactic position.
+GPU is recommended for the probing experiments (Colab works — the scripts
+auto-select `cuda` / `mps` / `cpu`). Building the dataset is CPU-only.
 
-### 3. CodeComplex generalization
+The legacy root `requirements.txt` is the upstream XLCoST environment for the
+original notebooks; the pipeline does not need it.
+
+## 2. Get the data
+
+**Option A — use the published dataset (no XLCoST download needed):**
+
+```python
+from datasets import load_dataset
+
+perturb = load_dataset("dhyuti-n/xlcost-variable-roles", "python_perturbations")
+multi   = load_dataset("dhyuti-n/xlcost-variable-roles", "multilingual_baseline")
+```
+
+To run the experiment CLIs against it, download the JSONL files into a local
+`dataset/` directory:
 
 ```bash
-jupyter notebook notebooks/probing_codecomplex.ipynb
+hf download dhyuti-n/xlcost-variable-roles --repo-type dataset --local-dir dataset
 ```
 
-Applies probes trained on XLCoST to [CodeComplex](https://huggingface.co/datasets/codeparrot/codecomplex) — a separate dataset of real Java competitive programming submissions. Tests out-of-distribution generalization.
-
-### 4. Multiple perturbation strategies
+**Option B — rebuild from XLCoST:** unzip `XLCoST_data.zip` into the repo root
+(or set `XLCOST_ROOT=/path/to/XLCoST_data`), then:
 
 ```bash
-jupyter notebook notebooks/probing_more_perturbations.ipynb
+python -m pipeline.build_dataset --out dataset                    # full corpus
+python -m pipeline.build_dataset --out dataset --max-programs 500 # notebook-sized
 ```
 
-Runs the probing experiment under 6 variable perturbation strategies:
+Writes `dataset/python_perturbations/{train,valid,test}.jsonl`,
+`dataset/multilingual_baseline/{train,valid,test}.jsonl`, and `dataset/stats.json`.
 
-| Strategy | Description |
-|----------|-------------|
-| `baseline` | Original names |
-| `random_nouns` | Replaced with everyday nouns |
-| `single_chars` | Replaced with a, b, c… |
-| `all_same` | Everything renamed to `x` |
-| `numeric_vars` | Replaced with v1, v2, v3… |
-| `misleading` | Index vars get accumulator names; non-index get index names |
-
-### 5. Directional misalignment analysis
+## 3. Run experiments
 
 ```bash
-jupyter notebook notebooks/probing_directional_analysis.ipynb
+# perturbation sweep for one role (Python, all naming strategies)
+python -m pipeline.run_experiment perturbation --role accumulator \
+    --model Qwen/Qwen2.5-1.5B --split train --max-programs 500
+
+# cross-language transfer for one role (Python-trained probe -> 6 languages)
+python -m pipeline.run_experiment crosslang --role index_key \
+    --model Qwen/Qwen2.5-1.5B --split train --max-programs 300
 ```
 
-Investigates *why* cross-language transfer accuracy is high (~97%) despite low probe weight cosine similarity (~0.15–0.30). Tests four hypotheses via margin analysis, subspace principal angles, class-mean direction alignment, and feature dimension overlap.
+Sweep everything:
+
+```bash
+for role in index_key accumulator iterator boolean class_struct; do
+  python -m pipeline.run_experiment perturbation --role $role --max-programs 500
+  python -m pipeline.run_experiment crosslang    --role $role --max-programs 300
+done
+```
+
+Results land in `results/unified/<model>/<role>/<mode>/`:
+
+| File | Contents |
+|---|---|
+| `per_layer.csv` | train/test accuracy and macro F1 for every layer × strategy |
+| `summary.csv` | best layer per strategy with ΔF1 vs baseline |
+| `cosine_vs_baseline.csv` | probe-direction cosine similarity per layer |
+| `crosslang.csv` | in-domain F1 + transfer accuracy/F1 per language |
+
+Protocol (identical to the original notebooks): per-layer logistic regression
+probes (class-balanced, C=1.0) on frozen hidden states, 80/20 stratified
+split, macro F1, best layer selected on test F1. Any Hugging Face model works
+via `--model`; swap in CodeBERT, RoBERTa, Qwen2.5-0.5B, DeepSeek-Coder, etc.
+
+## 4. Publish / update the dataset
+
+```bash
+hf auth login    # once
+python -m pipeline.hf_upload --repo <user-or-org>/xlcost-variable-roles [--private]
+```
+
+Uploads both configs plus the dataset card in `dataset_card/README.md`.
 
 ---
 
-## Results
-
-- Results and plots are saved to `results/` (organized by experiment)
-- Numeric results are tracked in `RESULTS_TABLE.md`
-- A full written summary is in `RESULTS.md`
-
----
-
-## Project Structure
+## Project structure
 
 ```
-├── notebooks/
-│   ├── probing_variable_roles.ipynb        # baseline
-│   ├── probing_renamed_variables.ipynb     # renamed vars
-│   ├── probing_codecomplex.ipynb           # cross-dataset
-│   ├── probing_more_perturbations.ipynb    # 6 perturbation strategies
-│   └── probing_directional_analysis.ipynb # why misalignment happens
-├── results/
-│   ├── baseline/
-│   ├── renamed/
-│   ├── codecomplex/
-│   ├── more_perturbated_variables/
-│   └── directional_analysis/
-├── XLCoST_data/                            # dataset (not tracked in git)
-├── RESULTS.md                              # full results writeup
-├── RESULTS_TABLE.md                        # fill-in table for all models
-└── requirements.txt
+├── pipeline/                  # the unified pipeline (see pipeline/README.md)
+│   ├── xlcost.py              #   XLCoST loading and token-list reconstruction
+│   ├── roles.py               #   role extractors (Python AST; regex elsewhere)
+│   ├── perturb.py             #   naming strategies incl. per-role misleading
+│   ├── build_dataset.py       #   materialize the two dataset configs
+│   ├── probing.py             #   token labeling, hidden states, probes
+│   ├── run_experiment.py      #   perturbation + crosslang CLIs
+│   ├── hf_upload.py           #   Hub upload
+│   └── requirements.txt       #   minimal deps
+├── dataset_card/README.md     # HF dataset card (XLCoST credits, fields, limits)
+├── dataset/stats.json         # row counts of the published build (JSONL gitignored)
+├── notebooks/                 # original per-role notebooks (superseded)
+├── results/                   # experiment outputs
+├── RESULTS.md, RESULTS_TABLE.md
+└── XLCoST_data/               # source corpus (not tracked)
 ```
 
----
+## Credits
 
-## Model
-
-All notebooks default to `Qwen/Qwen2.5-1.5B`. To swap models, change `MODEL_NAME` at the top of any notebook — CodeBERT, RoBERTa, and Qwen2.5-0.5B comparison cells are already included at the bottom of each notebook.
+Source programs come from **XLCoST** (Zhu et al., 2022,
+[arXiv:2206.08474](https://arxiv.org/abs/2206.08474), Apache-2.0). This
+repository adds structural role labels, renaming perturbations, and the
+probing pipeline; full citation in `dataset_card/README.md`.
