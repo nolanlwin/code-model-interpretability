@@ -27,6 +27,9 @@ for f in "$CANON" "$OCC" "$C0_STORE/index.jsonl"; do
   [ -s "$f" ] || { echo "MISSING $f — run: bash scripts/run_language.sh $LANGUAGE $MODEL_ID $SPLIT"; exit 1; }
 done
 
+echo "=== [0/4] tokenizer gate (strict): $MODEL_ID"
+python scripts/tokenizer_gate.py run --models "$MODEL_ID" --strict-version
+
 echo "=== [C0] re-probe under the frozen hash split (anchors every delta)"
 python scripts/probe.py run --store "$C0_STORE" \
   --split-policy repo --allow-class-drop --control-task --output "$C0_PROBE"
@@ -48,9 +51,9 @@ for c in C1 C2 C3 C4 C5; do
     --canonical "$RC" --occurrences "$RO" \
     --model-id "$MODEL_ID" --out-dir "$STORE" --log-every 500
 
-  echo "=== [$c 3/4] probe"
+  echo "=== [$c 3/4] probe (population pinned to C0's frozen sample)"
   python scripts/probe.py run --store "$STORE" \
-    --split-policy repo --allow-class-drop --output "$PR"
+    --split-policy repo --allow-class-drop --restrict-ids "$SAMPLE" --output "$PR"
 
   echo "=== [$c 4/4] paired delta vs C0"
   python scripts/bootstrap_ci.py delta "$PR" "$C0_PROBE" --n-boot 2000 > "$DELTA"

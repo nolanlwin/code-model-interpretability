@@ -297,6 +297,18 @@ def cmd_run(args: argparse.Namespace) -> int:
     else:
         records, load_stats = load_records(Path(args.manifest), Path(args.npz_dir), args.pooling)
         source_desc = args.manifest
+
+    if args.restrict_ids:
+        wanted = set(json.loads(Path(args.restrict_ids).read_text(encoding="utf-8")))
+        before = len(records)
+        records = [r for r in records if r["occurrence_id"] in wanted]
+        load_stats["restricted_to"] = args.restrict_ids
+        load_stats["restrict_requested"] = len(wanted)
+        load_stats["restrict_matched"] = len(records)
+        print(f"restricted to frozen sample: {len(records)}/{before} records match "
+              f"{len(wanted)} ids ({args.restrict_ids})")
+        if len(records) < 0.9 * len(wanted):
+            print("WARNING: <90% of the frozen sample matched — populations may have diverged")
     if not records:
         raise SystemExit("no usable records after join/dedup")
     print(f"loaded {len(records)} records from {source_desc}", flush=True)
@@ -477,6 +489,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--C", type=float, default=1.0)
     r.add_argument("--min-class-count", type=int, default=20)
     r.add_argument("--allow-class-drop", action="store_true")
+    r.add_argument("--restrict-ids",
+                   help="occurrence-id JSON (a C0 sample_ids file): evaluate EXACTLY this population")
     r.add_argument("--control-task", action="store_true",
                    help="also run the Hewitt control task and report selectivity")
     r.add_argument("--occurrence-cap", type=int, default=2000,
