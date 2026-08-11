@@ -55,10 +55,25 @@ def method_name(method: Node) -> str | None:
 
 
 def iter_top_level_methods(root: Node) -> Iterator[JavaMethod]:
-    for i in range(root.child_count):
-        child = root.child(i)
-        if child.type != "method_declaration":
-            continue
+    """Yield outermost method declarations at any class-nesting depth.
+
+    CodeSearchNet rows are bare methods (direct children of the root);
+    XLCoST programs wrap methods in ``class GFG { ... }``. Walk the whole
+    tree but skip methods nested inside another method (anonymous-class
+    bodies), so each occurrence belongs to exactly one yielded method.
+    """
+
+    def walk(node: Node, inside_method: bool) -> Iterator[Node]:
+        for i in range(node.child_count):
+            child = node.child(i)
+            if child.type == "method_declaration":
+                if not inside_method:
+                    yield child
+                yield from walk(child, True)
+            else:
+                yield from walk(child, inside_method)
+
+    for child in walk(root, False):
         name = method_name(child)
         if not name:
             continue
