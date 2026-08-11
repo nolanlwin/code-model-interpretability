@@ -121,7 +121,7 @@ def renameable_functions(code: str) -> tuple[list, set[str], dict]:
         for k in n.keywords
         if k.arg
     }
-    skips = {"nested_scope": 0, "global_nonlocal": 0, "kwarg_coupling": 0}
+    skips = {"nested_scope": 0, "global_nonlocal": 0, "kwarg_coupling": 0, "unsupported_binder": 0}
     out = []
     for node in tree.body:
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -135,6 +135,18 @@ def renameable_functions(code: str) -> tuple[list, set[str], dict]:
             isinstance(n, (ast.Global, ast.Nonlocal)) for n in ast.walk(node)
         ):
             skips["global_nonlocal"] += 1
+            continue
+        # Binding forms our span editor does not rewrite (the bound name is a
+        # bare string on the node, not an ast.Name): `except E as err`,
+        # match-case captures. symtable still lists them as locals, so C1/C2/C4
+        # would rename their USES but not the binding -> unbound code.
+        if any(
+            (isinstance(n, ast.ExceptHandler) and n.name)
+            or (isinstance(n, getattr(ast, "MatchAs", ())) and getattr(n, "name", None))
+            or (isinstance(n, getattr(ast, "MatchStar", ())) and getattr(n, "name", None))
+            for n in ast.walk(node)
+        ):
+            skips["unsupported_binder"] += 1
             continue
         local_names = [
             s.get_name()
@@ -426,6 +438,15 @@ def cmd_verify(_args: argparse.Namespace) -> int:
                 m = map_span(edits, *[int(x) for x in r["source_span"]])
                 okay &= m is not None and sites.get((m[0], m[1])) == r["occurrence_type"]
         checks.append((cond, okay))
+    exc_code = (
+        "def risky(flag):\n"
+        "    try:\n"
+        "        return flag\n"
+        "    except Exception as err:\n"
+        "        return err\n"
+    )
+    fns, _, skips = renameable_functions(exc_code)
+    checks.append(("except-as function skipped", not fns and skips["unsupported_binder"] == 1))
     det = rename_program(code, "deadbeef", "C4", targets)[0]
     checks.append(("C4 deterministic", det is not None and det == rename_program(code, "deadbeef", "C4", targets)[0]))
     ok = True

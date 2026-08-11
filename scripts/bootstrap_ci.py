@@ -179,25 +179,67 @@ def _load_predictions(path: str) -> dict:
     return res
 
 
+def _by_seed(preds: list[dict]) -> dict:
+    out: dict = {}
+    for p in preds:
+        out.setdefault(int(p.get("seed", 0)), {})[p["occurrence_id"]] = p
+    return out
+
+
 def cmd_delta(args: argparse.Namespace) -> int:
     ra, rb = _load_predictions(args.results_a), _load_predictions(args.results_b)
-    pa = {p["occurrence_id"]: p for p in ra["test_predictions"]}
-    pb = {p["occurrence_id"]: p for p in rb["test_predictions"]}
-    shared = sorted(set(pa) & set(pb))
-    if not shared:
-        raise SystemExit("no shared occurrence_ids between the two results files")
-    dropped = len(set(pa) ^ set(pb))
-    y = np.array([pa[k]["y_true"] for k in shared])
-    yb_check = np.array([pb[k]["y_true"] for k in shared])
-    if not np.array_equal(y, yb_check):
-        raise SystemExit("y_true disagrees between files for shared occurrences — not the same data")
-    a = np.array([pa[k]["y_pred"] for k in shared])
-    b = np.array([pb[k]["y_pred"] for k in shared])
-    cl = np.array([pa[k]["cluster"] for k in shared])
-    labels = sorted(set(y.tolist()))
-    out = paired_delta_ci(y, a, b, cl, labels, n_boot=args.n_boot, seed=args.seed)
-    out["n_shared"] = len(shared)
-    out["n_unpaired_dropped"] = dropped
+    sa, sb = _by_seed(ra["test_predictions"]), _by_seed(rb["test_predictions"])
+    seeds = sorted(set(sa) & set(sb))
+    if not seeds:
+        raise SystemExit("no common seeds between the two results files")
+
+    per_seed_deltas: dict = {}
+    pooled_y, pooled_a, pooled_b, pooled_cl = [], [], [], []
+    unique_shared: set = set()
+    min_coverage = 1.0
+    for sd in seeds:
+        pa, pb = sa[sd], sb[sd]
+        shared = sorted(set(pa) & set(pb))
+        # Overlap gate: a paired delta on a thin accidental intersection is
+        # exactly the failure mode this pipeline hit once (76 of ~400 items
+        # under diverged splits). Refuse rather than report a biased CI.
+        coverage = len(shared) / max(1, min(len(pa), len(pb)))
+        min_coverage = min(min_coverage, coverage)
+        if coverage < args.min_overlap and not args.allow_partial:
+            raise SystemExit(
+                f"seed {sd}: only {len(shared)}/{min(len(pa), len(pb))} test "
+                f"occurrences shared ({coverage:.1%} < --min-overlap "
+                f"{args.min_overlap:.0%}). The two runs do not share a test "
+                "fold — check split settings — or pass --allow-partial to "
+                "proceed anyway (reported, not silent)."
+            )
+        if not shared:
+            continue
+        y = np.array([pa[k]["y_true"] for k in shared])
+        if not np.array_equal(y, np.array([pb[k]["y_true"] for k in shared])):
+            raise SystemExit(f"seed {sd}: y_true disagrees for shared occurrences — not the same data")
+        a = np.array([pa[k]["y_pred"] for k in shared])
+        b = np.array([pb[k]["y_pred"] for k in shared])
+        labels = sorted(set(y.tolist()))
+        per_seed_deltas[sd] = macro_f1_stat(y, a, labels) - macro_f1_stat(y, b, labels)
+        pooled_y.extend(y.tolist())
+        pooled_a.extend(a.tolist())
+        pooled_b.extend(b.tolist())
+        # Cluster by problem: the same problem recurring across seeds stays in
+        # one cluster, so the bootstrap respects cross-seed dependence.
+        pooled_cl.extend(pa[k]["cluster"] for k in shared)
+        unique_shared.update(shared)
+
+    labels = sorted(set(pooled_y))
+    out = paired_delta_ci(
+        np.array(pooled_y), np.array(pooled_a), np.array(pooled_b),
+        np.array(pooled_cl), labels, n_boot=args.n_boot, seed=args.seed,
+    )
+    out["seeds"] = seeds
+    out["per_seed_deltas"] = {str(k): round(v, 6) for k, v in per_seed_deltas.items()}
+    out["n_shared"] = len(pooled_y)
+    out["n_shared_unique_occurrences"] = len(unique_shared)
+    out["min_seed_coverage"] = round(min_coverage, 4)
     print(json.dumps(out, indent=2))
     return 0
 
@@ -226,6 +268,10 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("results_b")
     d.add_argument("--n-boot", type=int, default=2000)
     d.add_argument("--seed", type=int, default=0)
+    d.add_argument("--min-overlap", type=float, default=0.9,
+                   help="minimum shared fraction of the smaller test fold per seed")
+    d.add_argument("--allow-partial", action="store_true",
+                   help="proceed below --min-overlap (coverage still reported)")
     sub.add_parser("verify", help="synthetic self-check")
     args = ap.parse_args(argv)
     if args.cmd == "verify":
