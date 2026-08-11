@@ -130,3 +130,7 @@ dmypy.json
 /algoverse
 /XLCoST_data
 
+
+# Built dataset — distributed via HuggingFace, keep only the manifest
+dataset/*/
+!dataset/stats.json
