@@ -132,6 +132,33 @@ Uploads both configs plus the dataset card in `dataset_card/README.md`.
 └── XLCoST_data/               # source corpus (not tracked)
 ```
 
+---
+
+## Boolean workstream & protocol tooling (`scripts/`)
+
+Alongside `pipeline/`, the repo carries the **boolean-control-variable**
+workstream and the protocol-grade measurement tooling it was built with
+(frozen in [PROTOCOL.md](PROTOCOL.md)):
+
+```bash
+bash scripts/run_language.sh Python Qwen/Qwen2.5-Coder-1.5B train   # corpus -> probe -> baselines
+bash scripts/run_renaming.sh Python Qwen/Qwen2.5-Coder-1.5B train   # C1-C5 renaming deltas
+```
+
+Distinct properties of this path (see `docs/` for the analyses behind them):
+
+- **Detokenized corpus**: `scripts/xlcost_data.py` pulls XLCoST from mirrors
+  and detokenizes/validates it, so models see natural code rather than
+  space-joined token streams.
+- **Frozen problem-grouped splits** (per-problem hash), layer selected on a
+  validation fold, 5 seeds, Hewitt control task, cluster-BCa CIs, and paired
+  deltas joined on stable `occurrence_id`s.
+- **Gates before numbers**: per-token tokenizer-offset checks per model
+  (`scripts/tokenizer_gate.py`), span-integrity and re-parse gates in
+  extraction and renaming; failures are counted, never silent.
+- Colab entry point: `notebooks/colab_python_results.ipynb`
+  (Runtime -> GPU -> Run all; resumable, checkpoints to Drive).
+
 ## Credits
 
 Source programs come from **XLCoST** (Zhu et al., 2022,
