@@ -84,8 +84,12 @@ def build_token_dataset(rows, role, tokenizer):
         if not tokens or sum(labels) == 0:
             skipped += 1
             continue
-        pid = row.get("program_id") or row.get("problem_id") or row.get("idx")
-        if pid is None:
+        pid = next(
+            (row[k] for k in ("program_id", "problem_id", "idx")
+             if row.get(k) is not None),
+            None,
+        )
+        if pid is None or str(pid) == "":
             raise ValueError(
                 "row has no stable program identity (program_id / problem_id "
                 "/ idx). A filtered-row-index fallback would let the same "
