@@ -76,6 +76,7 @@ def load_from_manifest(path: Path) -> list[dict]:
                 float(r.get("occurrence_frequency") or 0),
             ],
             "line_masked": None,
+            "statement_masked": None,
             "window_masked": None,
         }
         for r in rows
@@ -103,6 +104,11 @@ def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list
         s = code.rfind("\n", 0, span[0]) + 1
         e = code.find("\n", span[1])
         e = len(code) if e < 0 else e
+        # Enclosing STATEMENT: the honest local-surface unit for brace
+        # languages, whose detokenized XLCoST programs are single-line
+        # (measured 0.11 newlines/program vs 22.3 for Python), making the
+        # line baseline degenerate there (line == whole program).
+        ss, se = statement_bounds(code, span[0], span[1])
         group = r.get("problem_id") or r.get("repo") or "?"
         out.append(
             {
@@ -113,10 +119,137 @@ def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list
                 "function": f'{group}::{r.get("function")}',
                 "covariates": [float(len(code)), float(span[0]), 0.0],
                 "line_masked": code[s:e].replace(var, " VAR "),
+                "statement_masked": code[ss:se].replace(var, " VAR "),
                 "window_masked": code[max(0, span[0] - window): span[1] + window].replace(var, " VAR "),
             }
         )
     return out
+
+
+_TRIPLE_QUOTES = {'"""', "'''"}
+
+
+def _code_mask(code: str) -> tuple[list[bool], list[int]]:
+    """Per-character (is_code, bracket_depth).
+
+    is_code is False inside string/char literals and comments, so delimiters
+    there are not treated as syntax. This is a heuristic lexer, not a parser:
+    it handles single, double, backtick, and triple-quoted literals, line and
+    block comments, and backslash escapes. Known limit: raw literals
+    (raw triple-quoted strings) still honor escapes, which can only extend a
+    masked region, never end one early -- the conservative direction for a
+    baseline. depth counts ONLY () and [] — not {} —
+    so that the semicolons in a C-style ``for (init; cond; step)`` header sit
+    at depth > 0 and never split a statement, including when the occurrence
+    itself is inside that header (where a depth-relative test would accept
+    them and yield a fragment like ``i < n;``).
+    """
+    n = len(code)
+    is_code = [True] * n
+    depth = [0] * n
+    i = d = 0
+    quote = None          # active string delimiter
+    comment = None        # "line" | "block"
+    while i < n:
+        ch = code[i]
+        nxt = code[i + 1] if i + 1 < n else ""
+        if comment == "line":
+            is_code[i] = False
+            if ch == "\n":
+                comment = None
+                is_code[i] = True          # the newline itself is a boundary
+        elif comment == "block":
+            is_code[i] = False
+            if ch == "*" and nxt == "/":
+                is_code[i + 1] = False
+                depth[i] = d
+                i += 2
+                comment = None
+                continue
+        elif quote:
+            is_code[i] = False
+            # Escapes apply inside triple-quoted literals too: without this,
+            # an escaped delimiter run (\\""" ) closes the literal early and
+            # its remaining newlines/semicolons become false boundaries.
+            if ch == "\\":
+                if i + 1 < n:
+                    is_code[i + 1] = False
+                depth[i] = d
+                i += 2
+                continue
+            if code.startswith(quote, i):
+                for k in range(i, min(i + len(quote), n)):
+                    is_code[k] = False
+                    depth[k] = d
+                i += len(quote)
+                quote = None
+                continue
+        elif code[i:i + 3] in _TRIPLE_QUOTES:
+            # Triple-quoted string / Java text block. Must be detected BEFORE
+            # the single-quote branch: that branch opens on the first
+            # delimiter and closes on the second, leaving the body exposed as
+            # code whenever the body contains an unbalanced quote character.
+            quote = code[i:i + 3]
+            for k in range(i, min(i + 3, n)):
+                is_code[k] = False
+                depth[k] = d
+            i += 3
+            continue
+        elif ch in "\"'`":
+            quote = ch
+            is_code[i] = False
+        elif ch == "/" and nxt == "/":
+            comment = "line"
+            is_code[i] = False
+        elif ch == "#":
+            comment = "line"
+            is_code[i] = False
+        elif ch == "/" and nxt == "*":
+            comment = "block"
+            is_code[i] = False
+        elif ch in "([":
+            d += 1
+        elif ch in ")]":
+            d = max(0, d - 1)
+        depth[i] = d
+        i += 1
+    return is_code, depth
+
+
+def statement_bounds(code: str, start: int, end: int) -> tuple[int, int]:
+    """Enclosing statement: nearest code-level boundary on each side.
+
+    Boundaries are ``{``, ``}``, ``;`` and newline — all only OUTSIDE
+    parentheses/brackets, since a wrapped call or a multiline
+    ``for (init; cond; step)`` header contains newlines and semicolons that
+    are continuations rather than statement ends.
+    Delimiters inside strings and comments are skipped. An occurrence inside
+    a ``for (init; cond; step)`` header therefore expands to the whole
+    header rather than to a fragment between its internal semicolons.
+    """
+    is_code, paren = _code_mask(code)
+
+    def is_boundary(i: int) -> bool:
+        if not is_code[i]:
+            return False
+        ch = code[i]
+        # Inside () or [] nothing terminates a statement: a wrapped call or a
+        # for-header split across lines carries newlines that are
+        # continuations, and its semicolons belong to the header.
+        if paren[i] > 0:
+            return False
+        return ch in ";{}\n"
+
+    ss, se = 0, len(code)
+    for i in range(min(start, len(code)) - 1, -1, -1):
+        if is_boundary(i):
+            ss = i + 1
+            break
+    for i in range(max(end, 0), len(code)):
+        if is_boundary(i):
+            se = i + 1
+            break
+    return ss, se
 
 
 def _fit_text(texts: list[str], y: np.ndarray, tr: np.ndarray, te: np.ndarray,
@@ -198,6 +331,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         }
         if have_text:
             row["line_masked"] = _fit_text([r["line_masked"] for r in recs], y, tr, te, labels, seed)
+            row["statement_masked"] = _fit_text([r["statement_masked"] for r in recs], y, tr, te, labels, seed)
             row["window_masked"] = _fit_text([r["window_masked"] for r in recs], y, tr, te, labels, seed)
         per_seed.append(row)
 
@@ -205,7 +339,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         vals = [s[key][metric] for s in per_seed if key in s and np.isfinite(s[key].get(metric, np.nan))]
         return float(np.mean(vals)) if vals else float("nan")
 
-    keys = ["majority", "name_only", "covariates_only"] + (["line_masked", "window_masked"] if have_text else [])
+    keys = ["majority", "name_only", "covariates_only"] + (
+        ["line_masked", "statement_masked", "window_masked"] if have_text else [])
     result = {
         "source": source,
         "git_commit": git_commit(),
