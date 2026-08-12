@@ -48,6 +48,18 @@ from bootstrap_ci import cluster_bootstrap_ci, macro_f1_stat  # noqa: E402
 PROTOCOL_VERSION = "1.0"
 
 
+def git_commit() -> str:
+    """Commit that produced this result (empty if not a git checkout)."""
+    import subprocess
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=_SCRIPT_DIR,
+            capture_output=True, text=True, timeout=10,
+        ).stdout.strip()
+    except Exception:
+        return ""
+
+
 def load_records(manifest: Path, npz_dir: Path, pooling: str) -> tuple[list[dict], dict]:
     """Load manifest rows joined to npz tensors, deduped and conflict-filtered."""
     rows = []
@@ -366,6 +378,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     result: dict = {
         "protocol_version": PROTOCOL_VERSION,
+        "git_commit": git_commit(),
         "task": "occurrence_type",
         "source": source_desc,
         "pooling": args.pooling,
