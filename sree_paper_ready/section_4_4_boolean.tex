@@ -56,7 +56,7 @@ Masked source line                 & \textbf{0.988} & --- & --- \\
 \multicolumn{4}{l}{\textit{Linear probes (validation-selected layer)}} \\
 Qwen2.5-1.5B                       & 0.977 & $+0.189$ & $-0.011$ \\
 Qwen2.5-Coder-1.5B                 & 0.985 & $+0.198$ & $-0.003$ \\
-StarCoder2-7B                      & 0.989 & $+0.203$ & $+0.001$ \\
+StarCoder2-7B                      & 0.989 & $+0.203$ & $+0.0005$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,11 +78,15 @@ $\pm 0.016$ macro-F1, across all five conditions and all three models---
 including C5, which renames each flag to an index-style identifier
 (\texttt{i}, \texttt{idx}, \texttt{pos}), the same manipulation that costs
 the index role $\Delta\mathrm{F1} = -0.272$ (Section~\ref{sec:index}). The
-deltas do not share a sign: they scatter around zero (median $-0.003$),
-which is the signature of seed noise rather than a suppressed effect.
-Boolean occurrence type is therefore \textbf{name-invariant}: the signal
-survives complete removal, collapse, or adversarial inversion of lexical
-information, because it never depended on it.
+deltas do not share a sign---$4$ of $15$ are positive, median
+$-0.004$---and no condition is consistently worst across models: C1 is
+the largest drop for Qwen2.5, C4 for the other two. A residual negative
+tilt of a few thousandths is visible and we do not claim it is exactly
+zero, but it is two orders of magnitude below the index effect and within
+the range the surface baseline already explains. Boolean occurrence type
+is \textbf{name-invariant} at the resolution this design can measure: the
+signal survives complete removal, collapse, and adversarial inversion of
+lexical information.
 
 \begin{table}[t]
 \centering
@@ -136,3 +140,10 @@ and we report it as secondary. Renaming counterfactuals are Python-only
 %   "best layer" as a finding. Axis label: "embed, 1..28".
 % - StarCoder2-7B exceeds the line baseline by +0.0005. Do NOT describe
 %   this as beating the baseline; it is inside seed variation.
+% - PROVENANCE: StarCoder2-7B was produced at 8102a40, an ANCESTOR of
+%   195df12 (the Qwens). Checked: the diff between the two commits touches
+%   none of scripts/{probe,extract,rename_corpus,xlcost_data,
+%   tokenizer_gate,bootstrap_ci}.py -- the probing and renaming path is
+%   byte-identical across both runs. scripts/baselines.py did change, but
+%   the shared baseline is 0.9882 under both. So the mismatch is cosmetic;
+%   still list both commits in the artifact appendix rather than one.
