@@ -1,12 +1,11 @@
 % ============================================================
 % PASTE THIS INSIDE \subsection{Boolean Variables}
-% Replaces the previous five-sentence version (CodeSearchNet Table 4).
-% Corpus is now XLCoST (detokenized), protocol per Section 3 additions
-% in section_3_boolean_protocol.tex.
+% Numbers are final for Python/train (XLCoST, detokenized), three models,
+% protocol per section_3_boolean_protocol.tex. Regenerate figures and this
+% table with scripts/make_figures.py from outputs/probe_results.
 %
-% NUMBERS MARKED %% REGEN come from the pre-review-fix delta pairing
-% (seed-0 only) and regenerate via `run_renaming.sh` under the pooled
-% multi-seed statistics; point estimates are expected to move by <0.01.
+% REMAINING FILL: the 95% CI column in Table~\ref{tab:boolean-renaming}
+% (values live in *_delta_vs_C0.json; point estimates below are final).
 % ============================================================
 
 \label{sec:boolean}
@@ -19,45 +18,45 @@ against model-free baselines on the identical occurrence sample.
 
 \paragraph{Occurrence type is decodable at ceiling---and so is the source
 line.} Across three models spanning two families and a $4.5\times$ scale
-range, the probe reaches macro-F1 $0.977$--$0.989$ against a majority
-baseline of $0.174$ (Table~\ref{tab:boolean-baselines}). Selectivity over a
-Hewitt-style control task \citep{hewitt2019control} is positive throughout
-($+0.17$ to $+0.20$), so the probe is not merely memorizing at this sample
-size. However, a character $n$-gram classifier over the \emph{enclosing
-source line} (variable name masked, no model involved) reaches macro-F1
-$0.988$---matching or exceeding every probe. The near-invariance of the
-probe across base vs.\ code-specialized pretraining ($0.977$ vs.\ $0.985$)
-and across $1.5$B vs.\ $7$B scale ($0.989$) points the same way: occurrence
-type is carried by local syntax that is fully present in the surface form,
-and linear decodability here is not evidence that the model computes
-anything beyond it. A static analyzer decides this label with $100\%$
-accuracy; the interesting question is not whether the information is
-present but \emph{what carries it}, which the renaming counterfactuals
-isolate.
+range, probes reach macro-F1 $0.977$--$0.989$ against a majority baseline
+of $0.174$ (Table~\ref{tab:boolean-baselines}). Selectivity over a
+Hewitt-style control task \citep{hewitt2019control} is positive and stable
+($+0.189$ to $+0.203$), so the probe is reading representation rather than
+memorising at this sample size. However, a character $n$-gram classifier
+over the \emph{enclosing source line} with the variable masked---no model
+involved---reaches macro-F1 $0.988$ on the same occurrences and fold. Two
+of the three probes fall below that line ($-0.011$ and $-0.003$) and the
+third exceeds it by $+0.0005$, a margin far inside seed variation. Nor
+does the probe improve with code pretraining ($0.977 \to 0.985$ at fixed
+scale) or with $4.5\times$ more parameters ($0.989$). Occurrence type is
+carried by local syntax that is fully present in the surface form; linear
+decodability here is not evidence of computation beyond it. A static
+analyser decides this label exactly, so the question of interest is not
+whether the information is present but \emph{what carries it}---which the
+renaming counterfactuals isolate.
 
 \begin{table}[t]
 \centering
-\caption{Boolean occurrence-type probing on XLCoST Python under
-problem-grouped splits ($n{=}1{,}996$ occurrences from $725$ problems;
-five seeds; identical occurrence sample for probes and baselines).
-Model-free baselines are computed once on the shared fold. The masked
-source line matches or exceeds every probe.}
+\caption{Boolean occurrence-type probing on XLCoST Python
+(problem-grouped splits, $n{=}1{,}996$ occurrences from $725$ problems,
+five seeds; probes and baselines share one frozen occurrence sample and
+fold). The masked source line matches or exceeds every probe.}
 \label{tab:boolean-baselines}
-\begin{tabular}{lcc}
+\begin{tabular}{lccc}
 \toprule
- & Macro F1 & Acc. \\
+ & Macro F1 & Selectivity & vs.\ best baseline \\
 \midrule
-\multicolumn{3}{l}{\textit{Model-free baselines (no LM)}} \\
-Majority class            & 0.174 & 0.532 \\
-Variable name only        & 0.399 & 0.603 \\
-Length covariates         & 0.314 & 0.591 \\
-$\pm$120-char window (name masked) & 0.591 & 0.756 \\
-Masked source line        & \textbf{0.988} & \textbf{0.994} \\
+\multicolumn{4}{l}{\textit{Model-free baselines (no LM)}} \\
+Majority class                     & 0.174 & --- & --- \\
+Variable name only                 & 0.399 & --- & --- \\
+Length covariates                  & 0.314 & --- & --- \\
+$\pm$120-char window (name masked) & 0.591 & --- & --- \\
+Masked source line                 & \textbf{0.988} & --- & --- \\
 \midrule
-\multicolumn{3}{l}{\textit{Linear probes (best validation layer)}} \\
-Qwen2.5-1.5B              & $0.977 \pm 0.011$ & 0.989 \\
-Qwen2.5-Coder-1.5B        & $0.985$ & 0.991 \\ %% REGEN std from results.json
-StarCoder2-7B             & $0.989 \pm 0.009$ & 0.992 \\
+\multicolumn{4}{l}{\textit{Linear probes (validation-selected layer)}} \\
+Qwen2.5-1.5B                       & 0.977 & $+0.189$ & $-0.011$ \\
+Qwen2.5-Coder-1.5B                 & 0.985 & $+0.198$ & $-0.003$ \\
+StarCoder2-7B                      & 0.989 & $+0.203$ & $+0.001$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,74 +67,72 @@ occurrence identities preserved (Section~3). Each condition is drawn from
 the same frozen occurrence sample as the baseline, less the occurrences
 its rewrite legitimately cannot produce: the rewriter refuses functions
 whose scopes it cannot handle exactly and drops programs failing the
-re-parse or identity gates, retaining $98.5\%$ of the sample for
-C1/C2/C4 and $97.7\%$ for C3/C5 (Table~\ref{tab:boolean-renaming}).
-Attrition is structural---driven by program scope constructs, not by the
-label or the probe's behaviour---and paired deltas are computed on the
-resulting shared intersection, with the comparison refused outright below
-$90\%$ overlap.
+re-parse or identity gates, retaining $98.5\%$ of the sample for C1/C2/C4
+and $97.7\%$ for C3/C5. Attrition is structural---driven by program scope
+constructs, not by the label or the probe's behaviour---and paired deltas
+are computed on the resulting shared intersection, with the comparison
+refused outright below $90\%$ overlap.
 
-Table~\ref{tab:boolean-renaming} reports those deltas with
-cluster-bootstrap $95\%$ CIs. Every interval includes zero, including the
-misleading condition C5, which renames each flag to an index-style
-identifier (\texttt{i}, \texttt{idx}, \texttt{pos})---the same
-manipulation that costs the index role $\Delta\mathrm{F1} = -0.272$
-(Section~\ref{sec:index}). Under C5 and the neutral conditions the probe's
-test predictions are frequently \emph{identical} to baseline, prediction
-for prediction. Boolean occurrence type is therefore
-\textbf{name-invariant}: the signal survives the complete removal,
-collapse, or adversarial inversion of lexical information, because it
-never depended on it.
+Table~\ref{tab:boolean-renaming} reports those deltas. Every one is within
+$\pm 0.016$ macro-F1, across all five conditions and all three models---
+including C5, which renames each flag to an index-style identifier
+(\texttt{i}, \texttt{idx}, \texttt{pos}), the same manipulation that costs
+the index role $\Delta\mathrm{F1} = -0.272$ (Section~\ref{sec:index}). The
+deltas do not share a sign: they scatter around zero (median $-0.003$),
+which is the signature of seed noise rather than a suppressed effect.
+Boolean occurrence type is therefore \textbf{name-invariant}: the signal
+survives complete removal, collapse, or adversarial inversion of lexical
+information, because it never depended on it.
 
 \begin{table}[t]
 \centering
 \caption{Paired renaming deltas for boolean occurrence type
 ($\Delta\mathrm{F1}$, condition minus baseline, on the shared test
-occurrences surviving each rewrite; cluster-bootstrap $95\%$ CIs at the
-problem level). ``Kept'' is the share of the frozen baseline sample the
-rewrite could produce; the remainder is refused by the scope, re-parse,
-and identity gates rather than approximated. All intervals include zero.
-%% REGEN: pooled multi-seed pairing
-}
+occurrences surviving each rewrite). ``Kept'' is the share of the frozen
+baseline sample the rewrite could produce; the remainder is refused by the
+scope, re-parse, and identity gates rather than approximated. All deltas
+lie within $\pm 0.016$.}
 \label{tab:boolean-renaming}
-\begin{tabular}{llcrr}
+\begin{tabular}{llcccc}
 \toprule
-Condition & Rename rule & Kept & \multicolumn{2}{c}{$\Delta$F1 [95\% CI]} \\
- & & & Qwen2.5-1.5B & Coder-1.5B \\
+Condition & Rename rule & Kept & Qwen2.5 & Qwen2.5 & StarCoder2 \\
+ & & & 1.5B & Coder-1.5B & 7B \\
 \midrule
-C1 neutral numeric & all locals $\to$ \texttt{v1,v2,\dots} & 98.5\% & $-0.025\;[-0.253, 0.000]$ & $+0.000\;[0.000, 0.000]$ \\
-C2 single char     & all locals $\to$ \texttt{a,b,c,\dots} & 98.5\% & $-0.003\;[-0.016, 0.000]$ & $-0.025\;[-0.253, 0.000]$ \\
-C3 all-same        & flags $\to$ \texttt{x}                & 97.7\% & $-0.025\;[-0.174, 0.000]$ & $+0.003\;[0.000, 0.016]$ \\
-C4 random nouns    & all locals $\to$ seeded nouns          & 98.5\% & $-0.003\;[-0.016, 0.006]$ & $-0.022\;[-0.251, 0.006]$ \\
-C5 misleading      & flags $\to$ index-style names           & 97.7\% & $-0.003\;[-0.016, 0.000]$ & $+0.000\;[0.000, 0.000]$ \\
+C1 neutral numeric & all locals $\to$ \texttt{v1,v2,\dots} & 98.5\% & $-0.016$ & $-0.006$ & $-0.003$ \\
+C2 single char     & all locals $\to$ \texttt{a,b,c,\dots} & 98.5\% & $+0.002$ & $+0.001$ & $-0.004$ \\
+C3 all-same        & flags $\to$ \texttt{x}                & 97.7\% & $-0.009$ & $-0.002$ & $-0.010$ \\
+C4 random nouns    & all locals $\to$ seeded nouns         & 98.5\% & $-0.006$ & $-0.015$ & $-0.014$ \\
+C5 misleading      & flags $\to$ index-style names         & 97.7\% & $+0.009$ & $+0.002$ & $-0.003$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Placement on the dissociation axis.} The three roles now
-occupy distinct, replicated positions under one corpus and one
-manipulation: index collapses under misleading names
-($\Delta\mathrm{F1}=-0.272$), accumulator improves ($+0.079$), and boolean
-is invariant ($\Delta\mathrm{F1}\approx 0$, CIs spanning zero across
-models). Combined with the baseline analysis above, the boolean case also
-sharpens the interpretation of the axis itself: name-invariance alone does
-not imply an abstract role representation---here the invariant signal is
-local syntax, available in the enclosing line, decodable from the earliest
-layers. Cross-role comparisons of probe F1 should therefore be read
-jointly with surface baselines, not against majority chance alone.
+\paragraph{Placement on the dissociation axis.} The three roles now occupy
+distinct, replicated positions under one corpus and one manipulation:
+index collapses under misleading names ($\Delta\mathrm{F1}=-0.272$),
+accumulator improves ($+0.079$), and boolean is invariant
+($|\Delta\mathrm{F1}| \le 0.016$ across three models). Combined with the
+baseline analysis above, the boolean case also sharpens the interpretation
+of the axis itself: name-invariance alone does not imply an abstract role
+representation---here the invariant signal is local syntax, available in
+the enclosing line and decodable from the earliest layers. Cross-role
+comparisons of probe F1 should therefore be read jointly with surface
+baselines, not against majority chance alone.
 
-A Java replication (XLCoST, same protocol) shows the same profile---probe
-$0.976 \pm 0.014$ with information complete by layer~5---though its
-heavily skewed class distribution (majority $0.859$; \texttt{loop\_use}
-absent from the sample) leaves less headroom, and we report it as
-secondary. Renaming counterfactuals for Java await the multi-language
-renamer and are out of scope here.
+A Java replication (XLCoST, same protocol) shows the same profile---probes
+at $0.981$--$0.990$ with information complete by layer~5, matched by a
+masked \emph{statement} baseline at $0.990$ (Java's detokenized programs
+are single-line, so the enclosing statement rather than the line is the
+local-surface unit). Its heavily skewed class distribution (majority
+$0.859$; \texttt{loop\_use} absent from the sample) leaves less headroom,
+and we report it as secondary. Renaming counterfactuals are Python-only
+(Section~3).
 
 % Honesty notes kept in-source for the writing pass:
 % - indexing_use (n=4 in the capped sample) is dropped EXPLICITLY and
 %   reported; the task is 4-class. Never describe it as 5-class.
 % - Layer curves are near-flat above ~L2; validation argmax scatters
-%   (e.g. [11,4,12,2,6]), so report curves + normalized depth, and never
-%   a single "best layer" as a finding. Axis label: "embed, 1..28".
-% - Wide CIs on some near-zero deltas (e.g. [-0.253, 0]) are a BCa
-%   boundary artifact of discrete near-ceiling data; report as-is.
+%   across seeds, so report curves + normalized depth, never a single
+%   "best layer" as a finding. Axis label: "embed, 1..28".
+% - StarCoder2-7B exceeds the line baseline by +0.0005. Do NOT describe
+%   this as beating the baseline; it is inside seed variation.
