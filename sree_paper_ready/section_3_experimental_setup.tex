@@ -38,3 +38,20 @@ to lexically-driven (index) representations, and from single-language
 (boolean, class reference) to cross-language (accumulator, index) detection
 patterns---motivating the different probing methodologies described in
 Section~\ref{sec:evidence}.
+
+\paragraph{Renaming scope and implementations.}
+Renaming counterfactuals are evaluated on \textbf{Python only}; the
+seven-language corpus supports baseline probing and cross-language
+transfer, not renaming (the pipeline refuses renaming requests for other
+languages rather than emitting corrupted source, since whole-word
+substitution rewrites keywords, preprocessor directives, and stdlib names
+outside Python). Two renaming implementations appear in this work and we
+report which produced each result: the pipeline's whole-word substitution
+(index, accumulator, iterator, and class/structure results), which
+rewrites every textual occurrence of a target name including inside
+string literals and comments, and the boolean workstream's scope-aware
+span editor (boolean results), which renames only identifier occurrences,
+preserves strings and comments, and re-verifies each rewritten program by
+parsing and occurrence-identity checks. Both preserve program parseability
+on Python; converging on a single parser-based renamer is planned
+follow-up work.
