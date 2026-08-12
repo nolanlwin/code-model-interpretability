@@ -64,7 +64,13 @@ def cluster_bootstrap_ci(y_true, y_pred, clusters, n_boot=1000, seed=0, alpha=0.
     y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
     cmap = _cluster_indices(np.asarray(clusters))
     keys = list(cmap)
-    observed = macro_f1(y_true, y_pred)
+    observed = macro_f1(y_true, y_pred) if len(y_true) else float("nan")
+    if len(keys) < 2:
+        # Jackknife needs >=2 clusters; report the point with undefined CI
+        # rather than crashing (leave-one-out over one cluster is empty).
+        return {"point": observed, "ci_low": float("nan"),
+                "ci_high": float("nan"), "n_clusters": len(keys),
+                "cluster_warning": True}
 
     def stat(idx):
         return macro_f1(y_true[idx], y_pred[idx])

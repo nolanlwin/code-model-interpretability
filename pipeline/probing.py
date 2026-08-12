@@ -125,13 +125,15 @@ def train_probes(hidden_by_layer, labels, program_ids, seeds=SEEDS, C=1.0,
     layers = sorted(hidden_by_layer)
     acc = {li: defaultdict(list) for li in layers}
     fitted = {}
-    sel_layers, sel_f1 = [], []
+    sel_layers, sel_f1, seeds_used = [], [], []
     pooled = {"y": [], "p": [], "g": []}
 
     for seed in seeds:
         tr, val, te = hash_split(program_ids, seed)
         if min(len(tr), len(val), len(te)) == 0 or len(set(labels[tr])) < 2:
             continue
+        seeds_used.append(seed)
+        store_fits = not fitted  # first VALID seed keeps the reusable probes
         val_f1, test_preds = [], []
         for li in layers:
             X = hidden_by_layer[li].astype(np.float32)
@@ -148,7 +150,7 @@ def train_probes(hidden_by_layer, labels, program_ids, seeds=SEEDS, C=1.0,
             acc[li]["test_f1"].append(macro_f1(labels[te], p_te))
             val_f1.append(macro_f1(labels[val], p_va))
             test_preds.append(p_te)
-            if seed == seeds[0]:
+            if store_fits:
                 fitted[li] = (scaler, clf)
         b = int(np.argmax(val_f1))
         sel_layers.append(layers[b])
@@ -157,6 +159,11 @@ def train_probes(hidden_by_layer, labels, program_ids, seeds=SEEDS, C=1.0,
         pooled["p"].extend(test_preds[b])
         pooled["g"].extend(program_ids[te])
 
+    if not seeds_used:
+        raise ValueError(
+            "no seed produced a usable split (empty fold or single-class "
+            "training data in every seed) — dataset too small or degenerate"
+        )
     results = {}
     for li in layers:
         scaler, clf = fitted[li]
@@ -168,6 +175,7 @@ def train_probes(hidden_by_layer, labels, program_ids, seeds=SEEDS, C=1.0,
     majority = np.zeros_like(np.asarray(pooled["y"]))
     results[META] = {
         "selected_layers": sel_layers,
+        "seeds_used": seeds_used,
         "selected_layer": int(np.median(sel_layers)) if sel_layers else -1,
         "test_f1_mean": float(np.mean(sel_f1)) if sel_f1 else float("nan"),
         "test_f1_std": float(np.std(sel_f1)) if sel_f1 else float("nan"),
@@ -191,8 +199,9 @@ def control_selectivity(hidden_by_layer, labels, program_ids, results,
     labels_c = permute_labels_within_programs(labels, program_ids)
     program_ids = np.asarray(program_ids)
     sel = results[META]["selected_layers"]
+    seeds_used = results[META].get("seeds_used", list(seeds)[: len(sel)])
     f1s = []
-    for seed, li in zip(seeds, sel):
+    for seed, li in zip(seeds_used, sel):
         tr, val, te = hash_split(program_ids, seed)
         if min(len(tr), len(te)) == 0 or len(set(labels_c[tr])) < 2:
             continue
