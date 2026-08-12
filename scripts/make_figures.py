@@ -102,11 +102,13 @@ def fig_layer_curves(models: dict, lang: str, split: str, out: Path):
     fig, ax = plt.subplots(figsize=(7.2, 4.2), dpi=200)
     fig.patch.set_facecolor(SURFACE)
     _style(ax)
-    n_layers = None
+    n_layers = 0
     for i, (slug, entry) in enumerate(models.items()):
         curves = np.array([s["test_macro_f1_curve"] for s in entry["c0"]["per_seed"]])
         mean, std = curves.mean(0), curves.std(0)
-        n_layers = curves.shape[1]
+        # Models differ in depth (e.g. 28 vs 32 layers); the axis must span the
+        # LONGEST curve or the deepest model's tail falls past the last tick.
+        n_layers = max(n_layers, curves.shape[1])
         x = np.arange(n_layers)
         color = SERIES[i % len(SERIES)]
         ax.plot(x, mean, color=color, linewidth=2, zorder=3)
@@ -141,7 +143,8 @@ def fig_layer_curves(models: dict, lang: str, split: str, out: Path):
     return p
 
 
-def fig_renaming_deltas(models: dict, lang: str, split: str, out: Path):
+def fig_renaming_deltas(models: dict, lang: str, split: str, out: Path,
+                        ref_delta: float | None = None, ref_label: str = ""):
     with_deltas = {s: e for s, e in models.items() if e["deltas"]}
     if not with_deltas:
         return None
@@ -172,12 +175,16 @@ def fig_renaming_deltas(models: dict, lang: str, split: str, out: Path):
     ax.set_ylabel("paired ΔF1 vs baseline (95% CI)", color=INK2, fontsize=10)
     ax.set_title(f"Renaming does not move the boolean probe — {lang}/{split}",
                  fontsize=11, color=INK, loc="left")
-    # Reference: the index role's collapse under the same manipulation.
-    ax.axhline(-0.272, color=MUTED, linewidth=1.2, linestyle=(0, (2, 3)), zorder=1)
-    ax.annotate("index role under misleading renaming (−0.272)",
-                xy=(0.99, -0.272), xycoords=("axes fraction", "data"),
-                xytext=(0, 4), textcoords="offset points",
-                fontsize=8, color=INK2, ha="right")
+    # Optional cross-role reference. Off by default: a hardcoded constant
+    # would be drawn beside artifacts from a different language, split, or
+    # model set with no provenance of its own. The caller must pass both the
+    # value and a label naming its configuration.
+    if ref_delta is not None:
+        ax.axhline(ref_delta, color=MUTED, linewidth=1.2, linestyle=(0, (2, 3)), zorder=1)
+        ax.annotate(f"{ref_label} ({ref_delta:+.3f})",
+                    xy=(0.99, ref_delta), xycoords=("axes fraction", "data"),
+                    xytext=(0, 4), textcoords="offset points",
+                    fontsize=8, color=INK2, ha="right")
     if len(with_deltas) > 1:
         ax.legend(frameon=False, fontsize=8.5, loc="lower left")
     fig.tight_layout()
@@ -238,7 +245,15 @@ def main(argv=None):
     ap.add_argument("--lang", default="python")
     ap.add_argument("--split", default="train")
     ap.add_argument("--out", default="results/boolean")
+    ap.add_argument("--reference-delta", type=float,
+                    help="optional cross-role reference line on the delta plot; "
+                         "supply --reference-label naming its configuration")
+    ap.add_argument("--reference-label", default="",
+                    help="e.g. 'index role, Python/train, Qwen2.5-1.5B'")
     args = ap.parse_args(argv)
+    if args.reference_delta is not None and not args.reference_label:
+        ap.error("--reference-delta requires --reference-label naming the "
+                 "configuration it came from (language, split, model)")
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -246,7 +261,8 @@ def main(argv=None):
     if not models:
         raise SystemExit(f"no {args.lang}_{args.split}_*_problem.json in {args.results_dir}")
     made = [fig_layer_curves(models, args.lang, args.split, out),
-            fig_renaming_deltas(models, args.lang, args.split, out)]
+            fig_renaming_deltas(models, args.lang, args.split, out,
+                                args.reference_delta, args.reference_label)]
     for slug, entry in models.items():
         made.append(fig_probe_vs_baselines(slug, entry, args.lang, args.split, out))
     for p in made:
