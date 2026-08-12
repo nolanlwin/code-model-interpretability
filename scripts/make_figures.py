@@ -126,7 +126,10 @@ def fig_layer_curves(models: dict, lang: str, split: str, out: Path):
             for e in models.values() if e["baselines"]]
     if seen:
         (name, val), sample, classes = seen[0]
-        comparable = all(
+        # Every plotted model must have a baseline artifact AND agree: a
+        # subset that agrees among itself would otherwise be drawn as if it
+        # were shared by models that have no baseline at all.
+        comparable = len(seen) == len(models) and all(
             abs(v - val) < 1e-9 and n == name and sm == sample and cl == classes
             for (n, v), sm, cl in seen
         )
@@ -137,8 +140,11 @@ def fig_layer_curves(models: dict, lang: str, split: str, out: Path):
                         xytext=(0, 4), textcoords="offset points",
                         fontsize=8, color=INK2)
         else:
-            print("note: models' baselines differ (sample, classes, or value) — "
-                  "no shared baseline line drawn; see per-model baseline figures")
+            why = ("only %d of %d models have baseline artifacts"
+                   % (len(seen), len(models))) if len(seen) != len(models) else \
+                  "models' baselines differ in value, sample or class set"
+            print(f"note: {why} — no shared baseline line drawn; "
+                  "see the per-model baseline figures")
     ax.set_xlabel("layer (0 = embedding)", color=INK2, fontsize=10)
     ax.set_ylabel("test macro F1 (mean ± sd over seeds)", color=INK2, fontsize=10)
     ticks = [0] + list(range(4, n_layers, 4))
