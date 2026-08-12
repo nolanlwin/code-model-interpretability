@@ -1,3 +1,10 @@
+> **⚠️ TEMPLATE — NOT MEASURED RESULTS.** Every numeric cell below is an
+> illustrative placeholder (note the fill-in instruction and that the example
+> value `0.959 (L8)` is also the first "result"). No unified-pipeline runs have
+> been recorded yet. Regenerate this table from `results/unified/**/summary.csv`
+> once runs land, and delete this banner in that commit. Nothing here may be
+> cited or pasted into the paper. (Issue #8.)
+
 # Probing Results — Models × Variable Perturbations
 
 **Task:** Binary token classification — detect index/key variables  
