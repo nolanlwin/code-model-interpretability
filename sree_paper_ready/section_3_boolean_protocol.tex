@@ -1,0 +1,59 @@
+% ============================================================
+% PASTE INSIDE \section{Experimental Setup}, after the role
+% definitions paragraph. Describes the measurement protocol used by
+% the boolean role (Section 4.4); the machinery is role-agnostic
+% (scripts/ in the repository) and other roles can adopt it verbatim.
+% ============================================================
+
+\paragraph{Measurement protocol (boolean role).}
+Programs come from XLCoST \citep{zhu2022xlcost} in \emph{detokenized}
+form: the official release is TransCoder-tokenized (whitespace-mangled),
+so we reconstruct natural source and validate that each program parses
+before use. Every variable occurrence carries a stable identity
+$\langle\textit{problem},\textit{language},\textit{function},
+\textit{binding},\textit{occurrence}\rangle$ assigned at extraction; all
+paired comparisons join on these identities, never on character offsets.
+Activations are mean-pooled residual streams at the occurrence's own
+tokens, extracted with one forward pass per program; token--character
+alignment is verified per model by an offset gate before any extraction
+(a roundtrip check alone is insufficient: one candidate tokenizer
+round-tripped correctly while corrupting half its offsets).
+
+Splits are grouped at the \emph{problem} level and frozen by hash: each
+problem is assigned to train/validation/test ($70/10/20$) by a
+deterministic digest of its identifier and the seed, so every
+counterfactual condition tests on the same problems regardless of which
+programs survive rewriting. Probes are $\ell_2$-regularized logistic
+regressions on standardized features, fit per layer; the reported layer is
+selected on the \emph{validation} fold and evaluated once on test, for
+each of five seeds. Classes falling below a support threshold are dropped
+explicitly and reported, never silently. Occurrence counts are capped at
+$2{,}000$ per (role, language) by whole-problem sampling with a fixed
+seed; the sampled identity list is frozen and reused by every baseline
+and condition. Baselines share this population exactly; counterfactual
+conditions share it less whatever their rewrite legitimately cannot
+produce (Section~\ref{sec:boolean} reports the retained share per
+condition), and paired comparisons are refused outright if fewer than
+$90\%$ of the smaller fold's occurrences match.
+
+Each probe is reported against model-free baselines computed on the
+identical sample and fold: majority class, a classifier over the variable
+name alone, length covariates, a masked context window, and a masked
+enclosing source line. Probe capacity is checked with a control task in
+the sense of \citet{hewitt2019control} (a random label per variable name,
+drawn from the empirical marginal), reported as selectivity. Uncertainty
+is quantified by BCa bootstrap over \emph{problems} (occurrences within a
+program are dependent), and renaming effects are paired deltas on shared
+test occurrences pooled across seeds, with the comparison refused
+outright if fewer than $90\%$ of the smaller fold's occurrences match.
+
+Renaming counterfactuals are produced by scope-correct span edits on the
+original source---never re-pretty-printing---so formatting, comments, and
+strings are untouched; renames respect binding scope, avoid collisions,
+and are seeded deterministically per program and condition. Rewritten
+programs must re-parse, and extraction on the rewritten program must
+recover an occurrence at every mapped span with an unchanged label;
+programs failing any gate are dropped and counted. Functions whose scopes
+the rewriter cannot handle exactly (nested scopes, \texttt{global}
+declarations, \texttt{except}-as binders) are left unrenamed and counted
+rather than approximated.
