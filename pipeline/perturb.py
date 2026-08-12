@@ -57,13 +57,14 @@ MISLEADING_COUNTER = {
 
 
 # Languages whose renaming output has been validated. Regex whole-word
-# substitution cannot be made safe language-by-language: with per-language
-# keyword protection Java survives, but C/C++ lose preprocessor and namespace
-# tokens (`#include <bits/stdc++.h>` -> `#e <b/j++.c>`, `using namespace std;`
-# -> `l c d;`) and PHP loses its `<?php` open tag, because those tokens are
-# ordinary words to a regex. Correct multi-language renaming needs identifier
-# nodes from a parser, not word matches.
-RENAME_SUPPORTED = {"Python", "Java"}
+# substitution cannot be made safe language-by-language: keyword protection is
+# not enough because stdlib/API names are ordinary words to a regex — Java
+# renames `System`, `out`, `println`; C/C++ lose preprocessor and namespace
+# tokens (`#include <bits/stdc++.h>` -> `#e <b/j++.c>`); PHP loses its
+# `<?php` open tag. Python is validated because collect_all_identifiers uses
+# the AST there and PYTHON_PROTECTED covers builtins. Correct multi-language
+# renaming needs identifier nodes from a parser, not word matches (issue #6).
+RENAME_SUPPORTED = {"Python"}
 
 
 class UnsupportedRenameLanguage(ValueError):
@@ -133,7 +134,7 @@ def perturb_single_chars(code, seed=0, language="Python"):
 
 
 def perturb_all_same(code, seed=0, language="Python"):
-    return apply_rename_map(code, {n: "x" for n in _renameable(code)})
+    return apply_rename_map(code, {n: "x" for n in _renameable(code, language)})
 
 
 def perturb_numeric_vars(code, seed=0, language="Python"):
@@ -147,7 +148,7 @@ def perturb_numeric_vars(code, seed=0, language="Python"):
 def perturb_misleading(code, role, seed=0, language="Python"):
     rng = random.Random(seed)
     all_names = _renameable(code, language)
-    role_names = extract_roles(code, "Python")[role]
+    role_names = extract_roles(code, language)[role]
 
     role_vars = sorted(n for n in all_names if n in role_names)
     other_vars = sorted(n for n in all_names if n not in role_names)
