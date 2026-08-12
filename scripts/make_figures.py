@@ -109,7 +109,7 @@ def fig_layer_curves(models: dict, lang: str, split: str, out: Path):
         # Models differ in depth (e.g. 28 vs 32 layers); the axis must span the
         # LONGEST curve or the deepest model's tail falls past the last tick.
         n_layers = max(n_layers, curves.shape[1])
-        x = np.arange(n_layers)
+        x = np.arange(curves.shape[1])   # this model's depth, not the running max
         color = SERIES[i % len(SERIES)]
         ax.plot(x, mean, color=color, linewidth=2, zorder=3)
         ax.fill_between(x, mean - std, mean + std, color=color, alpha=0.15,
@@ -117,18 +117,28 @@ def fig_layer_curves(models: dict, lang: str, split: str, out: Path):
         ax.annotate(MODEL_LABELS.get(slug, slug), xy=(x[-1], mean[-1]),
                     xytext=(4, 0), textcoords="offset points",
                     fontsize=8.5, color=INK, va="center")
-    # Strongest model-free baseline as a reference line (baselines are
-    # model-independent; take the first available).
-    for entry in models.values():
-        name, val = strongest_baseline(entry)
-        if val is not None:
+    # Shared strongest-baseline reference — drawn ONLY if every model's
+    # baseline is the same measurement. Baselines are model-independent in
+    # this pipeline (same frozen occurrence sample), but a mismatched sample
+    # or class set would make one model's score a false shared reference.
+    seen = [(strongest_baseline(e), e["baselines"].get("sample_ids"),
+             tuple(e["baselines"].get("classes_used", [])))
+            for e in models.values() if e["baselines"]]
+    if seen:
+        (name, val), sample, classes = seen[0]
+        comparable = all(
+            abs(v - val) < 1e-9 and n == name and sm == sample and cl == classes
+            for (n, v), sm, cl in seen
+        )
+        if comparable and val is not None:
             ax.axhline(val, color=INK2, linewidth=1.2, linestyle=(0, (4, 3)), zorder=1)
             ax.annotate(f"strongest surface baseline ({name.replace('_', ' ')}) = {val:.3f}",
                         xy=(0.01, val), xycoords=("axes fraction", "data"),
                         xytext=(0, 4), textcoords="offset points",
                         fontsize=8, color=INK2)
-            maj = entry["c0"].get("majority_baseline_acc")
-            break
+        else:
+            print("note: models' baselines differ (sample, classes, or value) — "
+                  "no shared baseline line drawn; see per-model baseline figures")
     ax.set_xlabel("layer (0 = embedding)", color=INK2, fontsize=10)
     ax.set_ylabel("test macro F1 (mean ± sd over seeds)", color=INK2, fontsize=10)
     ticks = [0] + list(range(4, n_layers, 4))
