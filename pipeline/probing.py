@@ -75,7 +75,7 @@ def label_tokens(code, target_names, tokenizer):
 def build_token_dataset(rows, role, tokenizer):
     """rows: dicts with 'code' and 'roles'. Keeps programs with >=1 positive token."""
     dataset, skipped = [], 0
-    for i, row in enumerate(rows):
+    for row in rows:
         names = row["roles"].get(role, [])
         if not names:
             skipped += 1
@@ -84,9 +84,17 @@ def build_token_dataset(rows, role, tokenizer):
         if not tokens or sum(labels) == 0:
             skipped += 1
             continue
+        pid = row.get("program_id") or row.get("problem_id") or row.get("idx")
+        if pid is None:
+            raise ValueError(
+                "row has no stable program identity (program_id / problem_id "
+                "/ idx). A filtered-row-index fallback would let the same "
+                "program land in different folds across strategies, silently "
+                "invalidating paired comparisons — provide a stable id."
+            )
         dataset.append({
             "code": row["code"], "labels": labels, "tokens": tokens,
-            "program_id": str(row.get("program_id", row.get("idx", i))),
+            "program_id": str(pid),
         })
     return dataset, skipped
 
