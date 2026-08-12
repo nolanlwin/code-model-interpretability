@@ -11,7 +11,7 @@ import random
 import re
 import string
 
-from .roles import PYTHON_PROTECTED, extract_roles
+from .roles import LANG_KEYWORDS, PYTHON_PROTECTED, extract_roles
 
 RANDOM_NOUNS = sorted(set([
     "apple", "bag", "ball", "basil", "bear", "bed", "belt", "birch", "bird", "bolt",
@@ -56,6 +56,27 @@ MISLEADING_COUNTER = {
 }
 
 
+# Languages whose renaming output has been validated. Regex whole-word
+# substitution cannot be made safe language-by-language: keyword protection is
+# not enough because stdlib/API names are ordinary words to a regex — Java
+# renames `System`, `out`, `println`; C/C++ lose preprocessor and namespace
+# tokens (`#include <bits/stdc++.h>` -> `#e <b/j++.c>`); PHP loses its
+# `<?php` open tag. Python is validated because collect_all_identifiers uses
+# the AST there and PYTHON_PROTECTED covers builtins. Correct multi-language
+# renaming needs identifier nodes from a parser, not word matches (issue #6).
+RENAME_SUPPORTED = {"Python"}
+
+
+class UnsupportedRenameLanguage(ValueError):
+    """Raised rather than silently emitting corrupted source."""
+
+
+def _protected_for(language):
+    if language == "Python":
+        return PYTHON_PROTECTED
+    return PYTHON_PROTECTED | LANG_KEYWORDS.get(language, set())
+
+
 def collect_all_identifiers(code):
     names = set()
     try:
@@ -72,8 +93,9 @@ def collect_all_identifiers(code):
     return names
 
 
-def _renameable(code):
-    return sorted(n for n in collect_all_identifiers(code) if n not in PYTHON_PROTECTED)
+def _renameable(code, language="Python"):
+    protected = _protected_for(language)
+    return sorted(n for n in collect_all_identifiers(code) if n not in protected)
 
 
 def apply_rename_map(code, rename_map):
@@ -89,18 +111,18 @@ def _cycle_pool(pool, n, rng):
     return out
 
 
-def perturb_random_nouns(code, seed=0):
+def perturb_random_nouns(code, seed=0, language="Python"):
     rng = random.Random(seed)
-    names = _renameable(code)
+    names = _renameable(code, language)
     pool = rng.sample(RANDOM_NOUNS, min(len(RANDOM_NOUNS), len(names)))
     if len(names) > len(pool):
         pool += rng.choices(RANDOM_NOUNS, k=len(names) - len(pool))
     return apply_rename_map(code, dict(zip(names, pool)))
 
 
-def perturb_single_chars(code, seed=0):
+def perturb_single_chars(code, seed=0, language="Python"):
     rng = random.Random(seed)
-    names = _renameable(code)
+    names = _renameable(code, language)
     pool = list(string.ascii_lowercase)
     suffix = 0
     while len(pool) < len(names):
@@ -111,22 +133,22 @@ def perturb_single_chars(code, seed=0):
     return apply_rename_map(code, dict(zip(names, pool)))
 
 
-def perturb_all_same(code, seed=0):
-    return apply_rename_map(code, {n: "x" for n in _renameable(code)})
+def perturb_all_same(code, seed=0, language="Python"):
+    return apply_rename_map(code, {n: "x" for n in _renameable(code, language)})
 
 
-def perturb_numeric_vars(code, seed=0):
+def perturb_numeric_vars(code, seed=0, language="Python"):
     rng = random.Random(seed)
-    names = _renameable(code)
+    names = _renameable(code, language)
     indices = list(range(1, len(names) + 1))
     rng.shuffle(indices)
     return apply_rename_map(code, {n: f"v{idx}" for n, idx in zip(names, indices)})
 
 
-def perturb_misleading(code, role, seed=0):
+def perturb_misleading(code, role, seed=0, language="Python"):
     rng = random.Random(seed)
-    all_names = _renameable(code)
-    role_names = extract_roles(code, "Python")[role]
+    all_names = _renameable(code, language)
+    role_names = extract_roles(code, language)[role]
 
     role_vars = sorted(n for n in all_names if n in role_names)
     other_vars = sorted(n for n in all_names if n not in role_names)
@@ -139,16 +161,28 @@ def perturb_misleading(code, role, seed=0):
     return apply_rename_map(code, rmap)
 
 
-def perturb(code, strategy, seed=0):
-    """Apply one strategy; returns perturbed code (baseline returns input)."""
+def perturb(code, strategy, seed=0, language="Python"):
+    """Apply one strategy; returns perturbed code (baseline returns input).
+
+    Raises UnsupportedRenameLanguage outside RENAME_SUPPORTED: emitting
+    corrupted source would yield plausible-looking probe numbers measured on
+    code the model can never have seen, which is worse than no number.
+    """
     if strategy == "baseline":
         return code
+    if language not in RENAME_SUPPORTED:
+        raise UnsupportedRenameLanguage(
+            f"renaming is validated for {sorted(RENAME_SUPPORTED)}; {language!r} "
+            "would be corrupted by whole-word substitution (see RENAME_SUPPORTED "
+            "notes). Run baseline-only for this language, or use a parser-based "
+            "renamer."
+        )
     if strategy.startswith("misleading_"):
-        return perturb_misleading(code, strategy.removeprefix("misleading_"), seed)
+        return perturb_misleading(code, strategy.removeprefix("misleading_"), seed, language)
     fn = {
         "random_nouns": perturb_random_nouns,
         "single_chars": perturb_single_chars,
         "all_same": perturb_all_same,
         "numeric_vars": perturb_numeric_vars,
     }[strategy]
-    return fn(code, seed)
+    return fn(code, seed, language)

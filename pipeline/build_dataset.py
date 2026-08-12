@@ -46,7 +46,7 @@ def build_python_perturbations(out_dir, splits, max_programs):
         with open(path, "w") as f:
             for idx, code in load_programs("Python", split, max_programs):
                 for strategy in STRATEGIES:
-                    row = _row(idx, "Python", split, strategy, perturb(code, strategy, seed=idx))
+                    row = _row(idx, "Python", split, strategy, perturb(code, strategy, seed=idx, language="Python"))
                     if row is None:
                         stats[f"{split}:skipped"] += 1
                         continue
