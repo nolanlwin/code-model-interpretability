@@ -192,7 +192,10 @@ def _code_mask(code: str) -> tuple[list[bool], list[int]]:
 def statement_bounds(code: str, start: int, end: int) -> tuple[int, int]:
     """Enclosing statement: nearest code-level boundary on each side.
 
-    Boundaries are ``{``, ``}``, newline, and ``;`` outside parentheses.
+    Boundaries are ``{``, ``}``, ``;`` and newline — all only OUTSIDE
+    parentheses/brackets, since a wrapped call or a multiline
+    ``for (init; cond; step)`` header contains newlines and semicolons that
+    are continuations rather than statement ends.
     Delimiters inside strings and comments are skipped. An occurrence inside
     a ``for (init; cond; step)`` header therefore expands to the whole
     header rather than to a fragment between its internal semicolons.
@@ -203,10 +206,12 @@ def statement_bounds(code: str, start: int, end: int) -> tuple[int, int]:
         if not is_code[i]:
             return False
         ch = code[i]
-        if ch in "{}\n":
-            return True
-        # ';' inside () or [] belongs to a header/expression, not a statement
-        return ch == ";" and paren[i] == 0
+        # Inside () or [] nothing terminates a statement: a wrapped call or a
+        # for-header split across lines carries newlines that are
+        # continuations, and its semicolons belong to the header.
+        if paren[i] > 0:
+            return False
+        return ch in ";{}\n"
 
     ss, se = 0, len(code)
     for i in range(min(start, len(code)) - 1, -1, -1):
