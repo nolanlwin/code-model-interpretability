@@ -178,6 +178,53 @@ def _token_positions_for_span(
     return _tokalign.char_span_to_token_indices(offset_mapping, s, e)
 
 
+
+def _byte_to_char_map(code: str) -> dict[int, int]:
+    m, bi = {}, 0
+    for ci, ch in enumerate(code):
+        m[bi] = ci
+        bi += len(ch.encode("utf-8"))
+    m[bi] = len(code)
+    return m
+
+
+def _normalize_treesitter_rows(
+    code: str, rows: list[dict[str, Any]], tokenizer, max_length: int
+) -> list[dict[str, Any]]:
+    """Tree-sitter extractors emit BYTE offsets; everything downstream consumes
+    CHARACTER offsets (identical only on pure-ASCII source). Convert spans,
+    recompute token positions where the byte-based ones were wrong, and drop
+    any row whose span still does not slice back to its variable name (PHP
+    spans legitimately include the ``$`` sigil)."""
+    if not rows:
+        return rows
+    is_ascii = code.isascii()
+    bmap = offset_mapping = None
+    if not is_ascii:
+        bmap = _byte_to_char_map(code)
+        if tokenizer is not None and getattr(tokenizer, "is_fast", False):
+            _, offset_mapping, _ = _tokalign.tokenize_for_alignment(
+                tokenizer, code, max_length=max_length
+            )
+    kept = []
+    for r in rows:
+        span = r.get("source_span") or (0, 0)
+        s, e = int(span[0]), int(span[1])
+        if bmap is not None:
+            if s not in bmap or e not in bmap:
+                continue  # mid-codepoint span: unrecoverable, drop
+            s, e = bmap[s], bmap[e]
+            r["source_span"] = [s, e]
+            if offset_mapping is not None:
+                r["token_positions"] = _token_positions_for_span(
+                    code, (s, e), offset_mapping
+                )
+        var = str(r.get("variable") or "")
+        if 0 <= s < e <= len(code) and code[s:e] in (var, f"${var}"):
+            kept.append(r)
+    return kept
+
+
 def occurrence_rows_from_code(
     code: str,
     *,
@@ -189,7 +236,7 @@ def occurrence_rows_from_code(
     max_length: int = 2048,
 ) -> tuple[list[dict[str, Any]], str | None]:
     if language == "java":
-        return occurrence_rows_from_java_code(
+        rows, err = occurrence_rows_from_java_code(
             code,
             repo=repo,
             path=path,
@@ -197,8 +244,11 @@ def occurrence_rows_from_code(
             tokenizer=tokenizer,
             max_length=max_length,
         )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
     if language == "go":
-        return occurrence_rows_from_go_code(
+        rows, err = occurrence_rows_from_go_code(
             code,
             repo=repo,
             path=path,
@@ -206,8 +256,11 @@ def occurrence_rows_from_code(
             tokenizer=tokenizer,
             max_length=max_length,
         )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
     if language == "javascript":
-        return occurrence_rows_from_javascript_code(
+        rows, err = occurrence_rows_from_javascript_code(
             code,
             repo=repo,
             path=path,
@@ -215,8 +268,11 @@ def occurrence_rows_from_code(
             tokenizer=tokenizer,
             max_length=max_length,
         )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
     if language == "php":
-        return occurrence_rows_from_php_code(
+        rows, err = occurrence_rows_from_php_code(
             code,
             repo=repo,
             path=path,
@@ -224,8 +280,11 @@ def occurrence_rows_from_code(
             tokenizer=tokenizer,
             max_length=max_length,
         )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
     if language == "ruby":
-        return occurrence_rows_from_ruby_code(
+        rows, err = occurrence_rows_from_ruby_code(
             code,
             repo=repo,
             path=path,
@@ -233,6 +292,9 @@ def occurrence_rows_from_code(
             tokenizer=tokenizer,
             max_length=max_length,
         )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
     if language != "python":
         return [], f"unsupported language: {language!r} (choose {SUPPORTED_LANGUAGES})"
     notes: list[str] = []
