@@ -108,11 +108,7 @@ def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list
         # languages, whose detokenized XLCoST programs are single-line
         # (measured 0.11 newlines/program vs 22.3 for Python), making the
         # line baseline degenerate there (line == whole program).
-        stmt_bounds = ";{}\n"
-        ss = max(code.rfind(c, 0, span[0]) for c in stmt_bounds) + 1
-        se_cands = [code.find(c, span[1]) for c in stmt_bounds]
-        se_cands = [x for x in se_cands if x >= 0]
-        se = min(se_cands) + 1 if se_cands else len(code)
+        ss, se = statement_bounds(code, span[0], span[1])
         group = r.get("problem_id") or r.get("repo") or "?"
         out.append(
             {
@@ -128,6 +124,88 @@ def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list
             }
         )
     return out
+
+
+def _code_mask(code: str) -> tuple[list[bool], list[int]]:
+    """Per-character (is_code, bracket_depth).
+
+    is_code is False inside string/char literals and comments, so delimiters
+    there are not treated as syntax. depth counts (), [], {} so that the
+    semicolons in a C-style ``for (init; cond; step)`` header, which sit at
+    depth > 0, do not split the statement.
+    """
+    n = len(code)
+    is_code = [True] * n
+    depth = [0] * n
+    i = d = 0
+    quote = None          # active string delimiter
+    comment = None        # "line" | "block"
+    while i < n:
+        ch = code[i]
+        nxt = code[i + 1] if i + 1 < n else ""
+        if comment == "line":
+            is_code[i] = False
+            if ch == "\n":
+                comment = None
+                is_code[i] = True          # the newline itself is a boundary
+        elif comment == "block":
+            is_code[i] = False
+            if ch == "*" and nxt == "/":
+                is_code[i + 1] = False
+                depth[i] = d
+                i += 2
+                comment = None
+                continue
+        elif quote:
+            is_code[i] = False
+            if ch == "\\":
+                if i + 1 < n:
+                    is_code[i + 1] = False
+                depth[i] = d
+                i += 2
+                continue
+            if ch == quote:
+                quote = None
+        elif ch in "\"'`":
+            quote = ch
+            is_code[i] = False
+        elif ch == "/" and nxt == "/":
+            comment = "line"
+            is_code[i] = False
+        elif ch == "#":
+            comment = "line"
+            is_code[i] = False
+        elif ch == "/" and nxt == "*":
+            comment = "block"
+            is_code[i] = False
+        elif ch in "([{":
+            d += 1
+        elif ch in ")]}":
+            d = max(0, d - 1)
+        depth[i] = d
+        i += 1
+    return is_code, depth
+
+
+def statement_bounds(code: str, start: int, end: int) -> tuple[int, int]:
+    """Enclosing statement: nearest code-level ; { } or newline on each side.
+
+    Delimiters inside strings/comments are skipped, and only depth-0 (or
+    depth equal to the occurrence's own, for a name inside a for-header)
+    delimiters count, so a `for (i = 0; i < n; i++)` header stays whole.
+    """
+    is_code, depth = _code_mask(code)
+    base = depth[start] if start < len(depth) else 0
+    ss, se = 0, len(code)
+    for i in range(min(start, len(code)) - 1, -1, -1):
+        if is_code[i] and code[i] in ";{}\n" and depth[i] <= base:
+            ss = i + 1
+            break
+    for i in range(max(end, 0), len(code)):
+        if is_code[i] and code[i] in ";{}\n" and depth[i] <= base:
+            se = i + 1
+            break
+    return ss, se
 
 
 def _fit_text(texts: list[str], y: np.ndarray, tr: np.ndarray, te: np.ndarray,
