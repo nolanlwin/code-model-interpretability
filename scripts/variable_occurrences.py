@@ -34,12 +34,15 @@ from boolean_flag_roles import (  # noqa: E402
 from csn_function_ast import build_parent_map, iter_top_level_functions, parse_module  # noqa: E402
 from go_variable_occurrences import occurrence_rows_from_go_code  # noqa: E402
 from java_variable_occurrences import occurrence_rows_from_java_code  # noqa: E402
+from javascript_variable_occurrences import occurrence_rows_from_javascript_code  # noqa: E402
+from php_variable_occurrences import occurrence_rows_from_php_code  # noqa: E402
+from ruby_variable_occurrences import occurrence_rows_from_ruby_code  # noqa: E402
 import token_alignment as _tokalign  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = PROJECT_ROOT / "outputs" / "occurrences" / "boolean_flag_occurrences.jsonl"
 DEFAULT_MODEL_ID = "Qwen/Qwen2.5-1.5B"
-SUPPORTED_LANGUAGES = ("python", "java", "go")
+SUPPORTED_LANGUAGES = ("python", "java", "go", "javascript", "php", "ruby")
 
 _NAME_IN_BOOL_PATTERNS = frozenset(
     {
@@ -175,6 +178,53 @@ def _token_positions_for_span(
     return _tokalign.char_span_to_token_indices(offset_mapping, s, e)
 
 
+
+def _byte_to_char_map(code: str) -> dict[int, int]:
+    m, bi = {}, 0
+    for ci, ch in enumerate(code):
+        m[bi] = ci
+        bi += len(ch.encode("utf-8"))
+    m[bi] = len(code)
+    return m
+
+
+def _normalize_treesitter_rows(
+    code: str, rows: list[dict[str, Any]], tokenizer, max_length: int
+) -> list[dict[str, Any]]:
+    """Tree-sitter extractors emit BYTE offsets; everything downstream consumes
+    CHARACTER offsets (identical only on pure-ASCII source). Convert spans,
+    recompute token positions where the byte-based ones were wrong, and drop
+    any row whose span still does not slice back to its variable name (PHP
+    spans legitimately include the ``$`` sigil)."""
+    if not rows:
+        return rows
+    is_ascii = code.isascii()
+    bmap = offset_mapping = None
+    if not is_ascii:
+        bmap = _byte_to_char_map(code)
+        if tokenizer is not None and getattr(tokenizer, "is_fast", False):
+            _, offset_mapping, _ = _tokalign.tokenize_for_alignment(
+                tokenizer, code, max_length=max_length
+            )
+    kept = []
+    for r in rows:
+        span = r.get("source_span") or (0, 0)
+        s, e = int(span[0]), int(span[1])
+        if bmap is not None:
+            if s not in bmap or e not in bmap:
+                continue  # mid-codepoint span: unrecoverable, drop
+            s, e = bmap[s], bmap[e]
+            r["source_span"] = [s, e]
+            if offset_mapping is not None:
+                r["token_positions"] = _token_positions_for_span(
+                    code, (s, e), offset_mapping
+                )
+        var = str(r.get("variable") or "")
+        if 0 <= s < e <= len(code) and code[s:e] in (var, f"${var}"):
+            kept.append(r)
+    return kept
+
+
 def occurrence_rows_from_code(
     code: str,
     *,
@@ -186,7 +236,7 @@ def occurrence_rows_from_code(
     max_length: int = 2048,
 ) -> tuple[list[dict[str, Any]], str | None]:
     if language == "java":
-        return occurrence_rows_from_java_code(
+        rows, err = occurrence_rows_from_java_code(
             code,
             repo=repo,
             path=path,
@@ -194,8 +244,11 @@ def occurrence_rows_from_code(
             tokenizer=tokenizer,
             max_length=max_length,
         )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
     if language == "go":
-        return occurrence_rows_from_go_code(
+        rows, err = occurrence_rows_from_go_code(
             code,
             repo=repo,
             path=path,
@@ -203,6 +256,45 @@ def occurrence_rows_from_code(
             tokenizer=tokenizer,
             max_length=max_length,
         )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
+    if language == "javascript":
+        rows, err = occurrence_rows_from_javascript_code(
+            code,
+            repo=repo,
+            path=path,
+            source_row=source_row,
+            tokenizer=tokenizer,
+            max_length=max_length,
+        )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
+    if language == "php":
+        rows, err = occurrence_rows_from_php_code(
+            code,
+            repo=repo,
+            path=path,
+            source_row=source_row,
+            tokenizer=tokenizer,
+            max_length=max_length,
+        )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
+    if language == "ruby":
+        rows, err = occurrence_rows_from_ruby_code(
+            code,
+            repo=repo,
+            path=path,
+            source_row=source_row,
+            tokenizer=tokenizer,
+            max_length=max_length,
+        )
+        if err is None:
+            rows = _normalize_treesitter_rows(code, rows, tokenizer, max_length)
+        return rows, err
     if language != "python":
         return [], f"unsupported language: {language!r} (choose {SUPPORTED_LANGUAGES})"
     notes: list[str] = []
@@ -371,18 +463,16 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    if args.language == "java":
-        sample = PROJECT_ROOT / "fixtures" / "boolean_occurrence_sample.java"
-        need = {"assignment", "conditional_use", "return_use", "loop_use"}
-        min_rows = 6
-    elif args.language == "go":
-        sample = PROJECT_ROOT / "fixtures" / "boolean_occurrence_sample.go"
-        need = {"assignment", "conditional_use", "return_use", "loop_use"}
-        min_rows = 6
-    else:
-        sample = PROJECT_ROOT / "fixtures" / "boolean_occurrence_sample.py"
-        need = {"definition", "assignment", "conditional_use", "return_use", "loop_use"}
-        min_rows = 6
+    _FIXTURES: dict[str, tuple[str, set[str], int]] = {
+        "java": ("boolean_occurrence_sample.java", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "go": ("boolean_occurrence_sample.go", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "javascript": ("boolean_occurrence_sample.js", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "php": ("boolean_occurrence_sample.php", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "ruby": ("boolean_occurrence_sample.rb", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "python": ("boolean_occurrence_sample.py", {"definition", "assignment", "conditional_use", "return_use", "loop_use"}, 6),
+    }
+    fname, need, min_rows = _FIXTURES[args.language]
+    sample = PROJECT_ROOT / "fixtures" / fname
     code = sample.read_text(encoding="utf-8")
     rows, err = occurrence_rows_from_code(
         code, language=args.language, tokenizer=None, max_length=2048
