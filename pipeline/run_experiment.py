@@ -21,9 +21,11 @@ import os
 import torch
 
 from . import LANGUAGES, ROLES, STRATEGIES
-from .probing import (best_layer, build_token_dataset, cross_evaluate,
-                      extract_hidden_states, load_model, probe_cosine,
-                      train_probes)
+from .probing import (META, best_layer, build_token_dataset,
+                      control_selectivity, cross_evaluate,
+                      extract_hidden_states, layer_keys, load_model,
+                      probe_cosine, train_probes)
+from .stats import git_commit
 
 
 def load_rows(dataset_dir, config, split, language=None, strategy=None, max_programs=None):
@@ -50,7 +52,18 @@ def _relevant_strategies(role):
             if not s.startswith("misleading_") or s == f"misleading_{role}"]
 
 
+def _write_run_meta(out_dir, args):
+    import json
+    with open(os.path.join(out_dir, "run_meta.json"), "w") as f:
+        json.dump({"git_commit": git_commit(), "model": args.model,
+                   "role": args.role, "split": args.split,
+                   "max_programs": args.max_programs,
+                   "protocol": "hash_split_70_10_20 | val-selected layer | 5 seeds | BCa CIs | control task"},
+                  f, indent=1)
+
+
 def run_perturbation(args, tokenizer, model, leading_special, device, out_dir):
+    _write_run_meta(out_dir, args)
     all_results = {}
     for strategy in _relevant_strategies(args.role):
         rows = load_rows(args.dataset, "python_perturbations", args.split,
@@ -60,13 +73,18 @@ def run_perturbation(args, tokenizer, model, leading_special, device, out_dir):
             print(f"[{strategy}] no usable programs, skipping")
             continue
         print(f"[{strategy}] {len(data)} programs ({skipped} skipped)")
-        hidden, labels = extract_hidden_states(data, tokenizer, model, leading_special, device)
-        all_results[strategy] = train_probes(hidden, labels)
-        bl = best_layer(all_results[strategy])
-        print(f"  best layer {bl}: acc={all_results[strategy][bl]['test_acc']:.3f} "
-              f"F1={all_results[strategy][bl]['test_f1']:.3f}")
+        hidden, labels, programs = extract_hidden_states(
+            data, tokenizer, model, leading_special, device)
+        res = train_probes(hidden, labels, programs)
+        control_selectivity(hidden, labels, programs, res)
+        all_results[strategy] = res
+        m = res[META]
+        print(f"  selected layer {m['selected_layer']} (val): "
+              f"F1={m['test_f1_mean']:.3f}±{m['test_f1_std']:.3f} "
+              f"CI[{m['ci_low']:.3f},{m['ci_high']:.3f}] "
+              f"selectivity={m['selectivity']:+.3f}")
 
-    layers = sorted(next(iter(all_results.values())))
+    layers = layer_keys(next(iter(all_results.values())))
     with open(os.path.join(out_dir, "per_layer.csv"), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["strategy", "layer", "train_acc", "test_acc", "train_f1", "test_f1"])
@@ -76,16 +94,21 @@ def run_perturbation(args, tokenizer, model, leading_special, device, out_dir):
                 w.writerow([s, li, f"{r['train_acc']:.4f}", f"{r['test_acc']:.4f}",
                             f"{r['train_f1']:.4f}", f"{r['test_f1']:.4f}"])
 
-    base_f1 = max(all_results["baseline"][li]["test_f1"] for li in layers) \
+    base_f1 = all_results["baseline"][META]["test_f1_mean"] \
         if "baseline" in all_results else None
     with open(os.path.join(out_dir, "summary.csv"), "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["strategy", "best_layer", "test_acc", "test_f1", "delta_f1_vs_baseline"])
+        w.writerow(["strategy", "selected_layer", "test_f1_mean", "test_f1_std",
+                    "ci_low", "ci_high", "majority_f1", "control_f1",
+                    "selectivity", "n_programs", "delta_f1_vs_baseline"])
         for s, res in all_results.items():
-            bl = best_layer(res)
-            f1 = res[bl]["test_f1"]
+            m = res[META]
+            f1 = m["test_f1_mean"]
             delta = f"{f1 - base_f1:+.4f}" if base_f1 is not None and s != "baseline" else ""
-            w.writerow([s, bl, f"{res[bl]['test_acc']:.4f}", f"{f1:.4f}", delta])
+            w.writerow([s, m["selected_layer"], f"{f1:.4f}", f"{m['test_f1_std']:.4f}",
+                        f"{m['ci_low']:.4f}", f"{m['ci_high']:.4f}",
+                        f"{m['majority_f1']:.4f}", f"{m['control_f1']:.4f}",
+                        f"{m['selectivity']:+.4f}", m["n_programs"], delta])
 
     if "baseline" in all_results:
         with open(os.path.join(out_dir, "cosine_vs_baseline.csv"), "w", newline="") as f:
@@ -99,21 +122,26 @@ def run_perturbation(args, tokenizer, model, leading_special, device, out_dir):
 
 
 def run_crosslang(args, tokenizer, model, leading_special, device, out_dir):
+    _write_run_meta(out_dir, args)
     py_rows = load_rows(args.dataset, "multilingual_baseline", args.split,
                         language="Python", max_programs=args.max_programs)
     py_data, _ = build_token_dataset(py_rows, args.role, tokenizer)
     print(f"[Python] {len(py_data)} programs")
-    py_hidden, py_labels = extract_hidden_states(py_data, tokenizer, model, leading_special, device)
-    py_results = train_probes(py_hidden, py_labels)
+    py_hidden, py_labels, py_programs = extract_hidden_states(
+        py_data, tokenizer, model, leading_special, device)
+    py_results = train_probes(py_hidden, py_labels, py_programs)
     py_best = best_layer(py_results)
-    print(f"  in-domain best layer {py_best}: F1={py_results[py_best]['test_f1']:.3f}")
+    print(f"  in-domain selected layer {py_best} (val): "
+          f"F1={py_results[META]['test_f1_mean']:.3f}")
 
     with open(os.path.join(out_dir, "crosslang.csv"), "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["language", "programs", "indomain_best_layer", "indomain_test_f1",
+        w.writerow(["language", "programs", "indomain_selected_layer",
+                    "indomain_test_f1_mean", "indomain_ci_low", "indomain_ci_high",
                     "transfer_acc_at_py_best", "transfer_f1_at_py_best"])
-        w.writerow(["Python", len(py_data), py_best,
-                    f"{py_results[py_best]['test_f1']:.4f}", "", ""])
+        pm = py_results[META]
+        w.writerow(["Python", len(py_data), py_best, f"{pm['test_f1_mean']:.4f}",
+                    f"{pm['ci_low']:.4f}", f"{pm['ci_high']:.4f}", "", ""])
         for language in LANGUAGES:
             if language == "Python":
                 continue
@@ -124,12 +152,14 @@ def run_crosslang(args, tokenizer, model, leading_special, device, out_dir):
                 print(f"[{language}] no usable programs, skipping")
                 continue
             print(f"[{language}] {len(data)} programs ({skipped} skipped)")
-            hidden, labels = extract_hidden_states(data, tokenizer, model, leading_special, device)
-            in_results = train_probes(hidden, labels)
+            hidden, labels, programs = extract_hidden_states(
+                data, tokenizer, model, leading_special, device)
+            in_results = train_probes(hidden, labels, programs)
             in_best = best_layer(in_results)
+            im = in_results[META]
             xfer = cross_evaluate(py_results, hidden, labels)
-            w.writerow([language, len(data), in_best,
-                        f"{in_results[in_best]['test_f1']:.4f}",
+            w.writerow([language, len(data), in_best, f"{im['test_f1_mean']:.4f}",
+                        f"{im['ci_low']:.4f}", f"{im['ci_high']:.4f}",
                         f"{xfer[py_best]['acc']:.4f}", f"{xfer[py_best]['f1']:.4f}"])
 
 

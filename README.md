@@ -96,9 +96,12 @@ Results land in `results/unified/<model>/<role>/<mode>/`:
 | `cosine_vs_baseline.csv` | probe-direction cosine similarity per layer |
 | `crosslang.csv` | in-domain F1 + transfer accuracy/F1 per language |
 
-Protocol (identical to the original notebooks): per-layer logistic regression
-probes (class-balanced, C=1.0) on frozen hidden states, 80/20 stratified
-split, macro F1, best layer selected on test F1. Any Hugging Face model works
+Protocol (PROTOCOL.md): per-layer logistic regression probes
+(class-balanced, C=1.0) on standardized frozen hidden states; frozen
+problem-hash 70/10/20 splits grouped by program; layer selected on the
+validation fold; five seeds; macro F1 with program-clustered BCa CIs; a
+random-label control task (selectivity); tokenizer offset gate before
+extraction; provenance in run_meta.json. Any Hugging Face model works
 via `--model`; swap in CodeBERT, RoBERTa, Qwen2.5-0.5B, DeepSeek-Coder, etc.
 
 ## 4. Publish / update the dataset
