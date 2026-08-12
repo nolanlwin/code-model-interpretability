@@ -133,7 +133,12 @@ def _code_mask(code: str) -> tuple[list[bool], list[int]]:
     """Per-character (is_code, bracket_depth).
 
     is_code is False inside string/char literals and comments, so delimiters
-    there are not treated as syntax. depth counts ONLY () and [] — not {} —
+    there are not treated as syntax. This is a heuristic lexer, not a parser:
+    it handles single, double, backtick, and triple-quoted literals, line and
+    block comments, and backslash escapes. Known limit: raw literals
+    (raw triple-quoted strings) still honor escapes, which can only extend a
+    masked region, never end one early -- the conservative direction for a
+    baseline. depth counts ONLY () and [] — not {} —
     so that the semicolons in a C-style ``for (init; cond; step)`` header sit
     at depth > 0 and never split a statement, including when the occurrence
     itself is inside that header (where a depth-relative test would accept
@@ -163,7 +168,10 @@ def _code_mask(code: str) -> tuple[list[bool], list[int]]:
                 continue
         elif quote:
             is_code[i] = False
-            if ch == "\\" and len(quote) == 1:
+            # Escapes apply inside triple-quoted literals too: without this,
+            # an escaped delimiter run (\\""" ) closes the literal early and
+            # its remaining newlines/semicolons become false boundaries.
+            if ch == "\\":
                 if i + 1 < n:
                     is_code[i + 1] = False
                 depth[i] = d
