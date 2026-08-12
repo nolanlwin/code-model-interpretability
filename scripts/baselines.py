@@ -130,9 +130,11 @@ def _code_mask(code: str) -> tuple[list[bool], list[int]]:
     """Per-character (is_code, bracket_depth).
 
     is_code is False inside string/char literals and comments, so delimiters
-    there are not treated as syntax. depth counts (), [], {} so that the
-    semicolons in a C-style ``for (init; cond; step)`` header, which sit at
-    depth > 0, do not split the statement.
+    there are not treated as syntax. depth counts ONLY () and [] — not {} —
+    so that the semicolons in a C-style ``for (init; cond; step)`` header sit
+    at depth > 0 and never split a statement, including when the occurrence
+    itself is inside that header (where a depth-relative test would accept
+    them and yield a fragment like ``i < n;``).
     """
     n = len(code)
     is_code = [True] * n
@@ -178,9 +180,9 @@ def _code_mask(code: str) -> tuple[list[bool], list[int]]:
         elif ch == "/" and nxt == "*":
             comment = "block"
             is_code[i] = False
-        elif ch in "([{":
+        elif ch in "([":
             d += 1
-        elif ch in ")]}":
+        elif ch in ")]":
             d = max(0, d - 1)
         depth[i] = d
         i += 1
@@ -188,21 +190,31 @@ def _code_mask(code: str) -> tuple[list[bool], list[int]]:
 
 
 def statement_bounds(code: str, start: int, end: int) -> tuple[int, int]:
-    """Enclosing statement: nearest code-level ; { } or newline on each side.
+    """Enclosing statement: nearest code-level boundary on each side.
 
-    Delimiters inside strings/comments are skipped, and only depth-0 (or
-    depth equal to the occurrence's own, for a name inside a for-header)
-    delimiters count, so a `for (i = 0; i < n; i++)` header stays whole.
+    Boundaries are ``{``, ``}``, newline, and ``;`` outside parentheses.
+    Delimiters inside strings and comments are skipped. An occurrence inside
+    a ``for (init; cond; step)`` header therefore expands to the whole
+    header rather than to a fragment between its internal semicolons.
     """
-    is_code, depth = _code_mask(code)
-    base = depth[start] if start < len(depth) else 0
+    is_code, paren = _code_mask(code)
+
+    def is_boundary(i: int) -> bool:
+        if not is_code[i]:
+            return False
+        ch = code[i]
+        if ch in "{}\n":
+            return True
+        # ';' inside () or [] belongs to a header/expression, not a statement
+        return ch == ";" and paren[i] == 0
+
     ss, se = 0, len(code)
     for i in range(min(start, len(code)) - 1, -1, -1):
-        if is_code[i] and code[i] in ";{}\n" and depth[i] <= base:
+        if is_boundary(i):
             ss = i + 1
             break
     for i in range(max(end, 0), len(code)):
-        if is_code[i] and code[i] in ";{}\n" and depth[i] <= base:
+        if is_boundary(i):
             se = i + 1
             break
     return ss, se
