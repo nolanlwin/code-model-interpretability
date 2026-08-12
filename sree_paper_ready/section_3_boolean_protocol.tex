@@ -30,7 +30,11 @@ each of five seeds. Classes falling below a support threshold are dropped
 explicitly and reported, never silently. Occurrence counts are capped at
 $2{,}000$ per (role, language) by whole-problem sampling with a fixed
 seed; the sampled identity list is frozen and reused by every baseline
-and condition, so all comparisons share one population.
+and condition. Baselines share this population exactly; counterfactual
+conditions share it less whatever their rewrite legitimately cannot
+produce (Section~\ref{sec:boolean} reports the retained share per
+condition), and paired comparisons are refused outright if fewer than
+$90\%$ of the smaller fold's occurrences match.
 
 Each probe is reported against model-free baselines computed on the
 identical sample and fold: majority class, a classifier over the variable

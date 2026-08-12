@@ -64,37 +64,50 @@ StarCoder2-7B             & $0.989 \pm 0.009$ & 0.992 \\
 
 \paragraph{Renaming does not move the probe.} We re-extract activations
 for five naming counterfactuals applied by scope-correct span edits with
-occurrence identities preserved (Section~3), and evaluate the identical
-frozen occurrence sample under each condition. Table~\ref{tab:boolean-renaming}
-reports paired deltas with cluster-bootstrap $95\%$ CIs. Every interval
-includes zero, including the misleading condition C5, which renames each
-flag to an index-style identifier (\texttt{i}, \texttt{idx},
-\texttt{pos})---the same manipulation that costs the index role
-$\Delta\mathrm{F1} = -0.272$ (Section~\ref{sec:index}). Under C5 and the
-neutral conditions the probe's test predictions are frequently
-\emph{identical} to baseline, prediction for prediction. Boolean occurrence
-type is therefore \textbf{name-invariant}: the signal survives the complete
-removal, collapse, or adversarial inversion of lexical information, because
-it never depended on it.
+occurrence identities preserved (Section~3). Each condition is drawn from
+the same frozen occurrence sample as the baseline, less the occurrences
+its rewrite legitimately cannot produce: the rewriter refuses functions
+whose scopes it cannot handle exactly and drops programs failing the
+re-parse or identity gates, retaining $98.5\%$ of the sample for
+C1/C2/C4 and $97.7\%$ for C3/C5 (Table~\ref{tab:boolean-renaming}).
+Attrition is structural---driven by program scope constructs, not by the
+label or the probe's behaviour---and paired deltas are computed on the
+resulting shared intersection, with the comparison refused outright below
+$90\%$ overlap.
+
+Table~\ref{tab:boolean-renaming} reports those deltas with
+cluster-bootstrap $95\%$ CIs. Every interval includes zero, including the
+misleading condition C5, which renames each flag to an index-style
+identifier (\texttt{i}, \texttt{idx}, \texttt{pos})---the same
+manipulation that costs the index role $\Delta\mathrm{F1} = -0.272$
+(Section~\ref{sec:index}). Under C5 and the neutral conditions the probe's
+test predictions are frequently \emph{identical} to baseline, prediction
+for prediction. Boolean occurrence type is therefore
+\textbf{name-invariant}: the signal survives the complete removal,
+collapse, or adversarial inversion of lexical information, because it
+never depended on it.
 
 \begin{table}[t]
 \centering
 \caption{Paired renaming deltas for boolean occurrence type
-($\Delta\mathrm{F1}$, condition minus baseline, on shared test occurrences
-of the frozen sample; cluster-bootstrap $95\%$ CIs at the problem level).
-All intervals include zero. %% REGEN: pooled multi-seed pairing
+($\Delta\mathrm{F1}$, condition minus baseline, on the shared test
+occurrences surviving each rewrite; cluster-bootstrap $95\%$ CIs at the
+problem level). ``Kept'' is the share of the frozen baseline sample the
+rewrite could produce; the remainder is refused by the scope, re-parse,
+and identity gates rather than approximated. All intervals include zero.
+%% REGEN: pooled multi-seed pairing
 }
 \label{tab:boolean-renaming}
-\begin{tabular}{llrr}
+\begin{tabular}{llcrr}
 \toprule
-Condition & Rename rule & \multicolumn{2}{c}{$\Delta$F1 [95\% CI]} \\
- & & Qwen2.5-1.5B & Coder-1.5B \\
+Condition & Rename rule & Kept & \multicolumn{2}{c}{$\Delta$F1 [95\% CI]} \\
+ & & & Qwen2.5-1.5B & Coder-1.5B \\
 \midrule
-C1 neutral numeric & all locals $\to$ \texttt{v1,v2,\dots} & $-0.025\;[-0.253, 0.000]$ & $+0.000\;[0.000, 0.000]$ \\
-C2 single char     & all locals $\to$ \texttt{a,b,c,\dots} & $-0.003\;[-0.016, 0.000]$ & $-0.025\;[-0.253, 0.000]$ \\
-C3 all-same        & flags $\to$ \texttt{x}                & $-0.025\;[-0.174, 0.000]$ & $+0.003\;[0.000, 0.016]$ \\
-C4 random nouns    & all locals $\to$ seeded nouns          & $-0.003\;[-0.016, 0.006]$ & $-0.022\;[-0.251, 0.006]$ \\
-C5 misleading      & flags $\to$ index-style names           & $-0.003\;[-0.016, 0.000]$ & $+0.000\;[0.000, 0.000]$ \\
+C1 neutral numeric & all locals $\to$ \texttt{v1,v2,\dots} & 98.5\% & $-0.025\;[-0.253, 0.000]$ & $+0.000\;[0.000, 0.000]$ \\
+C2 single char     & all locals $\to$ \texttt{a,b,c,\dots} & 98.5\% & $-0.003\;[-0.016, 0.000]$ & $-0.025\;[-0.253, 0.000]$ \\
+C3 all-same        & flags $\to$ \texttt{x}                & 97.7\% & $-0.025\;[-0.174, 0.000]$ & $+0.003\;[0.000, 0.016]$ \\
+C4 random nouns    & all locals $\to$ seeded nouns          & 98.5\% & $-0.003\;[-0.016, 0.006]$ & $-0.022\;[-0.251, 0.006]$ \\
+C5 misleading      & flags $\to$ index-style names           & 97.7\% & $-0.003\;[-0.016, 0.000]$ & $+0.000\;[0.000, 0.000]$ \\
 \bottomrule
 \end{tabular}
 \end{table}
