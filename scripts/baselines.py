@@ -76,6 +76,7 @@ def load_from_manifest(path: Path) -> list[dict]:
                 float(r.get("occurrence_frequency") or 0),
             ],
             "line_masked": None,
+            "statement_masked": None,
             "window_masked": None,
         }
         for r in rows
@@ -103,6 +104,15 @@ def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list
         s = code.rfind("\n", 0, span[0]) + 1
         e = code.find("\n", span[1])
         e = len(code) if e < 0 else e
+        # Enclosing STATEMENT: the honest local-surface unit for brace
+        # languages, whose detokenized XLCoST programs are single-line
+        # (measured 0.11 newlines/program vs 22.3 for Python), making the
+        # line baseline degenerate there (line == whole program).
+        stmt_bounds = ";{}\n"
+        ss = max(code.rfind(c, 0, span[0]) for c in stmt_bounds) + 1
+        se_cands = [code.find(c, span[1]) for c in stmt_bounds]
+        se_cands = [x for x in se_cands if x >= 0]
+        se = min(se_cands) + 1 if se_cands else len(code)
         group = r.get("problem_id") or r.get("repo") or "?"
         out.append(
             {
@@ -113,6 +123,7 @@ def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list
                 "function": f'{group}::{r.get("function")}',
                 "covariates": [float(len(code)), float(span[0]), 0.0],
                 "line_masked": code[s:e].replace(var, " VAR "),
+                "statement_masked": code[ss:se].replace(var, " VAR "),
                 "window_masked": code[max(0, span[0] - window): span[1] + window].replace(var, " VAR "),
             }
         )
@@ -198,6 +209,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         }
         if have_text:
             row["line_masked"] = _fit_text([r["line_masked"] for r in recs], y, tr, te, labels, seed)
+            row["statement_masked"] = _fit_text([r["statement_masked"] for r in recs], y, tr, te, labels, seed)
             row["window_masked"] = _fit_text([r["window_masked"] for r in recs], y, tr, te, labels, seed)
         per_seed.append(row)
 
@@ -205,7 +217,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         vals = [s[key][metric] for s in per_seed if key in s and np.isfinite(s[key].get(metric, np.nan))]
         return float(np.mean(vals)) if vals else float("nan")
 
-    keys = ["majority", "name_only", "covariates_only"] + (["line_masked", "window_masked"] if have_text else [])
+    keys = ["majority", "name_only", "covariates_only"] + (
+        ["line_masked", "statement_masked", "window_masked"] if have_text else [])
     result = {
         "source": source,
         "git_commit": git_commit(),
