@@ -34,12 +34,15 @@ from boolean_flag_roles import (  # noqa: E402
 from csn_function_ast import build_parent_map, iter_top_level_functions, parse_module  # noqa: E402
 from go_variable_occurrences import occurrence_rows_from_go_code  # noqa: E402
 from java_variable_occurrences import occurrence_rows_from_java_code  # noqa: E402
+from javascript_variable_occurrences import occurrence_rows_from_javascript_code  # noqa: E402
+from php_variable_occurrences import occurrence_rows_from_php_code  # noqa: E402
+from ruby_variable_occurrences import occurrence_rows_from_ruby_code  # noqa: E402
 import token_alignment as _tokalign  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = PROJECT_ROOT / "outputs" / "occurrences" / "boolean_flag_occurrences.jsonl"
 DEFAULT_MODEL_ID = "Qwen/Qwen2.5-1.5B"
-SUPPORTED_LANGUAGES = ("python", "java", "go")
+SUPPORTED_LANGUAGES = ("python", "java", "go", "javascript", "php", "ruby")
 
 _NAME_IN_BOOL_PATTERNS = frozenset(
     {
@@ -196,6 +199,33 @@ def occurrence_rows_from_code(
         )
     if language == "go":
         return occurrence_rows_from_go_code(
+            code,
+            repo=repo,
+            path=path,
+            source_row=source_row,
+            tokenizer=tokenizer,
+            max_length=max_length,
+        )
+    if language == "javascript":
+        return occurrence_rows_from_javascript_code(
+            code,
+            repo=repo,
+            path=path,
+            source_row=source_row,
+            tokenizer=tokenizer,
+            max_length=max_length,
+        )
+    if language == "php":
+        return occurrence_rows_from_php_code(
+            code,
+            repo=repo,
+            path=path,
+            source_row=source_row,
+            tokenizer=tokenizer,
+            max_length=max_length,
+        )
+    if language == "ruby":
+        return occurrence_rows_from_ruby_code(
             code,
             repo=repo,
             path=path,
@@ -371,18 +401,16 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    if args.language == "java":
-        sample = PROJECT_ROOT / "fixtures" / "boolean_occurrence_sample.java"
-        need = {"assignment", "conditional_use", "return_use", "loop_use"}
-        min_rows = 6
-    elif args.language == "go":
-        sample = PROJECT_ROOT / "fixtures" / "boolean_occurrence_sample.go"
-        need = {"assignment", "conditional_use", "return_use", "loop_use"}
-        min_rows = 6
-    else:
-        sample = PROJECT_ROOT / "fixtures" / "boolean_occurrence_sample.py"
-        need = {"definition", "assignment", "conditional_use", "return_use", "loop_use"}
-        min_rows = 6
+    _FIXTURES: dict[str, tuple[str, set[str], int]] = {
+        "java": ("boolean_occurrence_sample.java", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "go": ("boolean_occurrence_sample.go", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "javascript": ("boolean_occurrence_sample.js", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "php": ("boolean_occurrence_sample.php", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "ruby": ("boolean_occurrence_sample.rb", {"assignment", "conditional_use", "return_use", "loop_use"}, 6),
+        "python": ("boolean_occurrence_sample.py", {"definition", "assignment", "conditional_use", "return_use", "loop_use"}, 6),
+    }
+    fname, need, min_rows = _FIXTURES[args.language]
+    sample = PROJECT_ROOT / "fixtures" / fname
     code = sample.read_text(encoding="utf-8")
     rows, err = occurrence_rows_from_code(
         code, language=args.language, tokenizer=None, max_length=2048

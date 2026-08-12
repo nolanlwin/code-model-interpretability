@@ -37,6 +37,12 @@ from qwen_inference import (  # noqa: E402
 from variable_occurrences import occurrence_rows_from_code, SUPPORTED_LANGUAGES  # noqa: E402
 from go_csn_parse import iter_top_level_functions as iter_top_level_go_functions, parse_go  # noqa: E402
 from java_csn_parse import iter_top_level_methods, parse_java  # noqa: E402
+from javascript_csn_parse import (  # noqa: E402
+    iter_top_level_functions as iter_top_level_js_functions,
+    parse_javascript,
+)
+from php_csn_parse import iter_top_level_functions as iter_top_level_php_functions, parse_php_module  # noqa: E402
+from ruby_csn_parse import iter_top_level_methods as iter_top_level_ruby_methods, parse_ruby  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MODEL_ID = "Qwen/Qwen2.5-1.5B"
@@ -56,6 +62,24 @@ def _function_source_len(code: str, function_name: str, *, language: str = "pyth
         for fn in iter_top_level_go_functions(tree.root_node):
             if fn.name == function_name:
                 return fn.end_byte - fn.start_byte
+        return None
+    if language == "javascript":
+        tree = parse_javascript(code)
+        for fn in iter_top_level_js_functions(tree.root_node):
+            if fn.name == function_name:
+                return fn.end_byte - fn.start_byte
+        return None
+    if language == "php":
+        module = parse_php_module(code)
+        for fn in iter_top_level_php_functions(module):
+            if fn.name == function_name:
+                return fn.end_byte - fn.start_byte
+        return None
+    if language == "ruby":
+        tree = parse_ruby(code)
+        for method in iter_top_level_ruby_methods(tree.root_node):
+            if method.name == function_name:
+                return method.end_byte - method.start_byte
         return None
     try:
         tree = ast.parse(code)
@@ -501,12 +525,15 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    if args.language == "java":
-        sample_path = PROJECT_ROOT / "fixtures" / "boolean_occurrence_sample.java"
-    elif args.language == "go":
-        sample_path = PROJECT_ROOT / "fixtures" / "boolean_occurrence_sample.go"
-    else:
-        sample_path = PROJECT_ROOT / "fixtures" / "boolean_occurrence_sample.py"
+    _FIXTURES = {
+        "java": "boolean_occurrence_sample.java",
+        "go": "boolean_occurrence_sample.go",
+        "javascript": "boolean_occurrence_sample.js",
+        "php": "boolean_occurrence_sample.php",
+        "ruby": "boolean_occurrence_sample.rb",
+        "python": "boolean_occurrence_sample.py",
+    }
+    sample_path = PROJECT_ROOT / "fixtures" / _FIXTURES[args.language]
     sample = sample_path.read_text(encoding="utf-8")
     with tempfile.TemporaryDirectory() as td:
         td_path = Path(td)
