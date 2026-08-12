@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import json
 import re
 import sys
@@ -90,6 +91,26 @@ def discover(results_dir: Path, lang: str, split: str):
     return out
 
 
+def _sample_fingerprint(baselines: dict):
+    """Identity of the occurrence sample a baseline was computed on.
+
+    The recorded ``sample_ids`` is a per-model PATH
+    (``..._<model>_problem.json.sample_ids.json``), so comparing paths would
+    report a mismatch for the normal case where every model shares one frozen
+    sample. Compare the ids themselves; fall back to the path only if the
+    file is gone.
+    """
+    path = baselines.get("sample_ids")
+    if not path:
+        return ("none",)
+    try:
+        with open(path, encoding="utf-8") as f:
+            ids = sorted(json.load(f))
+        return ("ids", hashlib.sha1("\u0000".join(map(str, ids)).encode()).hexdigest(), len(ids))
+    except (OSError, json.JSONDecodeError):
+        return ("path", path)
+
+
 def strongest_baseline(entry):
     if not entry["baselines"]:
         return None, None
@@ -121,7 +142,7 @@ def fig_layer_curves(models: dict, lang: str, split: str, out: Path):
     # baseline is the same measurement. Baselines are model-independent in
     # this pipeline (same frozen occurrence sample), but a mismatched sample
     # or class set would make one model's score a false shared reference.
-    seen = [(strongest_baseline(e), e["baselines"].get("sample_ids"),
+    seen = [(strongest_baseline(e), _sample_fingerprint(e["baselines"]),
              tuple(e["baselines"].get("classes_used", [])))
             for e in models.values() if e["baselines"]]
     if seen:
