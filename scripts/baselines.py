@@ -126,6 +126,9 @@ def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list
     return out
 
 
+_TRIPLE_QUOTES = {'"""', "'''"}
+
+
 def _code_mask(code: str) -> tuple[list[bool], list[int]]:
     """Per-character (is_code, bracket_depth).
 
@@ -160,14 +163,30 @@ def _code_mask(code: str) -> tuple[list[bool], list[int]]:
                 continue
         elif quote:
             is_code[i] = False
-            if ch == "\\":
+            if ch == "\\" and len(quote) == 1:
                 if i + 1 < n:
                     is_code[i + 1] = False
                 depth[i] = d
                 i += 2
                 continue
-            if ch == quote:
+            if code.startswith(quote, i):
+                for k in range(i, min(i + len(quote), n)):
+                    is_code[k] = False
+                    depth[k] = d
+                i += len(quote)
                 quote = None
+                continue
+        elif code[i:i + 3] in _TRIPLE_QUOTES:
+            # Triple-quoted string / Java text block. Must be detected BEFORE
+            # the single-quote branch: that branch opens on the first
+            # delimiter and closes on the second, leaving the body exposed as
+            # code whenever the body contains an unbalanced quote character.
+            quote = code[i:i + 3]
+            for k in range(i, min(i + 3, n)):
+                is_code[k] = False
+                depth[k] = d
+            i += 3
+            continue
         elif ch in "\"'`":
             quote = ch
             is_code[i] = False
