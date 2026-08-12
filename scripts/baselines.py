@@ -37,6 +37,18 @@ from bootstrap_ci import macro_f1_stat  # noqa: E402
 from probe import three_way_split  # noqa: E402
 
 
+def git_commit() -> str:
+    """Commit that produced this result (empty if not a git checkout)."""
+    import subprocess
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=_SCRIPT_DIR,
+            capture_output=True, text=True, timeout=10,
+        ).stdout.strip()
+    except Exception:
+        return ""
+
+
 def _read_jsonl(path: Path) -> list[dict]:
     out = []
     for ln in path.read_text(encoding="utf-8").splitlines():
@@ -196,6 +208,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     keys = ["majority", "name_only", "covariates_only"] + (["line_masked", "window_masked"] if have_text else [])
     result = {
         "source": source,
+        "git_commit": git_commit(),
         "sample_ids": args.sample_ids,
         "split_policy": args.split_policy,
         "n_records": len(recs),
