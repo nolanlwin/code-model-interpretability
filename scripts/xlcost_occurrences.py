@@ -35,9 +35,9 @@ sys.path.insert(0, str(_SCRIPT_DIR))
 from variable_occurrences import occurrence_rows_from_code  # noqa: E402
 
 # XLCoST language name -> how to extract. python/java/go go through the
-# dispatcher; javascript/php through their own library modules.
+# dispatcher; javascript/php/c++ through their own library modules.
 _DISPATCHER_LANGS = {"Python": "python", "Java": "java"}
-_MODULE_LANGS = {"Javascript": "javascript", "PHP": "php"}
+_MODULE_LANGS = {"Javascript": "javascript", "PHP": "php", "C++": "cpp"}
 
 
 def extract_rows(language: str, code: str, tokenizer=None, max_length: int = 2048):
