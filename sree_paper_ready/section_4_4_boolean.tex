@@ -24,11 +24,14 @@ Hewitt-style control task \citep{hewitt2019control} is positive and stable
 ($+0.189$ to $+0.203$), so the probe is reading representation rather than
 memorising at this sample size. However, a character $n$-gram classifier
 over the \emph{enclosing source line} with the variable masked---no model
-involved---reaches macro-F1 $0.988$ on the same occurrences and fold. Two
-of the three probes fall below that line ($-0.011$ and $-0.003$) and the
-third exceeds it by $+0.0005$, a margin far inside seed variation. Nor
+involved---reaches macro-F1 $0.988$ on the same occurrences and fold. All
+three probes sit within one test occurrence of that line ($-0.011$,
+$-0.003$, $+0.0005$, against a resolution of $\rho = 0.0154$;
+Table~\ref{tab:resolution}), so we report them as indistinguishable from
+it rather than ranking them. Nor
 does the probe improve with code pretraining ($0.977 \to 0.985$ at fixed
-scale) or with $4.5\times$ more parameters ($0.989$). Occurrence type is
+scale) or with $4.5\times$ more parameters ($0.989$)---both differences
+are themselves below $\rho$. Occurrence type is
 carried by local syntax that is fully present in the surface form; linear
 decodability here is not evidence of computation beyond it. A static
 analyser decides this label exactly, so the question of interest is not
@@ -78,15 +81,19 @@ $\pm 0.016$ macro-F1, across all five conditions and all three models---
 including C5, which renames each flag to an index-style identifier
 (\texttt{i}, \texttt{idx}, \texttt{pos}), the same manipulation that costs
 the index role $\Delta\mathrm{F1} = -0.272$ (Section~\ref{sec:index}). The
-deltas do not share a sign---$4$ of $15$ are positive, median
-$-0.004$---and no condition is consistently worst across models: C1 is
-the largest drop for Qwen2.5, C4 for the other two. A residual negative
-tilt of a few thousandths is visible and we do not claim it is exactly
-zero, but it is two orders of magnitude below the index effect and within
-the range the surface baseline already explains. Boolean occurrence type
-is \textbf{name-invariant} at the resolution this design can measure: the
-signal survives complete removal, collapse, and adversarial inversion of
-lexical information.
+largest delta in the table, $-0.016$, is one test occurrence at Python's
+resolution ($\rho = 0.0154$); the median, $-0.004$, is a quarter of one.
+Every renaming effect this manipulation produces therefore lies at or
+below the smallest difference the design can measure, while the index
+effect is roughly $18$ occurrences and far above it. Boolean occurrence
+type is \textbf{name-invariant} in the only sense the evidence supports:
+five manipulations that remove, collapse, or adversarially invert lexical
+information move the probe by less than the measurement's own step size.
+We make no claim about the signs or the ordering of the individual deltas,
+and none about the effect being exactly zero---a real effect smaller than
+$\rho$ would be invisible here. Distinguishing that case from true
+invariance needs an uncapped, class-stratified sample, which we did not
+run.
 
 \begin{table}[t]
 \centering
@@ -123,42 +130,94 @@ the enclosing line and decodable from the earliest layers. Cross-role
 comparisons of probe F1 should therefore be read jointly with surface
 baselines, not against majority chance alone.
 
-\paragraph{Replication in two further languages.} Java and JavaScript
-reproduce the profile under the same protocol
-(Table~\ref{tab:boolean-crosslang}). In both, the masked \emph{statement}
-baseline matches or exceeds every probe---XLCoST's detokenized programs in
-brace languages are single-line, so the enclosing statement rather than
-the line is the local-surface unit---and in both the information is
-complete by the early layers. Neither language supports the renaming
-counterfactuals, which are Python-only (Section~3), so they extend the
-surface-decodability result and not the name-invariance one.
+\paragraph{Replication in three further languages.} Java, JavaScript, and
+PHP reproduce the profile under the same protocol
+(Table~\ref{tab:boolean-crosslang}). In each, the masked \emph{statement}
+baseline is the strongest model-free predictor---XLCoST's detokenized
+programs in brace languages are single-line, so the enclosing statement
+rather than the line is the local-surface unit---and in each the
+information is complete by the early layers. None of the three supports
+the renaming counterfactuals, which are Python-only (Section~3), so they
+extend the surface-decodability result and not the name-invariance one.
 
-Both replications are weaker evidence than Python and we mark them
-secondary for three reasons. Their class distributions are heavily skewed
-toward return-use ($85.3\%$ of Java occurrences, $83.7\%$ of JavaScript;
-Java's \texttt{loop\_use} has $8$ occurrences in the extraction pool and
-none in the probed sample), so macro-F1 rests on classes with few test
-instances. Selectivity is lowest in JavaScript ($+0.120$ to $+0.150$
-versus $+0.189$ to $+0.203$ in Python), meaning the control probe fits the
-random-label task \emph{better} there and less of the probe's performance
-is attributable to structure. And the JavaScript corpus is materially
-damaged before probing begins: $14.2\%$ of programs ($1{,}179$ of
-$8{,}564$) fail to parse after XLCoST detokenization. We diagnosed these:
-inserting a single \texttt{||} at the error position repairs $318$ of
-them, and missing statement terminators account for most of the rest
-(JavaScript's automatic semicolon insertion needs newlines, which the
-single-line detokenization removes). Failing programs are longer than
-surviving ones (median $484$ versus $375$ characters), so the retained
-sample is biased toward shorter programs in a direction that inflates both
-probe and baseline. Java loses $0.1\%$ and Python $0.9\%$ by comparison.
+\paragraph{How large a difference can this design resolve?}
+Macro-F1 on a four-class problem is hostage to its smallest class, and the
+PROTOCOL occurrence cap of $2{,}000$---sampled as whole problems, which
+preserves the class skew---leaves those classes very small. We therefore
+report, for each language, the resolution $\rho$: the macro-F1 movement
+caused by a \emph{single} test occurrence of the smallest class changing
+its prediction (Table~\ref{tab:resolution}, measured directly on the real
+test folds rather than approximated). The consequence is stark. In Python
+and JavaScript, \emph{every} probe-minus-baseline margin in
+Table~\ref{tab:boolean-crosslang} is smaller than one test instance:
+Python's three margins are $-0.7$, $-0.2$, and $+0.0$ instances,
+JavaScript's are $-0.1$, $+0.3$, and $-0.2$. Those margins carry no
+information about which predictor is better, and we do not interpret their
+signs. What survives is the comparison the design \emph{can} make: probes
+and the masked-statement baseline are indistinguishable at this
+resolution, in every language tested.
+
+PHP is the one exception, and for an instructive reason. Its extraction
+pool ($1{,}774$ occurrences) falls below the cap, so no capping is
+applied, and its smallest test class retains $22$ occurrences against
+Python's $9$ and JavaScript's $6$. It is therefore the \emph{finest}
+resolution in the study despite the smallest corpus, and it is the only
+language where all three probes exceed the surface baseline by more than
+one instance ($+2.2$, $+0.9$, $+3.4$), with the highest selectivity
+observed ($+0.214$ to $+0.240$). We flag this as the single result
+warranting follow-up rather than claiming it: three instances out of
+twenty-two is a fragile margin, and it needs the per-condition intervals
+and an uncapped replication in another language before it can support any
+claim that PHP representations carry occurrence-type information beyond
+the local surface. The broader lesson is that the cap, not the corpus, is
+the binding constraint---Python's smallest test class falls from $87$
+occurrences to $9$ under it, coarsening $\rho$ roughly tenfold.
+
+\begin{table}[t]
+\centering
+\caption{Measurement resolution. $\rho$ is the macro-F1 change produced by
+one test occurrence of the smallest class flipping to the majority class,
+measured on the actual test fold after reproducing the PROTOCOL cap
+(whole-problem sample, fixed seed). Margins below $\rho$ are not
+interpretable.}
+\label{tab:resolution}
+\begin{tabular}{lccccc}
+\toprule
+Language & Capped $n$ & Problems & Test $n$ & Smallest test class & $\rho$ \\
+\midrule
+Python     & 2{,}000 & 725   & 343 & \texttt{loop\_use} $9$        & 0.0154 \\
+Java       & 2{,}000 & 1{,}427 & 423 & \texttt{conditional\_use} $25$ & 0.0073 \\
+JavaScript & 2{,}000 & 1{,}359 & 435 & \texttt{loop\_use} $6$        & 0.0231 \\
+PHP        & 1{,}774 (uncapped) & 1{,}306 & 373 & \texttt{loop\_use} $22$ & 0.0062 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Corpus quality.} Two defects in XLCoST bear on these numbers
+and we state them rather than let them sit in the artifacts. First,
+$14.2\%$ of JavaScript programs ($1{,}179$ of $8{,}564$) fail to parse
+after detokenization, against $0.9\%$ for Python and $0.1\%$ for Java.
+Inserting a single \texttt{||} at the error position repairs $318$ of
+them; missing statement terminators account for most of the rest, since
+JavaScript's automatic semicolon insertion requires newlines that the
+single-line detokenization removes. Failing programs are longer than
+surviving ones (median $484$ versus $375$ characters), so JavaScript's
+retained sample is biased toward shorter programs. Second, the
+detokenization leaves SentencePiece word markers (U+2581) in a third of
+the Java, PHP, and C\# programs and in $70\%$ of C---only Python, C++, and
+JavaScript are clean. We tested whether this depresses the PHP baseline
+and it does not: the masked-statement baseline scores $0.953$ on
+contaminated PHP programs versus $0.944$ on clean ones, so PHP's lower
+baseline is a property of the language, not of the artifact.
 
 \begin{table}[t]
 \centering
 \caption{Cross-language replication. Every probe is reported against the
 strongest model-free baseline computed on its own frozen sample and fold
 (masked source line for Python, masked statement for the brace
-languages). In all three languages the surface baseline matches or exceeds
-the probes; no probe clears it by more than $0.007$.}
+languages). Read the final column against the per-language resolution
+$\rho$ of Table~\ref{tab:resolution}: in Python and JavaScript every
+margin is smaller than a single test instance, and only PHP's exceed it.}
 \label{tab:boolean-crosslang}
 \begin{tabular}{llccc}
 \toprule
@@ -174,6 +233,11 @@ Language & Model & Macro F1 & Selectivity & vs.\ baseline \\
  & Qwen2.5-Coder-1.5B & 0.998 & $+0.150$ & $+0.006$ \\
  & StarCoder2-7B      & 0.988 & $+0.120$ & $-0.004$ \\
 \midrule
+\multicolumn{2}{l}{\textit{PHP}} & \multicolumn{3}{l}{\emph{baseline 0.969}} \\
+ & Qwen2.5-1.5B       & 0.983 & $+0.214$ & $+0.014$ \\
+ & Qwen2.5-Coder-1.5B & 0.975 & $+0.216$ & $+0.006$ \\
+ & StarCoder2-7B      & 0.990 & $+0.240$ & $+0.021$ \\
+\midrule
 \multicolumn{2}{l}{\textit{Java}} & \multicolumn{3}{l}{\emph{baseline 0.990}} \\
  & three models (range) & 0.981--0.990 & --- & $\le 0$ \\
 \bottomrule
@@ -186,14 +250,29 @@ Language & Model & Macro F1 & Selectivity & vs.\ baseline \\
 % - Layer curves are near-flat above ~L2; validation argmax scatters
 %   across seeds, so report curves + normalized depth, never a single
 %   "best layer" as a finding. Axis label: "embed, 1..28".
-% - StarCoder2-7B exceeds the line baseline by +0.0005. Do NOT describe
-%   this as beating the baseline; it is inside seed variation.
-% - Qwen2.5-Coder-1.5B on JavaScript is +0.0063 over the baseline -- the
-%   LARGEST probe-over-baseline margin anywhere in the study, ~13x the
-%   next one. It is still small, but it is the one result that a CI could
-%   plausibly separate from zero. Check its interval before the writing
-%   pass: if it excludes zero it needs a sentence, and if it does not, say
-%   so. Do not leave it as an unremarked number in the table.
+% - RESOLUTION IS THE GOVERNING FACT. rho per language: Python 0.0154,
+%   Java 0.0073, JavaScript 0.0231, PHP 0.0062. Reproduced probe.py's cap
+%   (whole problems, rng 1234) and measured on the real test folds; the
+%   Python reproduction lands on 725 problems, matching the run of record,
+%   so these are the actual folds and not an estimate.
+% - Consequence: StarCoder's +0.0005 (Python) is 0.0 instances and
+%   Qwen2.5-Coder's +0.0063 (JavaScript) is +0.3. An earlier draft called
+%   the latter "the largest margin in the study, the one a CI might
+%   separate from zero" -- that was wrong, it is a third of one test
+%   occurrence. Neither is interpretable. Do not rank probes against the
+%   baseline in Python or JavaScript at all.
+% - PHP is the only language whose margins clear rho (+2.2/+0.9/+3.4
+%   instances) and it is the only UNCAPPED language (1,774 < 2,000 cap).
+%   That is the lead for follow-up work, stated as such and not as a
+%   result. Do not upgrade it to a claim without the CIs.
+% - The renaming deltas max out at 1.0 instance and median 0.25. The
+%   invariance claim is "below the measurement step size", NOT "zero".
+%   The index contrast survives because -0.272 is ~18 instances.
+% - RECOMMENDATION for the next run: the 2,000 occurrence cap samples
+%   whole problems, which preserves the class skew and starves loop_use
+%   (Python 87 -> 9 test instances). A class-stratified cap, or simply a
+%   larger cap where the pool allows (Python has 16,671), would sharpen
+%   rho ~10x and is the cheapest available improvement to the whole study.
 % - NEEDED: per-model Java macro-F1 + selectivity. The table currently
 %   carries Java as a range because that is all we have; a range in a
 %   per-model table invites the question of which model was which.
