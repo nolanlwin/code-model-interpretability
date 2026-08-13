@@ -123,14 +123,62 @@ the enclosing line and decodable from the earliest layers. Cross-role
 comparisons of probe F1 should therefore be read jointly with surface
 baselines, not against majority chance alone.
 
-A Java replication (XLCoST, same protocol) shows the same profile---probes
-at $0.981$--$0.990$ with information complete by layer~5, matched by a
-masked \emph{statement} baseline at $0.990$ (Java's detokenized programs
-are single-line, so the enclosing statement rather than the line is the
-local-surface unit). Its heavily skewed class distribution (majority
-$0.859$; \texttt{loop\_use} absent from the sample) leaves less headroom,
-and we report it as secondary. Renaming counterfactuals are Python-only
-(Section~3).
+\paragraph{Replication in two further languages.} Java and JavaScript
+reproduce the profile under the same protocol
+(Table~\ref{tab:boolean-crosslang}). In both, the masked \emph{statement}
+baseline matches or exceeds every probe---XLCoST's detokenized programs in
+brace languages are single-line, so the enclosing statement rather than
+the line is the local-surface unit---and in both the information is
+complete by the early layers. Neither language supports the renaming
+counterfactuals, which are Python-only (Section~3), so they extend the
+surface-decodability result and not the name-invariance one.
+
+Both replications are weaker evidence than Python and we mark them
+secondary for three reasons. Their class distributions are heavily skewed
+toward return-use ($85.3\%$ of Java occurrences, $83.7\%$ of JavaScript;
+Java's \texttt{loop\_use} has $8$ occurrences in the extraction pool and
+none in the probed sample), so macro-F1 rests on classes with few test
+instances. Selectivity is lowest in JavaScript ($+0.120$ to $+0.150$
+versus $+0.189$ to $+0.203$ in Python), meaning the control probe fits the
+random-label task \emph{better} there and less of the probe's performance
+is attributable to structure. And the JavaScript corpus is materially
+damaged before probing begins: $14.2\%$ of programs ($1{,}179$ of
+$8{,}564$) fail to parse after XLCoST detokenization. We diagnosed these:
+inserting a single \texttt{||} at the error position repairs $318$ of
+them, and missing statement terminators account for most of the rest
+(JavaScript's automatic semicolon insertion needs newlines, which the
+single-line detokenization removes). Failing programs are longer than
+surviving ones (median $484$ versus $375$ characters), so the retained
+sample is biased toward shorter programs in a direction that inflates both
+probe and baseline. Java loses $0.1\%$ and Python $0.9\%$ by comparison.
+
+\begin{table}[t]
+\centering
+\caption{Cross-language replication. Every probe is reported against the
+strongest model-free baseline computed on its own frozen sample and fold
+(masked source line for Python, masked statement for the brace
+languages). In all three languages the surface baseline matches or exceeds
+the probes; no probe clears it by more than $0.007$.}
+\label{tab:boolean-crosslang}
+\begin{tabular}{llccc}
+\toprule
+Language & Model & Macro F1 & Selectivity & vs.\ baseline \\
+\midrule
+\multicolumn{2}{l}{\textit{Python}} & \multicolumn{3}{l}{\emph{baseline 0.988}} \\
+ & Qwen2.5-1.5B       & 0.977 & $+0.189$ & $-0.011$ \\
+ & Qwen2.5-Coder-1.5B & 0.985 & $+0.198$ & $-0.003$ \\
+ & StarCoder2-7B      & 0.989 & $+0.203$ & $+0.0005$ \\
+\midrule
+\multicolumn{2}{l}{\textit{JavaScript}} & \multicolumn{3}{l}{\emph{baseline 0.992}} \\
+ & Qwen2.5-1.5B       & 0.989 & $+0.132$ & $-0.003$ \\
+ & Qwen2.5-Coder-1.5B & 0.998 & $+0.150$ & $+0.006$ \\
+ & StarCoder2-7B      & 0.988 & $+0.120$ & $-0.004$ \\
+\midrule
+\multicolumn{2}{l}{\textit{Java}} & \multicolumn{3}{l}{\emph{baseline 0.990}} \\
+ & three models (range) & 0.981--0.990 & --- & $\le 0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % Honesty notes kept in-source for the writing pass:
 % - indexing_use (n=4 in the capped sample) is dropped EXPLICITLY and
@@ -140,6 +188,15 @@ and we report it as secondary. Renaming counterfactuals are Python-only
 %   "best layer" as a finding. Axis label: "embed, 1..28".
 % - StarCoder2-7B exceeds the line baseline by +0.0005. Do NOT describe
 %   this as beating the baseline; it is inside seed variation.
+% - Qwen2.5-Coder-1.5B on JavaScript is +0.0063 over the baseline -- the
+%   LARGEST probe-over-baseline margin anywhere in the study, ~13x the
+%   next one. It is still small, but it is the one result that a CI could
+%   plausibly separate from zero. Check its interval before the writing
+%   pass: if it excludes zero it needs a sentence, and if it does not, say
+%   so. Do not leave it as an unremarked number in the table.
+% - NEEDED: per-model Java macro-F1 + selectivity. The table currently
+%   carries Java as a range because that is all we have; a range in a
+%   per-model table invites the question of which model was which.
 % - PROVENANCE: StarCoder2-7B was produced at 8102a40, an ANCESTOR of
 %   195df12 (the Qwens). Checked: the diff between the two commits touches
 %   none of scripts/{probe,extract,rename_corpus,xlcost_data,
