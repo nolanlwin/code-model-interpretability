@@ -94,6 +94,7 @@ def run_experiment(args) -> int:
         print(f"steering directions fitted on {holdout} held-out cases", flush=True)
 
     rows: list[dict] = []
+    clean_all: list[float] = []
     skipped = defaultdict(int)
     for c in cases[holdout:holdout + args.max_cases]:
         code = code_by_pid[c["problem_id"]]
@@ -122,6 +123,17 @@ def run_experiment(args) -> int:
 
         clean_logits, cap = runner.run(p_ids, want_resid_layers=layers)
         clean = metric(clean_logits)
+        clean_all.append(clean)
+        # A case where the model does not already prefer the target over the
+        # distractor has NO preference to destroy, and an intervention there
+        # measures nothing. Worse, the effect ratio divides by this value:
+        # on Java the Qwen models average clean ~1.1, individual cases fall
+        # either side of zero, and the reported mean effect came out with the
+        # WRONG SIGN relative to the effect of the means. Excluded and counted
+        # rather than silently averaged in.
+        if clean < args.min_clean:
+            skipped["clean_below_floor"] += 1
+            continue
 
         # How many positions the edit will actually touch. Patch is bounded
         # by the smaller of the two sites, so asking for len(tpos) control
@@ -236,8 +248,18 @@ def run_experiment(args) -> int:
             1 for x in g if x.get("control_random_position", "missing") is None)
         summary.append(s)
 
+    q = (np.percentile(clean_all, [25, 50, 75]).tolist() if clean_all else [])
     result = {
         "protocol_version": "1.0",
+        "min_clean": args.min_clean,
+        "clean_distribution_all_cases": {
+            "n": len(clean_all),
+            "q25_median_q75": [round(x, 4) for x in q],
+            "frac_below_floor": (round(sum(1 for c in clean_all if c < args.min_clean)
+                                       / len(clean_all), 4) if clean_all else None),
+            "frac_negative": (round(sum(1 for c in clean_all if c < 0) / len(clean_all), 4)
+                              if clean_all else None),
+        },
         "git_commit": git_commit(),
         "model_id": args.model_id,
         "intervention": args.intervention,
@@ -271,6 +293,15 @@ def run_experiment(args) -> int:
               f"{s['effect_median']:>8.3f}")
     print("ratio = how many times further the real edit moves the metric than "
           "the same edit at control positions. Below ~2 is not a finding.")
+    cd = result["clean_distribution_all_cases"]
+    print(f"\nclean logit difference over all {cd['n']} cases: "
+          f"q25/median/q75 = {cd['q25_median_q75']}")
+    print(f"  below --min-clean={args.min_clean}: {cd['frac_below_floor']:.1%}"
+          f"   already negative (model prefers the distractor): {cd['frac_negative']:.1%}")
+    if cd["frac_below_floor"] and cd["frac_below_floor"] > 0.5:
+        print("  WARNING: most cases carry no preference to destroy. This "
+              "(model, language) has a weak readout; effects below are measured "
+              "on the minority that does.")
     print(f"\nskipped: {dict(skipped) or 'none'}")
     print(f"wrote {out}")
     return 0
