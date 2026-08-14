@@ -131,7 +131,20 @@ def _enclosing(spans: list[tuple[int, int, str]], pos: int):
 #: spelling twice as two independent bindings. Python and PHP are
 #: function-scoped, so a repeated assignment there is the same variable.
 _BLOCK_SCOPED = {"Java", "Javascript", "C++", "C"}
-_DECLARATOR_TYPES = {"init_declarator", "variable_declarator"}
+#: Node type -> field holding the bound name. Loop headers bind without any
+#: *_declarator node, so visiting only declarators misses every enhanced-for
+#: / range-for / for-of binding -- exactly the repeated `for (int x : a)`
+#: shape that makes two independent variables look like one.
+_BINDING_FIELDS = {
+    "init_declarator": "declarator",       # C, C++
+    "variable_declarator": "name",         # Java, JavaScript
+    "enhanced_for_statement": "name",      # Java   for (int x : a)
+    "for_range_loop": "declarator",        # C, C++ for (int x : a)
+    "for_in_statement": "left",            # JS     for (const x of a)
+}
+#: JS `for (x of a)` with no let/const/var declares nothing -- it assigns to
+#: an existing binding, so it must not be counted as a redeclaration.
+_JS_DECLARING_KINDS = {"let", "const", "var"}
 
 
 def ambiguous_bindings(code: str, language: str, fspans) -> dict:
@@ -175,11 +188,20 @@ def ambiguous_bindings(code: str, language: str, fspans) -> dict:
         stack = [tree.root_node]
         while stack:
             n = stack.pop()
-            if n.type in _DECLARATOR_TYPES:
-                d = n.child_by_field_name("declarator") or n.child_by_field_name("name")
+            field = _BINDING_FIELDS.get(n.type)
+            if field is not None:
+                if n.type == "for_in_statement":
+                    kind = n.child_by_field_name("kind")
+                    kind_txt = kind.text.decode("utf-8") if kind is not None else ""
+                    if kind_txt not in _JS_DECLARING_KINDS:
+                        stack.extend(n.children)
+                        continue
+                d = n.child_by_field_name(field)
+                if d is None:
+                    d = n.child_by_field_name("declarator") or n.child_by_field_name("name")
                 seen = 0
                 while d is not None and d.type != "identifier" and seen < 8:
-                    d = d.child_by_field_name("declarator")
+                    d = d.child_by_field_name("declarator") or d.child_by_field_name("name")
                     seen += 1
                 if d is not None and d.type == "identifier":
                     counts[d.text.decode("utf-8")] += 1

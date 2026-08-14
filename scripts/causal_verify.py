@@ -205,6 +205,23 @@ def run_verify() -> int:
     amb_ok = ambiguous_bindings(cpp_ok, "C++", function_spans(cpp_ok, "C++"))
     check("a singly-declared binding is not flagged",
           not any("i" in v for v in amb_ok.values()), f"got {amb_ok}")
+    # Loop headers bind without any *_declarator node. Visiting only
+    # declarators missed every enhanced-for / range-for / for-of binding.
+    LOOP_CASES = [
+        ("Java", 'class A{void f(int[] a){for(int x : a){} for(int x : a){}}}', True),
+        ("Java", 'class A{void f(int[] a){for(int x : a){}}}', False),
+        ("C++", 'void f(vector<int>& a){for(int x : a){} for(int x : a){}}', True),
+        ("C++", 'void f(vector<int>& a){for(int x : a){}}', False),
+        ("Javascript", 'function f(a){for(const x of a){} for(const x of a){}}', True),
+        # no let/const: this ASSIGNS an existing binding, so it declares nothing
+        ("Javascript", 'function f(a){let x; for(x of a){} for(x of a){}}', False),
+    ]
+    for _lang, _code, _want in LOOP_CASES:
+        _amb = ambiguous_bindings(_code, _lang, function_spans(_code, _lang))
+        _got = any("x" in v for v in _amb.values())
+        check(f"loop-header binding, {_lang}, ambiguous={_want}", _got == _want,
+              f"got {_got} for {_code[:44]}")
+
     check("function-scoped languages are exempt from the block-scope rule",
           ambiguous_bindings("def f():\n    i = 0\n    i = 1\n", "Python",
                              function_spans("def f():\n    i = 0\n    i = 1\n", "Python")) == {})
