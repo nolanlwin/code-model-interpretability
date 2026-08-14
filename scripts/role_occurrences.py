@@ -127,6 +127,31 @@ def _enclosing(spans: list[tuple[int, int, str]], pos: int):
     return found
 
 
+def _scoped_role_map(code: str, language: str, fspans) -> dict:
+    """``{scope_id: {role: {names}}}``, plus ``None`` for module level.
+
+    Roles are re-extracted per function rather than once per program. Two
+    functions routinely reuse a spelling for different purposes -- ``i`` as
+    an index in one and an accumulator in the other -- and a program-wide
+    role map cannot represent that. Filtering on the program-wide map would
+    then drop the spelling from BOTH scopes even though each is
+    individually unambiguous.
+    """
+    import textwrap
+    out: dict = {None: _safe_roles(code, language)}
+    for s0, e0, name in fspans:
+        sid = f"{name}@{s0}-{e0}"
+        out[sid] = _safe_roles(textwrap.dedent(code[s0:e0]), language)
+    return out
+
+
+def _safe_roles(src: str, language: str) -> dict:
+    try:
+        return {k: set(v or ()) for k, v in (extract_roles(src, language) or {}).items()}
+    except Exception:
+        return {}
+
+
 def occurrence_rows(code: str, language: str, role: str, problem_id: str,
                     drop_multi_role: bool = True) -> list[dict]:
     """Every in-code occurrence of every variable pipeline assigns to ``role``.
@@ -137,30 +162,31 @@ def occurrence_rows(code: str, language: str, role: str, problem_id: str,
     meaningful for a variable that is equally the index, and keeping it would
     make the label depend on which role happened to be extracted first.
     """
-    try:
-        by_role = extract_roles(code, language)
-    except Exception:
+    program_roles = _safe_roles(code, language)
+    fspans = function_spans(code, language)
+    scoped = _scoped_role_map(code, language, fspans)
+    # Bail only if NO scope carries the role. Gating on the program-wide map
+    # would undo the per-scope filtering below: a variable can be an
+    # accumulator inside one function while the whole-program extractor,
+    # seeing both uses at once, never assigns that role at all.
+    if not any(m.get(role) for m in scoped.values()) and not program_roles.get(role):
         return []
-    names = set(by_role.get(role) or ())
-    if not names:
-        return []
-    if drop_multi_role:
-        other = set()
-        for rl, vs in by_role.items():
-            if rl != role:
-                other |= set(vs or ())
-        names -= other
-        if not names:
-            return []
 
     is_code, _ = _code_mask(code)
-    fspans = function_spans(code, language)
     rows: list[dict] = []
     for m in _IDENT.finditer(code):
         name = m.group(0)
-        if name not in names:
-            continue
         s, e = m.start(), m.end()
+        sid, sname = _enclosing(fspans, s)
+        # Role membership is decided in the occurrence's OWN scope, falling
+        # back to the program map only for module-level code.
+        rmap = scoped.get(sid) or program_roles
+        if name not in rmap.get(role, set()):
+            continue
+        if drop_multi_role and any(
+            name in rmap.get(rl, set()) for rl in rmap if rl != role
+        ):
+            continue
         # Reject identifiers inside strings/comments. Checking only the first
         # character is enough: the lexer marks a literal contiguously.
         if not is_code[s]:
@@ -172,8 +198,8 @@ def occurrence_rows(code: str, language: str, role: str, problem_id: str,
             "language": language,
             "variable": name,
             "role": role,
-            "function": _enclosing(fspans, s)[0],
-            "function_name": _enclosing(fspans, s)[1],
+            "function": sid,
+            "function_name": sname,
             "scope_known": bool(fspans),
             "source_span": [s, e],
             "line": line,

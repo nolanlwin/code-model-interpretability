@@ -123,12 +123,18 @@ def run_experiment(args) -> int:
         clean_logits, cap = runner.run(p_ids, want_resid_layers=layers)
         clean = metric(clean_logits)
 
+        # How many positions the edit will actually touch. Patch is bounded
+        # by the smaller of the two sites, so asking for len(tpos) control
+        # positions would refuse a control that is perfectly feasible for the
+        # bounded edit.
+        n_edit = min(len(tpos), len(dpos)) if args.intervention == "patch" else len(tpos)
+
         for ly in layers:
             if ly not in cap:
                 continue
             resid = cap[ly]
             avoid = set(tpos) | set(dpos)
-            ctrl_pos = pick_control_positions(len(tpos), len(p_ids), avoid, rng)
+            ctrl_pos = pick_control_positions(n_edit, len(p_ids), avoid, rng)
 
             def apply(positions, values):
                 lg, _ = runner.run(p_ids, edits=[(ly, positions, np.asarray(values))])
@@ -144,10 +150,9 @@ def run_experiment(args) -> int:
                 # positions than distractor ones, an unbounded control would
                 # index fewer replacement vectors than destinations and the
                 # assignment would raise mid-run.
-                n = min(len(tpos), len(dpos))
+                n = n_edit
                 entry["intervened"] = apply(tpos[:n], resid[dpos[:n]])
                 entry["reverse"] = apply(dpos[:n], resid[tpos[:n]])
-                ctrl_pos = ctrl_pos[:n]
             elif args.intervention == "ablate":
                 # Mean ablation against this program's own residual mean --
                 # an on-distribution reference. Never zeros.

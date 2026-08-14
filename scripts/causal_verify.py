@@ -128,6 +128,22 @@ def run_verify() -> int:
     check("target_role with no matching target yields no case",
           build_cases(occ, {"p1": "acc  idx  acc  "}, target_role="iterator") == [])
 
+    # `s` is an accumulator in f and an index in g. Program-wide extraction
+    # sees both uses at once and calls it index_key only, so BOTH a
+    # program-wide role filter and a program-wide early return would lose
+    # the accumulator entirely. Each scope must be judged on its own.
+    from role_occurrences import occurrence_rows as _orows
+    py = ("def f(xs):\n    s = 0\n    for x in xs:\n        s += x\n    return s\n"
+          "def g(xs):\n    s = 2\n    return xs[s]\n")
+    acc = _orows(py, "Python", "accumulator", "p5")
+    idx = _orows(py, "Python", "index_key", "p5")
+    check("scope-local role survives a program-wide collision (accumulator in f)",
+          {r["function_name"] for r in acc} == {"f"} and len(acc) == 3,
+          f"got {[(r['variable'], r['function_name']) for r in acc]}")
+    check("the same spelling keeps its other role in the other scope (index in g)",
+          {r["function_name"] for r in idx} == {"g"},
+          f"got {[(r['variable'], r['function_name']) for r in idx]}")
+
     # ---- scope: identical spellings in different functions must NOT merge --
     # code layout: "s i i i  " -> s@0 (accumulator, fn f), i@2 and i@4
     # (index, fn f), i@6 (index, fn g). The distractor must precede the
