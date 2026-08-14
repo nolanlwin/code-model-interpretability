@@ -240,7 +240,8 @@ def run_verify() -> int:
             occurrences=str(td / "occ.jsonl"), canonical=str(td / "canon.jsonl"),
             model_id="fake", intervention="ablate", layers="0,1", alpha=1.0,
             max_cases=10, seed=0, no_controls=False, device="cpu", dtype="fp32",
-            max_length=2048, output=str(td / "out.json"), target_role=None)
+            max_length=2048, output=str(td / "out.json"), target_role=None,
+            min_clean=-1e9)   # the fake metric is negative by construction
         import causal_run
         causal_run.HFRunner = lambda *a, **k: FakeRunner()
         rc = run_experiment(args)

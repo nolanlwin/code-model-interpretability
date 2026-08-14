@@ -304,6 +304,10 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--layers", default="", help="comma-separated; default = every 4th")
     r.add_argument("--alpha", type=float, default=1.0, help="steering coefficient")
     r.add_argument("--max-cases", type=int, default=200)
+    r.add_argument("--min-clean", type=float, default=1.0,
+                   help="drop cases whose clean logit difference is below this: "
+                        "the model has no preference there to destroy, and the "
+                        "effect ratio divides by it")
     r.add_argument("--seed", type=int, default=0)
     r.add_argument("--no-controls", action="store_true")
     r.add_argument("--device", default="auto")
