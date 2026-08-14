@@ -28,10 +28,11 @@ involved---reaches macro-F1 $0.988$ on the same occurrences and fold. All
 three probes sit within one test occurrence of that line ($-0.011$,
 $-0.003$, $+0.0005$, against a resolution of $\rho = 0.0154$;
 Table~\ref{tab:resolution}), so we report them as indistinguishable from
-it rather than ranking them. Nor
-does the probe improve with code pretraining ($0.977 \to 0.985$ at fixed
-scale) or with $4.5\times$ more parameters ($0.989$)---both differences
-are themselves below $\rho$. Occurrence type is
+it rather than ranking them. Macro-F1 does rise across the three models---
+$0.977$ to $0.985$ with code pretraining at fixed scale, and $0.989$ at
+$4.5\times$ the parameters---but each increment is smaller than $\rho$,
+and none of the three carries the probe past what the masked line already
+achieves without a model. Occurrence type is
 carried by local syntax that is fully present in the surface form; linear
 decodability here is not evidence of computation beyond it. A static
 analyser decides this label exactly, so the question of interest is not
@@ -43,7 +44,9 @@ renaming counterfactuals isolate.
 \caption{Boolean occurrence-type probing on XLCoST Python
 (problem-grouped splits, $n{=}1{,}996$ occurrences from $725$ problems,
 five seeds; probes and baselines share one frozen occurrence sample and
-fold). The masked source line matches or exceeds every probe.}
+fold). No probe differs from the masked source line by as much as one test
+occurrence ($\rho = 0.0154$; Table~\ref{tab:resolution}), in either
+direction.}
 \label{tab:boolean-baselines}
 \begin{tabular}{lccc}
 \toprule
