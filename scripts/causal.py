@@ -206,9 +206,16 @@ class HFRunner:
         self.n_layers = len(self.blocks)
 
     def _module_for_layer(self, layer: int):
+        """Module whose output IS residual-stream layer ``layer``.
+
+        Layer 0 is the embedding output; layer i is the output of block i-1,
+        matching probe.py. The second element is vestigial -- output shape is
+        now detected at call time, because whether a block returns a tuple
+        depends on the transformers version.
+        """
         if layer == 0:
-            return self.embed, False      # embeddings: output is a plain tensor
-        return self.blocks[layer - 1], True   # blocks return a tuple
+            return self.embed, False
+        return self.blocks[layer - 1], True
 
     def tokenize(self, code: str, max_length: int = 2048):
         from token_alignment import tokenize_for_alignment
@@ -223,30 +230,53 @@ class HFRunner:
         torch = self.torch
         handles, captured = [], {}
 
-        def make_hook(layer, is_tuple, positions, values):
+        def split(out):
+            """(hidden_states, rebuild) for a module output of either shape.
+
+            Decoder blocks returned ``(hidden, ...)`` in older transformers and
+            return a bare tensor in current ones. Deciding by layer index -- a
+            block is a tuple, an embedding is not -- was wrong on transformers
+            5.x: ``out[0]`` on a bare ``[1, seq, hidden]`` tensor silently
+            yields ``[seq, hidden]``, so capture stored ONE token's vector as
+            if it were the whole sequence and the write landed elsewhere.
+            Neither raised. Detect the shape instead of assuming it.
+            """
+            if isinstance(out, tuple):
+                rest = tuple(out[1:])
+                return out[0], (lambda h: (h,) + rest)
+            return out, (lambda h: h)
+
+        def make_hook(positions, values):
             def hook(_m, _inp, out):
-                h = out[0] if is_tuple else out
-                if values is not None:
-                    h = h.clone()
-                    v = torch.as_tensor(np.asarray(values), dtype=h.dtype, device=h.device)
-                    h[0, positions, :] = v
-                    return (h,) + tuple(out[1:]) if is_tuple else h
-                return out
+                h, rebuild = split(out)
+                if values is None:
+                    return out
+                if h.dim() != 3:
+                    raise RuntimeError(
+                        f"expected hidden states [batch, seq, hidden], got {tuple(h.shape)}"
+                    )
+                h = h.clone()
+                v = torch.as_tensor(np.asarray(values), dtype=h.dtype, device=h.device)
+                h[0, positions, :] = v
+                return rebuild(h)
             return hook
 
-        def make_capture(layer, is_tuple):
+        def make_capture(layer):
             def hook(_m, _inp, out):
-                h = out[0] if is_tuple else out
+                h, _ = split(out)
+                if h.dim() != 3:
+                    raise RuntimeError(
+                        f"layer {layer}: expected [batch, seq, hidden], got {tuple(h.shape)}"
+                    )
                 captured[layer] = h[0].detach().float().cpu().numpy()
             return hook
 
         for layer, positions, values in (edits or []):
-            mod, is_tuple = self._module_for_layer(layer)
-            handles.append(mod.register_forward_hook(
-                make_hook(layer, is_tuple, positions, values)))
+            mod, _ = self._module_for_layer(layer)
+            handles.append(mod.register_forward_hook(make_hook(positions, values)))
         for layer in (want_resid_layers or []):
-            mod, is_tuple = self._module_for_layer(layer)
-            handles.append(mod.register_forward_hook(make_capture(layer, is_tuple)))
+            mod, _ = self._module_for_layer(layer)
+            handles.append(mod.register_forward_hook(make_capture(layer)))
 
         try:
             with torch.no_grad():
