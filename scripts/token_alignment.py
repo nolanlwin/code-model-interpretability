@@ -17,7 +17,10 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from transformers import AutoTokenizer
+# transformers is imported lazily inside the CLI commands that build a
+# tokenizer. The alignment helpers above them (char_span_to_token_indices,
+# span_chars_covered) are pure and are imported by tooling that runs without
+# torch installed -- a module-level import here would make those unusable.
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MODEL_ID = "Qwen/Qwen2.5-1.5B"
@@ -273,6 +276,8 @@ def cmd_align(args: argparse.Namespace) -> int:
             print(f"occurrences[{i}].source_span must be [start, end)", file=sys.stderr)
             return 1
 
+    from transformers import AutoTokenizer
+
     tok = AutoTokenizer.from_pretrained(args.model_id, trust_remote_code=True)
     try:
         results, notes = align_batch(tok, code, occurrences, max_length=args.max_length)
@@ -307,6 +312,8 @@ def cmd_align_bundle(args: argparse.Namespace) -> int:
     if not isinstance(code, str) or not isinstance(occurrences, list):
         print("bundle JSON must have string 'code' and list 'occurrences'", file=sys.stderr)
         return 1
+    from transformers import AutoTokenizer
+
     tok = AutoTokenizer.from_pretrained(args.model_id, trust_remote_code=True)
     try:
         results, notes = align_batch(tok, code, occurrences, max_length=args.max_length)
@@ -325,6 +332,8 @@ def cmd_align_bundle(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
+    from transformers import AutoTokenizer
+
     tok = AutoTokenizer.from_pretrained(args.model_id, trust_remote_code=True)
     if not tok.is_fast:
         print("verify requires a fast tokenizer", file=sys.stderr)
