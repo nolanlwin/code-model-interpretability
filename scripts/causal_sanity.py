@@ -16,9 +16,13 @@ Four checks, each of which fails loudly if the wiring is wrong:
      last block -- the two ends of the off-by-one that layer indexing invites.
   3. A LARGE PERTURBATION MOVES THE LOGITS at every layer. If some layer
      never moves, its hook is not attached.
-  4. POSITION SPECIFICITY. Editing position p must change the prediction
-     more than editing an unrelated position q. If not, the position
-     arithmetic is wrong even though the hook fires.
+  4. POSITION SPECIFICITY, via the causal mask. An edit at position k must
+     leave every logit BEFORE k bitwise unchanged and move the readout at
+     the end. The first position that moves must be exactly k, which pins
+     the position arithmetic: a hook writing to the wrong index shifts that
+     boundary. (Do not test this by comparing "near" against "far" edits --
+     attention is causal, so early tokens reach more of the sequence than
+     late ones, and position 0 is an attention sink besides.)
 
     python scripts/causal.py sanity --model-id Qwen/Qwen2.5-Coder-1.5B
 """
@@ -107,19 +111,36 @@ def run_sanity(args) -> int:
         check(f"layer {ly}: a large edit moves the logits", d_moved > 1e-3,
               f"max |logit delta| = {d_moved:.6f} -- hook not attached")
 
-    # 4: editing the position just before the readout must matter more than
-    # editing the first position, at the last position's logits.
+    # 4: POSITION SPECIFICITY, done properly.
+    #
+    # An earlier version asserted that editing a position near the readout
+    # outweighs editing a distant one. That is FALSE in a causal transformer
+    # and it failed here for a legitimate reason: attention is causal, so
+    # position 0 is attended to by every later token while position n-2 is
+    # attended to by two. Position 0 is also the classic attention sink and
+    # carries unusually large activations, so perturbing it moves the final
+    # logits MORE, not less. The test was wrong, not the hooks.
+    #
+    # The correct invariant is exact rather than comparative: an edit at
+    # position k can change logits at positions >= k and CANNOT change any
+    # logit before k. So locate the first position that moves and require it
+    # to be exactly k. That pins the position arithmetic, and a hook writing
+    # to the wrong index shifts the boundary and fails.
     ly = layers[len(layers) // 2]
     if ly in cap:
         resid = cap[ly]
-        near = [n - 2]
-        far = [0]
-        a, _ = runner.run(ids, edits=[(ly, near, resid[near] + 50.0)])
-        b, _ = runner.run(ids, edits=[(ly, far, resid[far] + 50.0)])
-        da = float(np.abs(a[-1] - base_logits[-1]).max())
-        db = float(np.abs(b[-1] - base_logits[-1]).max())
-        check(f"layer {ly}: nearby edit outweighs a distant one",
-              da > db, f"near={da:.4f} far={db:.4f} -- position arithmetic suspect")
+        k = n // 2
+        edited, _ = runner.run(ids, edits=[(ly, [k], resid[[k]] + 50.0)])
+        per_pos = np.abs(edited - base_logits).max(axis=1)
+        moved = np.flatnonzero(per_pos > tol)
+        first = int(moved[0]) if moved.size else None
+        check(f"layer {ly}: an edit at position {k} changes nothing before it",
+              first == k,
+              f"first changed position = {first}, expected {k} -- the hook is "
+              f"writing to the wrong index (before-k max delta "
+              f"{float(per_pos[:k].max()) if k else 0.0:.6f})")
+        check(f"layer {ly}: that edit does change the readout position",
+              per_pos[-1] > tol, f"final-position delta {float(per_pos[-1]):.6f}")
 
     print("\nSANITY PASS -- hooks are wired correctly" if ok else
           "\nSANITY FAILED -- do NOT trust causal numbers from this build")
