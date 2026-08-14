@@ -320,3 +320,44 @@ That advice is recorded here; the corpus decision is the team's. If 29 Aug is ke
 the XLCoST activations still exist and on whose Drive, which models and pooling. This repo contains
 **one** of the five role extractors (boolean) and zero lines of renaming code. Whether 29 Aug is a
 re-analysis or a rebuild depends entirely on that answer.
+
+## §5 Causal interventions (added 2026-08-14)
+
+Probing shows information is present; it cannot show the model uses it. The
+causal path (`scripts/causal.py`, driven by `scripts/run_causal.sh`) tests
+use, for **all five roles** and every XLCoST language.
+
+**Readout.** A real next-token prediction, never the probe's own output —
+scoring an intervention with the probe that motivated it is circular. The
+prompt is the program up to a variable's *last* occurrence; the metric is
+`logit(target first token) − logit(distractor first token)`, a logit
+difference rather than a probability (Zhang & Nanda, ICLR 2024). The
+distractor is another variable in the same program holding a *different*
+role, already in scope at the readout point.
+
+**Where interventions land.** On the variable's *earlier* occurrences, where
+its role was established — never on the readout position. So the question is
+whether what the model built earlier changes what it predicts later. This
+needs no renaming, which is why it covers all seven languages rather than
+Python alone.
+
+| mode | what it does |
+|---|---|
+| `patch` | interchange: target's earlier residuals ← distractor's, from the **same forward pass** (no cross-run alignment). Run **both directions**. |
+| `ablate` | **mean** ablation against a stated reference. Never zero ablation — zeros are off-distribution and inflate apparent importance. |
+| `steer` | add `α · (mean_distractor_role − mean_target_role)`, with the direction fitted on a **held-out half** of cases and applied only to the other half. |
+
+**Controls, on by default.** `random_position` repeats the edit at the same
+number of randomly chosen non-variable positions, separating "this variable
+matters" from "editing anything matters". `random_direction` (steering) uses
+a matched-norm random vector.
+
+**Layer indexing** matches `probe.py`: layer 0 is the embedding output, layer
+`i` is the output of block `i-1`. That mapping lives in exactly one place
+(`HFRunner._module_for_layer`) because getting it off by one silently
+patches the wrong site.
+
+**Before trusting any number**, `python scripts/causal.py verify` runs the
+real driver against a fake model whose metric is an exactly known function
+of the residual stream (23 checks, no GPU). It asserts computed values, not
+shapes.
