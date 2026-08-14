@@ -164,7 +164,14 @@ def run_experiment(args) -> int:
 
             # Random-position control for EVERY intervention, steering
             # included: without it a steering result cannot be separated from
-            # "adding this vector anywhere moves the logits".
+            # "adding this vector anywhere moves the logits". When the prompt
+            # has too few eligible positions to build one, that is RECORDED --
+            # a result must never carry controls: true while quietly missing
+            # the baseline it claims.
+            if not args.no_controls and not ctrl_pos:
+                entry["control_random_position"] = None
+                entry["control_unavailable"] = "too few non-variable positions"
+                skipped["control_random_position_unavailable"] += 1
             if not args.no_controls and ctrl_pos:
                 if args.intervention == "patch":
                     src = resid[dpos[:len(ctrl_pos)]]
@@ -175,6 +182,10 @@ def run_experiment(args) -> int:
                     src = None if d is None else resid[ctrl_pos] + args.alpha * d
                 if src is not None and len(src) == len(ctrl_pos):
                     entry["control_random_position"] = apply(ctrl_pos, src)
+                else:
+                    entry["control_random_position"] = None
+                    entry["control_unavailable"] = "no source vectors for the control"
+                    skipped["control_random_position_unavailable"] += 1
 
             entry["effect"] = effect_size(clean, entry["intervened"])
             rows.append(entry)
@@ -195,8 +206,12 @@ def run_experiment(args) -> int:
              "intervened_mean": agg([x["intervened"] for x in g]),
              "effect_mean": agg([x["effect"] for x in g])}
         for k in ("reverse", "control_random_position", "control_random_direction"):
+            vals = [x[k] for x in g if x.get(k) is not None]
             if any(k in x for x in g):
-                s[k + "_mean"] = agg([x[k] for x in g if k in x])
+                s[k + "_mean"] = agg(vals)
+                s[k + "_n"] = len(vals)
+        s["n_without_positional_control"] = sum(
+            1 for x in g if x.get("control_random_position", "missing") is None)
         summary.append(s)
 
     result = {

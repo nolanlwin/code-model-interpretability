@@ -156,6 +156,22 @@ def run_verify() -> int:
     lone = [two_fn[0], two_fn[3]]
     check("a lone binding in another function yields no case",
           build_cases(lone, {"p2": CODE2}) == [])
+    # Two DIFFERENT functions that happen to share a name (overloads, methods
+    # in different classes, nested functions) must stay distinct. Keying on
+    # the bare name would merge them and reintroduce the original bug.
+    same_name = [
+        {"problem_id":"p4","variable":"s","role":"accumulator","source_span":[0,1],
+         "function":"f@0-6","function_name":"f","scope_known":True,"occurrence_id":"a"},
+        {"problem_id":"p4","variable":"i","role":"index_key","source_span":[2,3],
+         "function":"f@0-6","function_name":"f","scope_known":True,"occurrence_id":"b"},
+        # same NAME, different span -> a different binding
+        {"problem_id":"p4","variable":"i","role":"index_key","source_span":[6,7],
+         "function":"f@6-9","function_name":"f","scope_known":True,"occurrence_id":"c"},
+    ]
+    check("same-named functions do not merge by name",
+          build_cases(same_name, {"p4": "s i   i  "}) == [],
+          f"got {build_cases(same_name, {'p4': 's i   i  '})}")
+
     unknown = [dict(r, scope_known=False) for r in two_fn]
     check("unknown scope is refused, not treated as one namespace",
           build_cases(unknown, {"p2": CODE2}) == [])
@@ -245,6 +261,13 @@ def run_verify() -> int:
                   False, f"{type(e).__name__}: {e}")
         args.occurrences, args.canonical = str(td / "occ.jsonl"), str(td / "canon.jsonl")
 
+        # A prompt with no eligible control positions must RECORD that, not
+        # quietly report controls: true without the baseline.
+        from causal import pick_control_positions as _pcp
+        import random as _rr
+        check("pick_control_positions returns empty when the pool is exhausted",
+              _pcp(5, 5, {0, 1, 2, 3, 4}, _rr.Random(0)) == [])
+
         # steering must record BOTH controls
         args.intervention, args.output = "steer", str(td / "steer.json")
         args.max_cases = 10
@@ -258,6 +281,8 @@ def run_verify() -> int:
               any("control_random_position_mean" in s_ for s_ in sres["summary_by_layer"])
               or sres["steering_holdout_cases"] == 0,
               f"keys={sorted(got)}")
+        check("every layer reports how many cases lack the positional control",
+              all("n_without_positional_control" in s_ for s_ in sres["summary_by_layer"]))
         args.intervention = "patch"
 
         # patch must edit BOTH directions

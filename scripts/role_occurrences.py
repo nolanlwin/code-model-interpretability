@@ -111,12 +111,19 @@ def function_spans(code: str, language: str) -> list[tuple[int, int, str]]:
         return []
 
 
-def _enclosing(spans: list[tuple[int, int, str]], pos: int) -> str | None:
-    """Innermost enclosing function name; spans arrive widest-first."""
-    found = None
+def _enclosing(spans: list[tuple[int, int, str]], pos: int):
+    """Innermost enclosing scope as ``(scope_id, name)``; widest-first input.
+
+    The id is ``name@start-end``, NOT the bare name. Overloaded methods,
+    same-named methods in different classes, and nested functions all share a
+    name, so keying on the name alone would merge distinct bindings again --
+    the very bug the scope work was meant to fix. A character span is unique
+    within a program, so it is the identity.
+    """
+    found = (None, None)
     for s0, e0, name in spans:
         if s0 <= pos < e0:
-            found = name
+            found = (f"{name}@{s0}-{e0}", name)
     return found
 
 
@@ -165,7 +172,8 @@ def occurrence_rows(code: str, language: str, role: str, problem_id: str,
             "language": language,
             "variable": name,
             "role": role,
-            "function": _enclosing(fspans, s),
+            "function": _enclosing(fspans, s)[0],
+            "function_name": _enclosing(fspans, s)[1],
             "scope_known": bool(fspans),
             "source_span": [s, e],
             "line": line,
