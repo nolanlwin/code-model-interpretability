@@ -159,6 +159,37 @@ CASES = [
             ("ok", "return_use", "return_bool"),
         ],
     ),
+    (
+        # tree-sitter reports offsets in UTF-8 BYTES. 'é' is two bytes, so
+        # an unconverted span lands one character right of `ok` and the span
+        # assertion below catches it. In production the failure is quieter:
+        # the span gate sees a mismatch and drops the valid row.
+        "multi-byte comment before the flag (2-byte char)",
+        "bool f(){/* café */ bool ok = true; return ok;}",
+        [
+            ("ok", "assignment", "assign_bool_literal"),
+            ("ok", "return_use", "return_bool"),
+        ],
+    ),
+    (
+        # U+2581 is THREE bytes, and is exactly what survives XLCoST
+        # detokenization in a third of Java/PHP/C# and 70% of C.
+        "SentencePiece marker in a string literal (3-byte char)",
+        'bool f(){const char* s = "a▁b▁c"; bool ok = true; return ok;}',
+        [
+            ("ok", "assignment", "assign_bool_literal"),
+            ("ok", "return_use", "return_bool"),
+        ],
+    ),
+    (
+        "multi-byte characters across several preceding lines",
+        "bool f(){\n  /* éé */\n  /* ▁ */\n"
+        "  bool ok = true;\n  return ok;\n}",
+        [
+            ("ok", "assignment", "assign_bool_literal"),
+            ("ok", "return_use", "return_bool"),
+        ],
+    ),
 ]
 
 

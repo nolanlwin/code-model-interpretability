@@ -34,12 +34,44 @@ wrong fails silently rather than loudly:
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from bisect import bisect_left
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from functools import lru_cache
 
 import tree_sitter_cpp as tscpp
 from tree_sitter import Language, Node, Parser, Tree
+
+
+def byte_to_char(code: str) -> Callable[[int], int]:
+    """Build a converter from tree-sitter byte offsets to character offsets.
+
+    tree-sitter reports every offset -- ``start_byte``, ``end_byte``, and a
+    point's ``column`` -- in UTF-8 BYTES, while Python string indices, the
+    span-integrity gate in ``xlcost_occurrences``, and Hugging Face fast
+    tokenizer offset mappings are all in CHARACTERS. On any source holding
+    a multi-byte character ahead of an occurrence the two diverge, and the
+    consequence is silent: the gate sees ``code[s:e] != variable`` and
+    drops a valid row, while any consumer trusting the span slices the
+    wrong text and gets wrong token positions.
+
+    Returns identity for pure-ASCII input -- the overwhelming majority of
+    XLCoST, and free. Otherwise records each character's byte offset once
+    per program and binary-searches it, making each lookup O(log n).
+    """
+    if code.isascii():
+        return lambda b: b
+    starts: list[int] = []
+    pos = 0
+    for ch in code:
+        starts.append(pos)
+        pos += len(ch.encode("utf-8"))
+    starts.append(pos)  # sentinel, so an exclusive end offset maps cleanly
+
+    def convert(byte_offset: int) -> int:
+        return bisect_left(starts, byte_offset)
+
+    return convert
 
 
 @dataclass(frozen=True)

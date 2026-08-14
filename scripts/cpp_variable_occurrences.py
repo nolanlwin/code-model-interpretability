@@ -17,6 +17,7 @@ from cpp_boolean_flag_roles import (
 from cpp_csn_parse import (
     CppFunction,
     build_parent_map,
+    byte_to_char,
     iter_top_level_functions,
     parse_cpp,
 )
@@ -46,8 +47,14 @@ _INDEXING_PARENTS = frozenset(
 )
 
 
-def name_char_span(code: str, node: Node) -> tuple[int, int]:
-    return node.start_byte, node.end_byte
+def name_char_span(node: Node, to_char) -> tuple[int, int]:
+    """The node's span in CHARACTER offsets.
+
+    ``to_char`` comes from ``byte_to_char(code)``; tree-sitter's own
+    ``start_byte``/``end_byte`` are UTF-8 byte offsets and must never be
+    written into ``source_span`` directly.
+    """
+    return to_char(node.start_byte), to_char(node.end_byte)
 
 
 def parent_node_type(parents: dict[Node, Node | None], node: Node) -> str | None:
@@ -154,6 +161,10 @@ def occurrence_rows_from_cpp_code(
         else:
             notes.append("slow_tokenizer_no_token_positions")
 
+    # Every offset tree-sitter hands back is a UTF-8 byte offset; build the
+    # converter once per program and route all of them through it.
+    to_char = byte_to_char(code)
+
     rows: list[dict[str, Any]] = []
     for func in funcs:
         parents = build_parent_map(func.node)
@@ -161,19 +172,22 @@ def occurrence_rows_from_cpp_code(
         hits.extend(collect_return_hits(func, code))
         for h in hits:
             for name_node in iter_hit_names(h):
-                span = name_char_span(code, name_node)
+                span = name_char_span(name_node, to_char)
                 s, e = span
                 occ_type = occurrence_type(h.pattern, name_node, parents)
                 tok_pos: list[int] | None = None
                 if offset_mapping is not None and s < e and e <= len(code):
                     tok_pos = _token_positions_for_span(code, span, offset_mapping)
+                # A point's column is also in bytes, so derive both columns
+                # from the converted span rather than from start_point[1].
+                line_start = code.rfind("\n", 0, s) + 1
                 rec: dict[str, Any] = {
                     "variable": h.variable,
                     "role": "boolean_flag",
                     "occurrence_type": occ_type,
                     "line": name_node.start_point[0] + 1,
-                    "col_offset": name_node.start_point[1],
-                    "end_col_offset": name_node.end_point[1],
+                    "col_offset": s - line_start,
+                    "end_col_offset": e - line_start,
                     "source_span": [s, e],
                     "token_positions": tok_pos,
                     "detection_pattern": h.pattern,
