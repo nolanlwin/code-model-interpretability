@@ -40,8 +40,96 @@ ROLES = ("index_key", "accumulator", "iterator", "boolean", "class_struct")
 _IDENT = re.compile(r"[A-Za-z_]\w*")
 
 
-def occurrence_rows(code: str, language: str, role: str, problem_id: str) -> list[dict]:
-    """Every in-code occurrence of every variable pipeline assigns to ``role``."""
+def function_spans(code: str, language: str) -> list[tuple[int, int, str]]:
+    """``(start_char, end_char, name)`` for each function, innermost last.
+
+    Scope matters here: two functions in one program routinely reuse ``i``
+    or ``res``, and treating those as one binding would let an intervention
+    edit a DIFFERENT variable than the one being scored. Returns [] when the
+    language has no parser (C#), and callers must treat that as "scope
+    unknown" rather than "one global scope".
+
+    Spans are CHARACTER offsets. tree-sitter reports bytes, and a third of
+    the Java/PHP corpus carries multi-byte U+2581, so the conversion is not
+    optional.
+    """
+    if language == "Python":
+        import ast as _ast
+        try:
+            tree = _ast.parse(code)
+        except SyntaxError:
+            return []
+        starts = [0]
+        for ln in code.splitlines(keepends=True):
+            starts.append(starts[-1] + len(ln))
+
+        def off(lineno, col):
+            return starts[lineno - 1] + col if lineno - 1 < len(starts) else 0
+
+        out = []
+        for n in _ast.walk(tree):
+            if isinstance(n, (_ast.FunctionDef, _ast.AsyncFunctionDef)):
+                if n.end_lineno is None:
+                    continue
+                out.append((off(n.lineno, n.col_offset),
+                            off(n.end_lineno, n.end_col_offset), n.name))
+        return sorted(out, key=lambda t: (t[1] - t[0]), reverse=True)
+
+    # PHP is NOT like the others: it parses to a module (the source may be
+    # wrapped in <?php, shifting every offset), it takes that module rather
+    # than a root node, and its spans must go through span_in_original.
+    # Treating it like Java silently returned zero functions, which made
+    # every PHP case unscoped and therefore refused.
+    try:
+        from cpp_csn_parse import byte_to_char
+        to_char = byte_to_char(code)
+        out = []
+        if language == "PHP":
+            import php_csn_parse as _php
+            module = _php.parse_php_module(code)
+            for fn in _php.iter_top_level_functions(module):
+                s0, e0 = _php.span_in_original(module, fn.node)
+                out.append((to_char(max(0, s0)), to_char(max(0, e0)), fn.name))
+        else:
+            mods = {
+                "Java": ("java_csn_parse", "parse_java", "iter_top_level_methods"),
+                "Javascript": ("javascript_csn_parse", "parse_javascript",
+                               "iter_top_level_functions"),
+                "C++": ("cpp_csn_parse", "parse_cpp", "iter_top_level_functions"),
+                "C": ("cpp_csn_parse", "parse_cpp", "iter_top_level_functions"),
+            }
+            spec = mods.get(language)
+            if spec is None:
+                return []
+            modname, parsefn, iterfn = spec
+            mod = __import__(modname)
+            tree = getattr(mod, parsefn)(code)
+            for fn in getattr(mod, iterfn)(tree.root_node):
+                out.append((to_char(fn.start_byte), to_char(fn.end_byte), fn.name))
+        return sorted(out, key=lambda t: (t[1] - t[0]), reverse=True)
+    except Exception:
+        return []
+
+
+def _enclosing(spans: list[tuple[int, int, str]], pos: int) -> str | None:
+    """Innermost enclosing function name; spans arrive widest-first."""
+    found = None
+    for s0, e0, name in spans:
+        if s0 <= pos < e0:
+            found = name
+    return found
+
+
+def occurrence_rows(code: str, language: str, role: str, problem_id: str,
+                    drop_multi_role: bool = True) -> list[dict]:
+    """Every in-code occurrence of every variable pipeline assigns to ``role``.
+
+    Variables that satisfy more than one role predicate (a loop counter is
+    routinely iterator AND index_key AND accumulator) are DROPPED by default
+    and counted. A causal claim about "the accumulator role" is not
+    meaningful for a variable that is equally the index, and keeping it would
+    make the label depend on which role happened to be extracted first.
+    """
     try:
         by_role = extract_roles(code, language)
     except Exception:
@@ -49,8 +137,17 @@ def occurrence_rows(code: str, language: str, role: str, problem_id: str) -> lis
     names = set(by_role.get(role) or ())
     if not names:
         return []
+    if drop_multi_role:
+        other = set()
+        for rl, vs in by_role.items():
+            if rl != role:
+                other |= set(vs or ())
+        names -= other
+        if not names:
+            return []
 
     is_code, _ = _code_mask(code)
+    fspans = function_spans(code, language)
     rows: list[dict] = []
     for m in _IDENT.finditer(code):
         name = m.group(0)
@@ -68,6 +165,8 @@ def occurrence_rows(code: str, language: str, role: str, problem_id: str) -> lis
             "language": language,
             "variable": name,
             "role": role,
+            "function": _enclosing(fspans, s),
+            "scope_known": bool(fspans),
             "source_span": [s, e],
             "line": line,
             "col_offset": s - line_start,

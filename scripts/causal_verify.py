@@ -128,6 +128,38 @@ def run_verify() -> int:
     check("target_role with no matching target yields no case",
           build_cases(occ, {"p1": "acc  idx  acc  "}, target_role="iterator") == [])
 
+    # ---- scope: identical spellings in different functions must NOT merge --
+    # code layout: "s i i i  " -> s@0 (accumulator, fn f), i@2 and i@4
+    # (index, fn f), i@6 (index, fn g). The distractor must precede the
+    # readout, so s sits first.
+    CODE2 = "s i i i  "
+    two_fn = [
+        {"problem_id":"p2","variable":"s","role":"accumulator","source_span":[0,1],
+         "function":"f","scope_known":True,"occurrence_id":"c"},
+        {"problem_id":"p2","variable":"i","role":"index_key","source_span":[2,3],
+         "function":"f","scope_known":True,"occurrence_id":"a"},
+        {"problem_id":"p2","variable":"i","role":"index_key","source_span":[4,5],
+         "function":"f","scope_known":True,"occurrence_id":"b"},
+        # same spelling, DIFFERENT function -- must not join the binding above
+        {"problem_id":"p2","variable":"i","role":"index_key","source_span":[6,7],
+         "function":"g","scope_known":True,"occurrence_id":"d"},
+    ]
+    sc = build_cases(two_fn, {"p2": CODE2})
+    check("bindings do not merge across functions",
+          len(sc) == 1 and sc[0]["function"] == "f",
+          f"got {[(c['function'], c['target']) for c in sc]}")
+    if sc:
+        check("readout is f's LAST i, not g's",
+              sc[0]["readout_char"] == 4, f"got {sc[0]['readout_char']}")
+        check("intervention stays inside the target's own function",
+              sc[0]["target_spans"] == [[2, 3]], f"got {sc[0]['target_spans']}")
+    lone = [two_fn[0], two_fn[3]]
+    check("a lone binding in another function yields no case",
+          build_cases(lone, {"p2": CODE2}) == [])
+    unknown = [dict(r, scope_known=False) for r in two_fn]
+    check("unknown scope is refused, not treated as one namespace",
+          build_cases(unknown, {"p2": CODE2}) == [])
+
     # ---- end-to-end through the real driver -------------------------------
     with tempfile.TemporaryDirectory() as td:
         td = Path(td)
@@ -185,6 +217,48 @@ def run_verify() -> int:
             check("single-role file is refused with a reason",
                   "single role" in str(e))
         args.occurrences = str(td / "occ.jsonl")
+
+        # Patch control must not exceed the number of source vectors. The
+        # reviewer's case: more target positions than distractor positions,
+        # which previously indexed fewer replacements than destinations and
+        # raised during assignment.
+        wide = [
+            {"problem_id":"p3","variable":"target","role":"accumulator",
+             "source_span":[0,6],"function":"f","scope_known":True,"occurrence_id":"t0"},
+            {"problem_id":"p3","variable":"d","role":"index_key",
+             "source_span":[7,8],"function":"f","scope_known":True,"occurrence_id":"d0"},
+            {"problem_id":"p3","variable":"target","role":"accumulator",
+             "source_span":[9,15],"function":"f","scope_known":True,"occurrence_id":"t1"},
+        ]
+        (td / "wide.jsonl").write_text("\n".join(json.dumps(r) for r in wide))
+        (td / "wide_c.jsonl").write_text(json.dumps(
+            {"problem_id": "p3", "code": "target d target "}))
+        args.occurrences, args.canonical = str(td / "wide.jsonl"), str(td / "wide_c.jsonl")
+        args.intervention, args.output = "patch", str(td / "wide.json")
+        try:
+            run_experiment(args)
+            wres = json.loads((td / "wide.json").read_text())
+            check("patch control survives more target than distractor positions",
+                  wres["n_cases_scored"] == 1, f"scored {wres['n_cases_scored']}")
+        except Exception as e:
+            check("patch control survives more target than distractor positions",
+                  False, f"{type(e).__name__}: {e}")
+        args.occurrences, args.canonical = str(td / "occ.jsonl"), str(td / "canon.jsonl")
+
+        # steering must record BOTH controls
+        args.intervention, args.output = "steer", str(td / "steer.json")
+        args.max_cases = 10
+        run_experiment(args)
+        sres = json.loads((td / "steer.json").read_text())
+        got = {k for s_ in sres["summary_by_layer"] for k in s_}
+        check("steering records a random-DIRECTION control",
+              any("control_random_direction_mean" in s_ for s_ in sres["summary_by_layer"])
+              or sres["steering_holdout_cases"] == 0)
+        check("steering records a random-POSITION control",
+              any("control_random_position_mean" in s_ for s_ in sres["summary_by_layer"])
+              or sres["steering_holdout_cases"] == 0,
+              f"keys={sorted(got)}")
+        args.intervention = "patch"
 
         # patch must edit BOTH directions
         args.intervention, args.output = "patch", str(td / "patch.json")

@@ -101,9 +101,17 @@ def build_cases(occ_rows: list[dict], code_by_pid: dict, min_occ: int = 2,
         code = code_by_pid.get(pid)
         if not code:
             continue
+        # Bind by (enclosing function, name), NOT by spelling. Two functions
+        # in one program routinely both use `i` or `res`; merging them would
+        # let an intervention edit a different binding than the one scored,
+        # and would offer a distractor that is not in scope at the readout.
+        # When no parser gave us a scope (C#), refuse rather than pretend the
+        # program is one flat namespace.
+        if any(r.get("scope_known") is False for r in rows):
+            continue
         by_var: dict = defaultdict(list)
         for r in rows:
-            by_var[r["variable"]].append(r)
+            by_var[(r.get("function"), r["variable"])].append(r)
         for v in by_var:
             by_var[v].sort(key=lambda r: r["source_span"][0])
 
@@ -117,19 +125,23 @@ def build_cases(occ_rows: list[dict], code_by_pid: dict, min_occ: int = 2,
             # own occurrences all start before the readout point (so it is
             # already in scope and a legal continuation there).
             readout_start = trows[-1]["source_span"][0]
+            # The distractor must share the target's scope and appear before
+            # the readout, so it is a legal continuation at that point.
             cand = [
                 d for d, drows in by_var.items()
-                if d != tgt and roles.get(d) != roles.get(tgt)
+                if d != tgt and d[0] == tgt[0]
+                and roles.get(d) != roles.get(tgt)
                 and drows[0]["source_span"][0] < readout_start
             ]
             if not cand:
                 continue
-            dist = sorted(cand)[0]
+            dist = sorted(cand, key=lambda k: (k[1], str(k[0])))[0]
             cases.append({
                 "problem_id": pid,
-                "target": tgt,
+                "function": tgt[0],
+                "target": tgt[1],
                 "target_role": roles.get(tgt),
-                "distractor": dist,
+                "distractor": dist[1],
                 "distractor_role": roles.get(dist),
                 "readout_char": readout_start,
                 "target_spans": [r["source_span"] for r in trows[:-1]],

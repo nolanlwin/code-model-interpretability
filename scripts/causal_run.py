@@ -140,9 +140,14 @@ def run_experiment(args) -> int:
 
             if args.intervention == "patch":
                 # Interchange, both directions, from the same forward pass.
+                # n bounds BOTH the edit and its control: with more target
+                # positions than distractor ones, an unbounded control would
+                # index fewer replacement vectors than destinations and the
+                # assignment would raise mid-run.
                 n = min(len(tpos), len(dpos))
                 entry["intervened"] = apply(tpos[:n], resid[dpos[:n]])
                 entry["reverse"] = apply(dpos[:n], resid[tpos[:n]])
+                ctrl_pos = ctrl_pos[:n]
             elif args.intervention == "ablate":
                 # Mean ablation against this program's own residual mean --
                 # an on-distribution reference. Never zeros.
@@ -157,10 +162,19 @@ def run_experiment(args) -> int:
                     rd = matched_norm_random(d, rng_np)
                     entry["control_random_direction"] = apply(tpos, resid[tpos] + args.alpha * rd)
 
-            if not args.no_controls and ctrl_pos and args.intervention != "steer":
-                src = resid[dpos[:len(ctrl_pos)]] if args.intervention == "patch" \
-                    else resid.mean(0, keepdims=True).repeat(len(ctrl_pos), 0)
-                entry["control_random_position"] = apply(ctrl_pos, src)
+            # Random-position control for EVERY intervention, steering
+            # included: without it a steering result cannot be separated from
+            # "adding this vector anywhere moves the logits".
+            if not args.no_controls and ctrl_pos:
+                if args.intervention == "patch":
+                    src = resid[dpos[:len(ctrl_pos)]]
+                elif args.intervention == "ablate":
+                    src = resid.mean(0, keepdims=True).repeat(len(ctrl_pos), 0)
+                else:
+                    d = dir_by_layer.get(ly)
+                    src = None if d is None else resid[ctrl_pos] + args.alpha * d
+                if src is not None and len(src) == len(ctrl_pos):
+                    entry["control_random_position"] = apply(ctrl_pos, src)
 
             entry["effect"] = effect_size(clean, entry["intervened"])
             rows.append(entry)
