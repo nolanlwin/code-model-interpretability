@@ -281,10 +281,17 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--max-length", type=int, default=2048)
     r.add_argument("--output", required=True)
     sub.add_parser("verify", help="self-check the pure logic, no model needed")
+    sn = sub.add_parser("sanity", help="GPU gate: prove the hooks write where they claim")
+    sn.add_argument("--model-id", required=True)
+    sn.add_argument("--device", default="auto")
+    sn.add_argument("--dtype", default="auto")
     args = ap.parse_args(argv)
     if args.cmd == "verify":
         from causal_verify import run_verify
         return run_verify()
+    if args.cmd == "sanity":
+        from causal_sanity import run_sanity
+        return run_sanity(args)
     from causal_run import run_experiment
     return run_experiment(args)
 
