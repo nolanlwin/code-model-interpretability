@@ -69,9 +69,21 @@ def run_sanity(args) -> int:
     base_logits, cap = runner.run(ids, want_resid_layers=layers)
     check("forward pass produced logits", base_logits.shape[0] == n,
           f"got {base_logits.shape}")
+
+    # Measure the model's OWN run-to-run variation first. fp16 kernels are not
+    # bitwise reproducible, so a fixed tolerance either masks a real bug or
+    # fails on noise. Everything below is judged against this floor.
+    again, _ = runner.run(ids)
+    noise = float(np.abs(again - base_logits).max())
+    tol = max(10 * noise, 1e-3)
+    print(f"run-to-run noise floor: {noise:.6f}  ->  self-patch tolerance {tol:.6f}\n")
+
     for ly in layers:
-        check(f"layer {ly} residual captured", ly in cap,
-              "hook did not fire -- check _module_for_layer")
+        got = cap.get(ly)
+        shape_ok = got is not None and got.ndim == 2 and got.shape[0] == n
+        check(f"layer {ly} residual captured with shape [seq, hidden]", shape_ok,
+              f"got {None if got is None else got.shape}, expected ({n}, hidden) -- "
+              "a 1-D capture means the module output was unwrapped one level too far")
 
     pos = list(range(max(1, n // 3), max(2, n // 3 + 2)))
     for ly in layers:
@@ -79,12 +91,14 @@ def run_sanity(args) -> int:
             continue
         resid = cap[ly]
 
-        # 1 + 2: writing captured values back must change nothing.
+        # 1 + 2: writing captured values back must change nothing beyond the
+        # model's own nondeterminism.
         same, _ = runner.run(ids, edits=[(ly, pos, resid[pos])])
         delta = float(np.abs(same - base_logits).max())
-        check(f"layer {ly}: self-patch is a no-op", delta < 1e-2,
-              f"max |logit delta| = {delta:.6f} -- the hook is writing to the "
-              f"wrong tensor, positions, or layer")
+        check(f"layer {ly}: self-patch is a no-op", delta <= tol,
+              f"max |logit delta| = {delta:.6f} vs noise floor {noise:.6f}. "
+              f"{'That is ~' + str(round(delta / max(noise, 1e-9))) + 'x the floor, so it is structural: ' if delta > 10 * max(noise, 1e-9) else ''}"
+              "the hook is writing to the wrong tensor, positions, or layer")
 
         # 3: a large perturbation must move the logits.
         big = resid[pos] + 50.0
