@@ -114,6 +114,7 @@ def run_experiment(args) -> int:
             continue
         tpos = _positions_for(c["target_spans"], p_offsets)
         dpos = _positions_for(c["distractor_spans"], p_offsets)
+        spos = _positions_for(c.get("same_role_spans") or [], p_offsets)
         if not tpos or not dpos:
             skipped["no_positions_in_prompt"] += 1
             continue
@@ -165,6 +166,13 @@ def run_experiment(args) -> int:
                 n = n_edit
                 entry["intervened"] = apply(tpos[:n], resid[dpos[:n]])
                 entry["reverse"] = apply(dpos[:n], resid[tpos[:n]])
+                # Same-role patch: identity changes, role does not. The gap
+                # between this and `intervened` is the role-attributable part;
+                # without it, a large patch effect is equally consistent with
+                # the model merely tracking WHICH variable, not its role.
+                if spos:
+                    ns = min(n, len(spos))
+                    entry["control_same_role"] = apply(tpos[:ns], resid[spos[:ns]])
             elif args.intervention == "ablate":
                 # Mean ablation against this program's own residual mean --
                 # an on-distribution reference. Never zeros.
@@ -232,7 +240,8 @@ def run_experiment(args) -> int:
              "effect_median": float(np.median(eff)) if eff else float("nan"),
              "delta_logit_mean": agg(d_int),
              "delta_logit_median": float(np.median(d_int)) if d_int else float("nan")}
-        for k in ("reverse", "control_random_position", "control_random_direction"):
+        for k in ("reverse", "control_random_position", "control_random_direction",
+                  "control_same_role"):
             vals = [x[k] for x in g if x.get(k) is not None]
             if any(k in x for x in g):
                 s[k + "_mean"] = agg(vals)

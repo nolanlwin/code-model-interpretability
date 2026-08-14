@@ -136,6 +136,19 @@ def build_cases(occ_rows: list[dict], code_by_pid: dict, min_occ: int = 2,
             if not cand:
                 continue
             dist = sorted(cand, key=lambda k: (k[1], str(k[0])))[0]
+            # A SAME-role alternate, if one is in scope. Patching from it is
+            # the control that separates role from identity: swapping in
+            # another variable of the SAME role changes which variable the
+            # activations belong to while holding the role fixed. Whatever
+            # extra damage the different-role patch does over this one is the
+            # part attributable to role.
+            same = [
+                d for d, drows in by_var.items()
+                if d != tgt and d[0] == tgt[0]
+                and roles.get(d) == roles.get(tgt)
+                and drows[0]["source_span"][0] < readout_start
+            ]
+            same_pick = sorted(same, key=lambda k: (k[1], str(k[0])))[0] if same else None
             cases.append({
                 "problem_id": pid,
                 "function": tgt[0],
@@ -146,6 +159,9 @@ def build_cases(occ_rows: list[dict], code_by_pid: dict, min_occ: int = 2,
                 "readout_char": readout_start,
                 "target_spans": [r["source_span"] for r in trows[:-1]],
                 "distractor_spans": [r["source_span"] for r in by_var[dist]],
+                "same_role_var": None if same_pick is None else same_pick[1],
+                "same_role_spans": ([] if same_pick is None
+                                    else [r["source_span"] for r in by_var[same_pick]]),
                 "occurrence_id": trows[-1].get("occurrence_id"),
             })
     return cases
