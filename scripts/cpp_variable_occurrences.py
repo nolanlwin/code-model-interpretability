@@ -1,0 +1,212 @@
+"""
+Per-site boolean-flag variable occurrences for C++ (tree-sitter).
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import Any
+
+from tree_sitter import Node
+
+from cpp_boolean_flag_roles import (
+    CppFlagHit,
+    collect_flag_hits,
+    collect_return_hits,
+)
+from cpp_csn_parse import (
+    CppFunction,
+    build_parent_map,
+    byte_to_char,
+    iter_top_level_functions,
+    parse_cpp,
+)
+import token_alignment as _tokalign  # noqa: E402
+
+_NAME_IN_BOOL_PATTERNS = frozenset(
+    {
+        "if_test",
+        "while_test",
+        "if_exp_test",
+        "assign_boolop_rhs",
+        "assign_not_name_inner",
+    }
+)
+_TARGET_PATTERNS = frozenset(
+    {
+        "assign_bool_literal",
+        "assign_boolop_lhs",
+        "assign_not_name",
+    }
+)
+#: Parents that make an identifier an index or member reference rather than
+#: a flag read. ``subscript_argument_list`` is the C++-only one: in ``v[i]``
+#: the index is its child, where Java's ``array_access`` parents it directly.
+_INDEXING_PARENTS = frozenset(
+    {"subscript_expression", "subscript_argument_list", "field_expression"}
+)
+
+
+def name_char_span(node: Node, to_char) -> tuple[int, int]:
+    """The node's span in CHARACTER offsets.
+
+    ``to_char`` comes from ``byte_to_char(code)``; tree-sitter's own
+    ``start_byte``/``end_byte`` are UTF-8 byte offsets and must never be
+    written into ``source_span`` directly.
+    """
+    return to_char(node.start_byte), to_char(node.end_byte)
+
+
+def parent_node_type(parents: dict[Node, Node | None], node: Node) -> str | None:
+    p = parents.get(node)
+    return p.type if p is not None else None
+
+
+def enclosing_statement_type(parents: dict[Node, Node | None], node: Node) -> str | None:
+    skip = frozenset({"translation_unit", "function_definition", "compound_statement"})
+    cur = parents.get(node)
+    while cur is not None:
+        if cur.type.endswith("_statement") or cur.type in {
+            "declaration",
+            "assignment_expression",
+            "return_statement",
+        }:
+            if cur.type not in skip:
+                return cur.type
+        cur = parents.get(cur)
+    return None
+
+
+def _is_indexing_name(node: Node, parents: dict[Node, Node | None]) -> bool:
+    p = parents.get(node)
+    return p is not None and p.type in _INDEXING_PARENTS
+
+
+def occurrence_type(pattern: str, node: Node, parents: dict[Node, Node | None]) -> str:
+    if _is_indexing_name(node, parents):
+        return "indexing_use"
+    if pattern == "while_test":
+        return "loop_use"
+    if pattern == "return_bool":
+        return "return_use"
+    if pattern in ("if_test", "if_exp_test", "assign_boolop_rhs", "assign_not_name_inner"):
+        return "conditional_use"
+    return "assignment"
+
+
+def _identifier_name(node: Node) -> str | None:
+    if node.type != "identifier":
+        return None
+    return node.text.decode("utf-8")
+
+
+def _walk_identifiers(node: Node) -> list[Node]:
+    out: list[Node] = []
+    if node.type == "identifier":
+        out.append(node)
+    for i in range(node.child_count):
+        out.extend(_walk_identifiers(node.child(i)))
+    return out
+
+
+def iter_hit_names(h: CppFlagHit) -> list[Node]:
+    var, node, pat = h.variable, h.node, h.pattern
+    if pat == "return_bool":
+        name = _identifier_name(node)
+        if name == var:
+            return [node]
+        return []
+    if pat in _NAME_IN_BOOL_PATTERNS or pat in _TARGET_PATTERNS:
+        return [sub for sub in _walk_identifiers(node) if _identifier_name(sub) == var]
+    return []
+
+
+def _token_positions_for_span(
+    code: str,
+    span: tuple[int, int],
+    offset_mapping: Sequence[tuple[int, int]],
+) -> list[int] | None:
+    s, e = span
+    if s >= e or s < 0 or e > len(code):
+        return None
+    if code[s:e] == "":
+        return None
+    return _tokalign.char_span_to_token_indices(offset_mapping, s, e)
+
+
+def occurrence_rows_from_cpp_code(
+    code: str,
+    *,
+    repo: str | None = None,
+    path: str | None = None,
+    source_row: int | None = None,
+    tokenizer=None,
+    max_length: int = 2048,
+) -> tuple[list[dict[str, Any]], str | None]:
+    notes: list[str] = []
+    tree = parse_cpp(code)
+    if tree.root_node.has_error:
+        return [], "cpp parse error"
+
+    funcs = list(iter_top_level_functions(tree.root_node))
+    if not funcs:
+        return [], "no top-level function definition"
+
+    offset_mapping: Sequence[tuple[int, int]] | None = None
+    if tokenizer is not None:
+        if tokenizer.is_fast:
+            _, offset_mapping, _ = _tokalign.tokenize_for_alignment(
+                tokenizer, code, max_length=max_length
+            )
+        else:
+            notes.append("slow_tokenizer_no_token_positions")
+
+    # Every offset tree-sitter hands back is a UTF-8 byte offset; build the
+    # converter once per program and route all of them through it.
+    to_char = byte_to_char(code)
+
+    rows: list[dict[str, Any]] = []
+    for func in funcs:
+        parents = build_parent_map(func.node)
+        hits = collect_flag_hits(func, code)
+        hits.extend(collect_return_hits(func, code))
+        for h in hits:
+            for name_node in iter_hit_names(h):
+                span = name_char_span(name_node, to_char)
+                s, e = span
+                occ_type = occurrence_type(h.pattern, name_node, parents)
+                tok_pos: list[int] | None = None
+                if offset_mapping is not None and s < e and e <= len(code):
+                    tok_pos = _token_positions_for_span(code, span, offset_mapping)
+                # A point's column is also in bytes, so derive both columns
+                # from the converted span rather than from start_point[1].
+                line_start = code.rfind("\n", 0, s) + 1
+                rec: dict[str, Any] = {
+                    "variable": h.variable,
+                    "role": "boolean_flag",
+                    "occurrence_type": occ_type,
+                    "line": name_node.start_point[0] + 1,
+                    "col_offset": s - line_start,
+                    "end_col_offset": e - line_start,
+                    "source_span": [s, e],
+                    "token_positions": tok_pos,
+                    "detection_pattern": h.pattern,
+                    "parent_ast_type": parent_node_type(parents, name_node),
+                    "enclosing_statement": enclosing_statement_type(parents, name_node),
+                    "function": func.name,
+                    "function_lineno": func.start_line,
+                    "language": "cpp",
+                }
+                if repo is not None:
+                    rec["repo"] = repo
+                if path is not None:
+                    rec["path"] = path
+                if source_row is not None:
+                    rec["source_row"] = source_row
+                rows.append(rec)
+
+    rows.sort(key=lambda r: (r["line"], r["col_offset"] or 0, r["variable"]))
+    if notes:
+        for r in rows:
+            r.setdefault("notes", []).extend(notes)
+    return rows, None
