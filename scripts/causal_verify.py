@@ -188,6 +188,27 @@ def run_verify() -> int:
           build_cases(same_name, {"p4": "s i   i  "}) == [],
           f"got {build_cases(same_name, {'p4': 's i   i  '})}")
 
+    # Two block-local bindings of one spelling inside a single C++ function
+    # are two variables. Merging them would let the readout come from the
+    # second while the intervention edits the first.
+    from role_occurrences import ambiguous_bindings, function_spans, occurrence_rows as _o2
+    cpp = ("int f(int n){int t = 0; for(int i = 0; i < n; i++){t += i;}"
+           " for(int i = 0; i < n; i++){t += i;} return t;}")
+    amb = ambiguous_bindings(cpp, "C++", function_spans(cpp, "C++"))
+    check("a spelling declared twice in one C++ function is flagged ambiguous",
+          any("i" in v for v in amb.values()), f"got {amb}")
+    rows_i = [r for r in _o2(cpp, "C++", "index_key", "pc") if r["variable"] == "i"]
+    check("occurrences of that ambiguous binding are dropped, not merged",
+          rows_i == [], f"kept {len(rows_i)}")
+    # A single declaration in the same shape must survive.
+    cpp_ok = "int f(int n){int t = 0; for(int i = 0; i < n; i++){t += i;} return t;}"
+    amb_ok = ambiguous_bindings(cpp_ok, "C++", function_spans(cpp_ok, "C++"))
+    check("a singly-declared binding is not flagged",
+          not any("i" in v for v in amb_ok.values()), f"got {amb_ok}")
+    check("function-scoped languages are exempt from the block-scope rule",
+          ambiguous_bindings("def f():\n    i = 0\n    i = 1\n", "Python",
+                             function_spans("def f():\n    i = 0\n    i = 1\n", "Python")) == {})
+
     unknown = [dict(r, scope_known=False) for r in two_fn]
     check("unknown scope is refused, not treated as one namespace",
           build_cases(unknown, {"p2": CODE2}) == [])

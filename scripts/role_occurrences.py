@@ -127,6 +127,69 @@ def _enclosing(spans: list[tuple[int, int, str]], pos: int):
     return found
 
 
+#: Languages with BLOCK scoping, where one function can declare the same
+#: spelling twice as two independent bindings. Python and PHP are
+#: function-scoped, so a repeated assignment there is the same variable.
+_BLOCK_SCOPED = {"Java", "Javascript", "C++", "C"}
+_DECLARATOR_TYPES = {"init_declarator", "variable_declarator"}
+
+
+def ambiguous_bindings(code: str, language: str, fspans) -> dict:
+    """``{scope_id: {names declared more than once in that scope}}``.
+
+    In C, C++, Java and JavaScript a function may declare the same spelling
+    in two disjoint blocks -- ``for (int i ...)`` twice, say -- and those are
+    two independent bindings. Keying occurrences on (function, name) would
+    merge them, so the readout could come from the second binding while the
+    intervention edits the first: the experiment would score one variable and
+    edit another.
+
+    Resolving block scope exactly would mean a per-language scope analyser.
+    Instead these variables are DROPPED and counted. That loses data in the
+    ~20% of C++/Java programs where it happens, and it cannot mis-attribute
+    anything, which is the right side to err on for a causal claim.
+    """
+    if language not in _BLOCK_SCOPED:
+        return {}
+    mods = {"Java": ("tree_sitter_java", "language"),
+            "Javascript": ("tree_sitter_javascript", "language"),
+            "C++": ("tree_sitter_cpp", "language"),
+            "C": ("tree_sitter_cpp", "language")}
+    spec = mods.get(language)
+    if spec is None:
+        return {}
+    try:
+        from tree_sitter import Language, Parser
+        mod = __import__(spec[0])
+        parser = Parser(Language(getattr(mod, spec[1])()))
+    except Exception:
+        return {}
+
+    out: dict = {}
+    for s0, e0, name in fspans:
+        try:
+            tree = parser.parse(code[s0:e0].encode("utf-8"))
+        except Exception:
+            continue
+        counts: Counter = Counter()
+        stack = [tree.root_node]
+        while stack:
+            n = stack.pop()
+            if n.type in _DECLARATOR_TYPES:
+                d = n.child_by_field_name("declarator") or n.child_by_field_name("name")
+                seen = 0
+                while d is not None and d.type != "identifier" and seen < 8:
+                    d = d.child_by_field_name("declarator")
+                    seen += 1
+                if d is not None and d.type == "identifier":
+                    counts[d.text.decode("utf-8")] += 1
+            stack.extend(n.children)
+        dup = {k for k, v in counts.items() if v > 1}
+        if dup:
+            out[f"{name}@{s0}-{e0}"] = dup
+    return out
+
+
 def _scoped_role_map(code: str, language: str, fspans) -> dict:
     """``{scope_id: {role: {names}}}``, plus ``None`` for module level.
 
@@ -141,7 +204,17 @@ def _scoped_role_map(code: str, language: str, fspans) -> dict:
     out: dict = {None: _safe_roles(code, language)}
     for s0, e0, name in fspans:
         sid = f"{name}@{s0}-{e0}"
-        out[sid] = _safe_roles(textwrap.dedent(code[s0:e0]), language)
+        slice_ = code[s0:e0]
+        # Blank any NESTED function body before extracting this scope's
+        # roles: otherwise ast.walk sees the inner function's variables too
+        # and an outer name that the inner scope uses differently looks
+        # multi-role. (Zero incidence in XLCoST -- 0/800 Python programs
+        # contain a nested function -- but the guard is nearly free.)
+        for n0, n1, _nm in fspans:
+            if n0 > s0 and n1 <= e0:
+                a, b = n0 - s0, n1 - s0
+                slice_ = slice_[:a] + (" " * (b - a)) + slice_[b:]
+        out[sid] = _safe_roles(textwrap.dedent(slice_), language)
     return out
 
 
@@ -173,6 +246,7 @@ def occurrence_rows(code: str, language: str, role: str, problem_id: str,
         return []
 
     is_code, _ = _code_mask(code)
+    ambiguous = ambiguous_bindings(code, language, fspans)
     rows: list[dict] = []
     for m in _IDENT.finditer(code):
         name = m.group(0)
@@ -186,6 +260,10 @@ def occurrence_rows(code: str, language: str, role: str, problem_id: str,
         if drop_multi_role and any(
             name in rmap.get(rl, set()) for rl in rmap if rl != role
         ):
+            continue
+        # Two block-local bindings of the same spelling in one function are
+        # two variables; refuse rather than merge them.
+        if name in ambiguous.get(sid, ()):
             continue
         # Reject identifiers inside strings/comments. Checking only the first
         # character is enough: the lexer marks a literal contiguously.
