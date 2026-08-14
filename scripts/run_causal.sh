@@ -29,6 +29,9 @@ OUT=outputs/causal
 echo "=== [1/5] self-check (no GPU needed)"
 python scripts/causal.py verify
 
+echo "=== [1b] GPU gate: hooks must write where they claim"
+python scripts/causal.py sanity --model-id "$MODEL_ID"
+
 echo "=== [2/5] corpus: $LANGUAGE/$SPLIT"
 [ -s "$CANON" ] || python scripts/xlcost_data.py build \
   --language "$LANGUAGE" --split "$SPLIT" --out-dir data/xlcost
