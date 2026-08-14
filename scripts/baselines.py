@@ -367,21 +367,42 @@ def cmd_run(args: argparse.Namespace) -> int:
     best_key = max(keys, key=lambda k: (agg(k, "macro_f1"), k))
     occ_ids = [r.get("occurrence_id") for r in recs]
     clusters = [str(r["repo"]) for r in recs]  # problem-level, matching probe.py
-    preds = []
-    for srow in per_seed:
-        te_idx, cell = srow["_te"], srow.get(best_key)
-        if cell is None or cell.get("_pred") is None:
-            continue
-        for j, i in enumerate(te_idx):
-            preds.append({
-                "occurrence_id": occ_ids[i],
-                "seed": srow["seed"],
-                "y_true": str(y[i]),
-                "y_pred": str(cell["_pred"][j]),
-                "cluster": clusters[i],
-            })
-    result["test_predictions_baseline"] = best_key
-    result["test_predictions"] = preds
+
+    # Pairing is BY occurrence_id, so emitting rows without one is worse than
+    # emitting nothing: bootstrap_ci.py keys predictions into a dict, so every
+    # null id would collapse onto a single entry and the resulting "CI" would
+    # be computed over one occurrence while looking perfectly well-formed.
+    # --manifest records (load_from_manifest) carry no ids at all. Refuse, and
+    # say why in the artifact rather than only on stdout.
+    n_missing = sum(o is None for o in occ_ids)
+    n_dupe = len(occ_ids) - len(set(occ_ids))
+    pairable = n_missing == 0 and n_dupe == 0
+    result["test_predictions_baseline"] = best_key if pairable else None
+    if not pairable:
+        why = (f"{n_missing} of {len(occ_ids)} records have no occurrence_id"
+               if n_missing else f"{n_dupe} duplicate occurrence_ids")
+        result["test_predictions"] = []
+        result["test_predictions_skipped"] = (
+            f"not emitted: {why}. Pairing in bootstrap_ci.py delta is by "
+            "occurrence_id; --manifest input does not carry one, so use "
+            "--occurrences/--canonical to get a probe-vs-baseline CI."
+        )
+        print(f"  NOTE: test_predictions not emitted - {why}")
+    else:
+        preds = []
+        for srow in per_seed:
+            te_idx, cell = srow["_te"], srow.get(best_key)
+            if cell is None or cell.get("_pred") is None:
+                continue
+            for j, i in enumerate(te_idx):
+                preds.append({
+                    "occurrence_id": occ_ids[i],
+                    "seed": srow["seed"],
+                    "y_true": str(y[i]),
+                    "y_pred": str(cell["_pred"][j]),
+                    "cluster": clusters[i],
+                })
+        result["test_predictions"] = preds
     # Drop the private arrays before serialising.
     for srow in per_seed:
         srow.pop("_te", None)
