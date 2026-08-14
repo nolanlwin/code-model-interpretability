@@ -258,13 +258,15 @@ def _fit_text(texts: list[str], y: np.ndarray, tr: np.ndarray, te: np.ndarray,
     try:
         Xtr = vec.fit_transform([texts[i] for i in tr])
     except ValueError:
-        return {"macro_f1": float("nan"), "acc": float("nan"), "note": "empty vocabulary"}
+        return {"macro_f1": float("nan"), "acc": float("nan"),
+                "note": "empty vocabulary", "_pred": None}
     Xte = vec.transform([texts[i] for i in te])
     clf = LogisticRegression(max_iter=2000, C=4.0, random_state=seed).fit(Xtr, y[tr])
     pred = clf.predict(Xte)
     return {
         "macro_f1": macro_f1_stat(y[te], pred, labels),
         "acc": float(accuracy_score(y[te], pred)),
+        "_pred": pred,
     }
 
 
@@ -276,6 +278,7 @@ def _fit_scalar(feats: np.ndarray, y: np.ndarray, tr: np.ndarray, te: np.ndarray
     return {
         "macro_f1": macro_f1_stat(y[te], pred, labels),
         "acc": float(accuracy_score(y[te], pred)),
+        "_pred": pred,
     }
 
 
@@ -318,13 +321,15 @@ def cmd_run(args: argparse.Namespace) -> int:
     for seed in args.seeds:
         tr, val, te = three_way_split(len(recs), groups, y, args.split_policy, seed)
         tr = np.concatenate([tr, val])  # baselines have no layer to select
+        _maj = Counter(y[tr].tolist()).most_common(1)[0][0]
+        _maj_pred = np.full(len(te), _maj)
         row = {
             "seed": seed,
+            "_te": te,
             "majority": {
-                "acc": float(np.mean(y[te] == Counter(y[tr].tolist()).most_common(1)[0][0])),
-                "macro_f1": macro_f1_stat(
-                    y[te], np.full(len(te), Counter(y[tr].tolist()).most_common(1)[0][0]), labels
-                ),
+                "acc": float(np.mean(y[te] == _maj)),
+                "macro_f1": macro_f1_stat(y[te], _maj_pred, labels),
+                "_pred": _maj_pred,
             },
             "name_only": _fit_text(names, y, tr, te, labels, seed),
             "covariates_only": _fit_scalar(covs, y, tr, te, labels, seed),
@@ -354,6 +359,36 @@ def cmd_run(args: argparse.Namespace) -> int:
         "strongest_baseline_macro_f1": max(agg(k, "macro_f1") for k in keys),
         "per_seed": per_seed,
     }
+    # Per-occurrence predictions for the STRONGEST baseline, in the same shape
+    # probe.py emits, so `bootstrap_ci.py delta <probe>.json <baselines>.json`
+    # can compute a paired clustered CI on probe-minus-baseline. Without this
+    # the strongest baseline is a point estimate with no interval, and a
+    # probe-vs-baseline margin cannot be told apart from zero.
+    best_key = max(keys, key=lambda k: (agg(k, "macro_f1"), k))
+    occ_ids = [r.get("occurrence_id") for r in recs]
+    clusters = [str(r["repo"]) for r in recs]  # problem-level, matching probe.py
+    preds = []
+    for srow in per_seed:
+        te_idx, cell = srow["_te"], srow.get(best_key)
+        if cell is None or cell.get("_pred") is None:
+            continue
+        for j, i in enumerate(te_idx):
+            preds.append({
+                "occurrence_id": occ_ids[i],
+                "seed": srow["seed"],
+                "y_true": str(y[i]),
+                "y_pred": str(cell["_pred"][j]),
+                "cluster": clusters[i],
+            })
+    result["test_predictions_baseline"] = best_key
+    result["test_predictions"] = preds
+    # Drop the private arrays before serialising.
+    for srow in per_seed:
+        srow.pop("_te", None)
+        for k in keys:
+            if isinstance(srow.get(k), dict):
+                srow[k].pop("_pred", None)
+
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=1), encoding="utf-8")
