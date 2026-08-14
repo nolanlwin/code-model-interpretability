@@ -37,7 +37,16 @@ from variable_occurrences import occurrence_rows_from_code  # noqa: E402
 # XLCoST language name -> how to extract. python/java/go go through the
 # dispatcher; javascript/php/c++ through their own library modules.
 _DISPATCHER_LANGS = {"Python": "python", "Java": "java"}
-_MODULE_LANGS = {"Javascript": "javascript", "PHP": "php", "C++": "cpp"}
+# "C" deliberately reuses the C++ extractor: C is very nearly a subset,
+# and tree-sitter-cpp parses the XLCoST C corpus BETTER than
+# tree-sitter-c does (381/421 vs 363/421). A separate C trio would be
+# 700 lines to parse strictly less.
+_MODULE_LANGS = {
+    "Javascript": "javascript",
+    "PHP": "php",
+    "C++": "cpp",
+    "C": "cpp",
+}
 
 
 def extract_rows(language: str, code: str, tokenizer=None, max_length: int = 2048):
