@@ -206,15 +206,32 @@ def run_experiment(args) -> int:
     summary = []
     for ly in sorted(by_layer):
         g = by_layer[ly]
+        eff = [x["effect"] for x in g if np.isfinite(x["effect"])]
+        d_int = [x["clean"] - x["intervened"] for x in g]
         s = {"layer": ly, "n": len(g),
              "clean_mean": agg([x["clean"] for x in g]),
              "intervened_mean": agg([x["intervened"] for x in g]),
-             "effect_mean": agg([x["effect"] for x in g])}
+             # effect is a RATIO per case, so its mean is dominated by cases
+             # with a near-zero clean value -- StarCoder/ablate reported a
+             # mean of 6.23 where the effect of the means was 1.02. Report the
+             # median for the ratio and, primarily, the raw logit-difference
+             # change, which has no denominator to explode.
+             "effect_mean": agg(eff),
+             "effect_median": float(np.median(eff)) if eff else float("nan"),
+             "delta_logit_mean": agg(d_int),
+             "delta_logit_median": float(np.median(d_int)) if d_int else float("nan")}
         for k in ("reverse", "control_random_position", "control_random_direction"):
             vals = [x[k] for x in g if x.get(k) is not None]
             if any(k in x for x in g):
                 s[k + "_mean"] = agg(vals)
                 s[k + "_n"] = len(vals)
+                if k.startswith("control"):
+                    # The number that decides whether an effect is a finding:
+                    # how far the real edit moves the metric relative to the
+                    # same edit at control sites.
+                    dc = agg([x["clean"] - x[k] for x in g if x.get(k) is not None])
+                    s[k + "_delta_mean"] = dc
+                    s[k + "_ratio"] = (agg(d_int) / dc) if dc and abs(dc) > 1e-9 else float("nan")
         s["n_without_positional_control"] = sum(
             1 for x in g if x.get("control_random_position", "missing") is None)
         summary.append(s)
@@ -243,13 +260,17 @@ def run_experiment(args) -> int:
     out.write_text(json.dumps(result, indent=1), encoding="utf-8")
 
     print(f"\n{args.intervention} | {args.model_id}")
-    print(f"{'layer':>6}{'n':>6}{'clean':>10}{'intervened':>12}{'effect':>9}"
-          f"{'ctrl-pos':>10}{'ctrl-dir':>10}")
+    print(f"{'layer':>6}{'n':>6}{'clean':>9}{'interv':>9}{'dLogit':>9}"
+          f"{'ctrlPos':>9}{'dCtrl':>8}{'ratio':>8}{'effMed':>8}")
     for s in summary:
-        print(f"{s['layer']:>6}{s['n']:>6}{s['clean_mean']:>10.3f}"
-              f"{s['intervened_mean']:>12.3f}{s['effect_mean']:>9.3f}"
-              f"{s.get('control_random_position_mean', float('nan')):>10.3f}"
-              f"{s.get('control_random_direction_mean', float('nan')):>10.3f}")
+        print(f"{s['layer']:>6}{s['n']:>6}{s['clean_mean']:>9.3f}"
+              f"{s['intervened_mean']:>9.3f}{s['delta_logit_mean']:>9.3f}"
+              f"{s.get('control_random_position_mean', float('nan')):>9.3f}"
+              f"{s.get('control_random_position_delta_mean', float('nan')):>8.3f}"
+              f"{s.get('control_random_position_ratio', float('nan')):>8.1f}"
+              f"{s['effect_median']:>8.3f}")
+    print("ratio = how many times further the real edit moves the metric than "
+          "the same edit at control positions. Below ~2 is not a finding.")
     print(f"\nskipped: {dict(skipped) or 'none'}")
     print(f"wrote {out}")
     return 0
