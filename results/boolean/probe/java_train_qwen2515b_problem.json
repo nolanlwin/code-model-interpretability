@@ -1,0 +1,800 @@
+{
+ "protocol_version": "1.0",
+ "git_commit": "5d8ea9371ad5e5267f2256c250b6d56621de7415",
+ "task": "occurrence_type",
+ "source": "outputs/activations_xlcost/java_train_qwen2515b",
+ "pooling": "mean",
+ "split_policy": "repo",
+ "split_ratio": [
+  0.7,
+  0.1,
+  0.2
+ ],
+ "split_method": "hash_bucket_per_group",
+ "ci_cluster_unit": "repo",
+ "layer_indexing": "0 = embedding layer (pre-transformer); label axes 'embed,1..L'",
+ "layer_selected_on": "validation",
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "C": 1.0,
+ "load_stats": {
+  "store": "outputs/activations_xlcost/java_train_qwen2515b",
+  "model_id": "Qwen/Qwen2.5-1.5B",
+  "index_skipped_rows": 0,
+  "records": 5689
+ },
+ "sample_info": {
+  "occurrence_cap": 2000,
+  "cap_applied": true,
+  "sampling_seed": 1234,
+  "n_after_cap": 2000,
+  "n_problems_sampled": 1427
+ },
+ "class_counts_full": {
+  "return_use": 1717,
+  "assignment": 172,
+  "conditional_use": 111
+ },
+ "classes_dropped": {},
+ "classes_used": [
+  "assignment",
+  "conditional_use",
+  "return_use"
+ ],
+ "majority_baseline_acc": 0.8585,
+ "n_records": 2000,
+ "n_repos": 1427,
+ "max_repo_share": 0.005,
+ "per_seed": [
+  {
+   "seed": 0,
+   "selected_layer": 7,
+   "normalized_depth": 0.25,
+   "val_macro_f1_curve": [
+    0.6451,
+    0.9119,
+    0.9845,
+    0.9845,
+    0.9845,
+    0.9845,
+    0.9845,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "test_macro_f1_curve": [
+    0.6415,
+    0.9801,
+    0.9768,
+    0.9725,
+    0.9801,
+    0.9798,
+    0.9725,
+    0.9801,
+    0.9801,
+    0.9921,
+    0.9845,
+    0.9845,
+    0.9732,
+    0.9845,
+    1.0,
+    0.9808,
+    1.0,
+    0.9845,
+    1.0,
+    0.9887,
+    0.9732,
+    0.9887,
+    0.9808,
+    0.9887,
+    0.9921,
+    0.9921,
+    0.9921,
+    0.9845,
+    0.9921
+   ],
+   "test_acc_curve": [
+    0.9214,
+    0.9946,
+    0.9946,
+    0.9919,
+    0.9946,
+    0.9946,
+    0.9919,
+    0.9946,
+    0.9946,
+    0.9973,
+    0.9946,
+    0.9946,
+    0.9919,
+    0.9946,
+    1.0,
+    0.9946,
+    1.0,
+    0.9946,
+    1.0,
+    0.9973,
+    0.9919,
+    0.9973,
+    0.9946,
+    0.9973,
+    0.9973,
+    0.9973,
+    0.9973,
+    0.9946,
+    0.9973
+   ],
+   "test_macro_f1": 0.9800943236547722,
+   "test_accuracy": 0.994579945799458,
+   "test_macro_f1_ci": [
+    0.9190997756712933,
+    1.0
+   ],
+   "ci_meta": {
+    "n_clusters": 281,
+    "max_cluster_share": 0.016260162601626018,
+    "cluster_warning": false
+   },
+   "classes_absent_from_train": [],
+   "per_class_f1": {
+    "assignment": 0.9778,
+    "conditional_use": 0.9655,
+    "return_use": 0.997
+   },
+   "test_support": {
+    "return_use": 332,
+    "assignment": 22,
+    "conditional_use": 15
+   },
+   "confusion_matrix": [
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     0,
+     14,
+     1
+    ],
+    [
+     1,
+     0,
+     331
+    ]
+   ],
+   "split_sizes": {
+    "train": 1440,
+    "val": 191,
+    "test": 369
+   }
+  },
+  {
+   "seed": 1,
+   "selected_layer": 9,
+   "normalized_depth": 0.32142857142857145,
+   "val_macro_f1_curve": [
+    0.5797,
+    0.9814,
+    0.9814,
+    0.9172,
+    0.9609,
+    0.9689,
+    0.9814,
+    0.9814,
+    0.9814,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.9814,
+    0.9814
+   ],
+   "test_macro_f1_curve": [
+    0.7944,
+    0.8952,
+    0.9309,
+    0.946,
+    0.9548,
+    0.978,
+    0.9421,
+    0.9662,
+    0.9535,
+    0.9354,
+    0.9662,
+    0.9836,
+    0.9836,
+    0.9604,
+    0.9724,
+    0.9942,
+    0.9776,
+    0.9942,
+    0.9942,
+    0.9942,
+    0.9882,
+    0.9882,
+    0.9826,
+    0.9826,
+    0.9826,
+    0.9826,
+    0.9826,
+    0.9826,
+    0.9826
+   ],
+   "test_acc_curve": [
+    0.942,
+    0.9815,
+    0.9868,
+    0.9868,
+    0.9868,
+    0.9921,
+    0.9842,
+    0.9921,
+    0.9894,
+    0.9868,
+    0.9921,
+    0.9947,
+    0.9947,
+    0.9894,
+    0.9921,
+    0.9974,
+    0.9921,
+    0.9974,
+    0.9974,
+    0.9974,
+    0.9947,
+    0.9947,
+    0.9921,
+    0.9921,
+    0.9921,
+    0.9921,
+    0.9921,
+    0.9921,
+    0.9921
+   ],
+   "test_macro_f1": 0.9353924983754647,
+   "test_accuracy": 0.9868073878627969,
+   "test_macro_f1_ci": [
+    0.7376806106843602,
+    1.0
+   ],
+   "ci_meta": {
+    "n_clusters": 278,
+    "max_cluster_share": 0.023746701846965697,
+    "cluster_warning": false
+   },
+   "classes_absent_from_train": [],
+   "per_class_f1": {
+    "assignment": 0.9846,
+    "conditional_use": 0.8276,
+    "return_use": 0.994
+   },
+   "test_support": {
+    "return_use": 330,
+    "assignment": 32,
+    "conditional_use": 17
+   },
+   "confusion_matrix": [
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     1,
+     12,
+     4
+    ],
+    [
+     0,
+     0,
+     330
+    ]
+   ],
+   "split_sizes": {
+    "train": 1439,
+    "val": 182,
+    "test": 379
+   }
+  },
+  {
+   "seed": 2,
+   "selected_layer": 5,
+   "normalized_depth": 0.17857142857142858,
+   "val_macro_f1_curve": [
+    0.8095,
+    0.9783,
+    0.9783,
+    0.9783,
+    0.9894,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "test_macro_f1_curve": [
+    0.8376,
+    0.9787,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "test_acc_curve": [
+    0.9521,
+    0.995,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "test_macro_f1": 1.0,
+   "test_accuracy": 1.0,
+   "test_macro_f1_ci": [
+    1.0,
+    1.0
+   ],
+   "ci_meta": {
+    "n_clusters": 296,
+    "max_cluster_share": 0.020151133501259445,
+    "cluster_warning": false
+   },
+   "classes_absent_from_train": [],
+   "per_class_f1": {
+    "assignment": 1.0,
+    "conditional_use": 1.0,
+    "return_use": 1.0
+   },
+   "test_support": {
+    "return_use": 348,
+    "assignment": 33,
+    "conditional_use": 16
+   },
+   "confusion_matrix": [
+    [
+     33,
+     0,
+     0
+    ],
+    [
+     0,
+     16,
+     0
+    ],
+    [
+     0,
+     0,
+     348
+    ]
+   ],
+   "split_sizes": {
+    "train": 1421,
+    "val": 182,
+    "test": 397
+   }
+  },
+  {
+   "seed": 3,
+   "selected_layer": 2,
+   "normalized_depth": 0.07142857142857142,
+   "val_macro_f1_curve": [
+    0.7237,
+    0.9922,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "test_macro_f1_curve": [
+    0.8266,
+    0.9837,
+    0.9947,
+    0.9947,
+    1.0,
+    0.9947,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "test_acc_curve": [
+    0.9519,
+    0.9928,
+    0.9976,
+    0.9976,
+    1.0,
+    0.9976,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "test_macro_f1": 0.9947105768527932,
+   "test_accuracy": 0.9975961538461539,
+   "test_macro_f1_ci": [
+    0.9747792400471874,
+    1.0
+   ],
+   "ci_meta": {
+    "n_clusters": 313,
+    "max_cluster_share": 0.021634615384615384,
+    "cluster_warning": false
+   },
+   "classes_absent_from_train": [],
+   "per_class_f1": {
+    "assignment": 0.9855,
+    "conditional_use": 1.0,
+    "return_use": 0.9986
+   },
+   "test_support": {
+    "return_use": 364,
+    "assignment": 34,
+    "conditional_use": 18
+   },
+   "confusion_matrix": [
+    [
+     34,
+     0,
+     0
+    ],
+    [
+     0,
+     18,
+     0
+    ],
+    [
+     1,
+     0,
+     363
+    ]
+   ],
+   "split_sizes": {
+    "train": 1368,
+    "val": 216,
+    "test": 416
+   }
+  },
+  {
+   "seed": 4,
+   "selected_layer": 8,
+   "normalized_depth": 0.2857142857142857,
+   "val_macro_f1_curve": [
+    0.773,
+    0.9884,
+    0.9711,
+    0.9816,
+    0.9691,
+    0.9814,
+    0.976,
+    0.9884,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.9933,
+    0.9933,
+    0.9933,
+    0.9933,
+    0.9933,
+    0.9816,
+    0.9933,
+    1.0,
+    1.0,
+    1.0,
+    0.9867,
+    0.9933,
+    0.9867,
+    0.9707,
+    0.9867,
+    0.9867,
+    0.9867
+   ],
+   "test_macro_f1_curve": [
+    0.7523,
+    0.9807,
+    0.9948,
+    0.9948,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "test_acc_curve": [
+    0.9224,
+    0.9945,
+    0.9972,
+    0.9972,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "test_macro_f1": 1.0,
+   "test_accuracy": 1.0,
+   "test_macro_f1_ci": [
+    1.0,
+    1.0
+   ],
+   "ci_meta": {
+    "n_clusters": 267,
+    "max_cluster_share": 0.019390581717451522,
+    "cluster_warning": false
+   },
+   "classes_absent_from_train": [],
+   "per_class_f1": {
+    "assignment": 1.0,
+    "conditional_use": 1.0,
+    "return_use": 1.0
+   },
+   "test_support": {
+    "return_use": 307,
+    "assignment": 36,
+    "conditional_use": 18
+   },
+   "confusion_matrix": [
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     0,
+     18,
+     0
+    ],
+    [
+     0,
+     0,
+     307
+    ]
+   ],
+   "split_sizes": {
+    "train": 1405,
+    "val": 234,
+    "test": 361
+   }
+  }
+ ],
+ "aggregate": {
+  "test_macro_f1_mean": 0.982039479776606,
+  "test_macro_f1_std": 0.02443539146680806,
+  "test_accuracy_mean": 0.9957966975016816,
+  "selected_layers": [
+   7,
+   9,
+   5,
+   2,
+   8
+  ],
+  "normalized_depths": [
+   0.25,
+   0.321,
+   0.179,
+   0.071,
+   0.286
+  ]
+ },
+ "control_task": {
+  "test_macro_f1_mean": 0.7268075526550822,
+  "selected_layers": [
+   0,
+   3,
+   7,
+   0,
+   5
+  ]
+ },
+ "selectivity_macro_f1": 0.25523192712152376,
+ "resolution_rho": 0.011995506006395207,
+ "smallest_test_class": {
+  "label": "conditional_use",
+  "n": 15
+ }
+}
