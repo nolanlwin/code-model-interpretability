@@ -67,7 +67,9 @@ def compare_boolean_flag_names(node: ast.Compare) -> set[str]:
             cur = comp
             continue
         for a, b in ((cur, comp), (comp, cur)):
-            if _is_load_name(a) and isinstance(b, ast.Constant) and b.value in (True, False):
+            # Same trap as _bool_literal: `x == 0` must not be read as
+            # `x == False`. Comparing an int is not a boolean-flag test.
+            if _is_load_name(a) and isinstance(b, ast.Constant) and _is_bool_constant(b.value):
                 out.add(a.id)
         cur = comp
     return out
@@ -107,8 +109,24 @@ def bool_expression_load_names(expr: ast.expr) -> set[str]:
     return set()
 
 
+def _is_bool_constant(value) -> bool:
+    """True only for the literals ``True``/``False``.
+
+    NOT ``value in (True, False)``. Python defines ``0 == False`` and
+    ``1 == True``, so that membership test also accepts the integers 0 and 1
+    (and the floats 0.0/1.0). Every ``i = 0`` and ``res = 1`` in the corpus
+    was therefore detected as a boolean-flag assignment: 7,897 of 8,432
+    detections on XLCoST Python -- 93.7% -- had an int or float right-hand
+    side, and the resulting class made up 47% of the whole boolean sample.
+
+    ``isinstance`` is the correct test because ``bool`` is a subclass of
+    ``int``: True and False are instances of bool, 0 and 1 are not.
+    """
+    return isinstance(value, bool)
+
+
 def _bool_literal(expr: ast.expr) -> bool:
-    return isinstance(expr, ast.Constant) and expr.value in (True, False)
+    return isinstance(expr, ast.Constant) and _is_bool_constant(expr.value)
 
 
 def hits_from_assign(node: ast.Assign, _source: str) -> list[FlagHit]:
