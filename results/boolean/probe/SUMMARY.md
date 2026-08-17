@@ -18,6 +18,6 @@ sample can resolve and must not be read as a difference.
 | php | Qwen2.5-1.5B | 0.9829 | 0.2138 | 0.9689 | 0.014 | 0.008 | +1.75 |
 | php | Qwen2.5-Coder-1.5B | 0.9748 | 0.216 | 0.9689 | 0.0059 | 0.008 | +0.74  ⚠ below resolution |
 | php | StarCoder2-7B | 0.9903 | 0.2401 | 0.9689 | 0.0214 | 0.008 | +2.69 |
-| python | Qwen2.5-1.5B | 0.9773 | 0.1891 | 0.9882 | -0.0109 | 0.0233 | -0.47  ⚠ below resolution |
-| python | Qwen2.5-Coder-1.5B | 0.9854 | 0.1975 | 0.9882 | -0.0028 | 0.0233 | -0.12  ⚠ below resolution |
-| python | StarCoder2-7B | 0.9887 | 0.2026 | 0.9882 | 0.0005 | 0.0233 | +0.02  ⚠ below resolution |
+| python | Qwen2.5-1.5B | 0.9815 | 0.2798 | 0.9827 | -0.0012 | 0.0068 | -0.17  ⚠ below resolution |
+| python | Qwen2.5-Coder-1.5B | 0.9808 | 0.2721 | 0.9827 | -0.0019 | 0.0068 | -0.28  ⚠ below resolution |
+| python | StarCoder2-7B | 0.9875 | 0.2879 | 0.9827 | 0.0048 | 0.0068 | +0.70  ⚠ below resolution |
