@@ -95,11 +95,25 @@ Results land in `results/unified/<model>/<role>/<mode>/`:
 | `summary.csv` | best layer per strategy with ΔF1 vs baseline |
 | `cosine_vs_baseline.csv` | probe-direction cosine similarity per layer |
 | `crosslang.csv` | in-domain F1 + transfer accuracy/F1 per language |
+| `patching.csv` | activation-patching recovery curve per condition (per layer) |
 
 Protocol (identical to the original notebooks): per-layer logistic regression
 probes (class-balanced, C=1.0) on frozen hidden states, 80/20 stratified
 split, macro F1, best layer selected on test F1. Any Hugging Face model works
 via `--model`; swap in CodeBERT, RoBERTa, Qwen2.5-0.5B, DeepSeek-Coder, etc.
+
+Both experiments additionally run **activation patching** (probe as readout):
+for a matched clean/corrupt pair the clean role-token activations are patched
+into the corrupt run one layer at a time, and `patching.csv` records the causal
+recovery of the probe readout per layer (`recovery≈1` ⇒ that layer carries the
+role signal). Disable with `--no-patch`; tune with `--max-pairs` /
+`--patch-min-gap`. Before a full sweep, run the offline sanity check — it
+verifies the patch mechanics (readout-layer recovery == 1.0, no hook residue)
+and exercises both experiments on a tiny cached model:
+
+```bash
+python -m pipeline.smoke_test
+```
 
 ## 4. Publish / update the dataset
 
@@ -121,7 +135,9 @@ Uploads both configs plus the dataset card in `dataset_card/README.md`.
 │   ├── perturb.py             #   naming strategies incl. per-role misleading
 │   ├── build_dataset.py       #   materialize the two dataset configs
 │   ├── probing.py             #   token labeling, hidden states, probes
-│   ├── run_experiment.py      #   perturbation + crosslang CLIs
+│   ├── patching.py            #   activation patching with probe readout
+│   ├── run_experiment.py      #   perturbation + crosslang CLIs (probes + patching)
+│   ├── smoke_test.py          #   offline end-to-end sanity check
 │   ├── hf_upload.py           #   Hub upload
 │   └── requirements.txt       #   minimal deps
 ├── dataset_card/README.md     # HF dataset card (XLCoST credits, fields, limits)

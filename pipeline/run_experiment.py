@@ -6,6 +6,10 @@ Modes:
   crosslang    — train the Python baseline probe for one role, evaluate on
                  every other language (in-domain probes + transfer accuracy)
 
+Both modes also run activation patching (unless --no-patch): using the trained
+probe as the readout, patch clean role-token activations into the corrupt run
+layer by layer and record the causal recovery curve (patching.csv).
+
 Usage:
   python -m pipeline.run_experiment perturbation --role accumulator \
       --model Qwen/Qwen2.5-1.5B --dataset dataset --split train --max-programs 500
@@ -21,6 +25,7 @@ import os
 import torch
 
 from . import LANGUAGES, ROLES, STRATEGIES
+from .patching import find_decoder_layers, patch_experiment
 from .probing import (best_layer, build_token_dataset, cross_evaluate,
                       extract_hidden_states, load_model, probe_cosine,
                       train_probes)
@@ -44,6 +49,20 @@ def load_rows(dataset_dir, config, split, language=None, strategy=None, max_prog
     return rows
 
 
+def _by_pid(rows):
+    return {row["problem_id"]: row for row in rows}
+
+
+def _patch_readout_layer(best, layers):
+    """Clamp a probe's best layer to a valid patch/readout index.
+
+    Valid targets are the raw residual-stream layers 1..n_layers-1 (excluding
+    the embeddings at 0 and the post-final-norm hidden state at n_layers).
+    """
+    n_layers = len(layers)
+    return min(max(1, best), max(1, n_layers - 1))
+
+
 def _relevant_strategies(role):
     # Role-specific misleading only; other roles' misleading variants are noise here.
     return [s for s in STRATEGIES
@@ -65,6 +84,11 @@ def run_perturbation(args, tokenizer, model, leading_special, device, out_dir):
         bl = best_layer(all_results[strategy])
         print(f"  best layer {bl}: acc={all_results[strategy][bl]['test_acc']:.3f} "
               f"F1={all_results[strategy][bl]['test_f1']:.3f}")
+
+    if not all_results:
+        print(f"no usable programs for role '{args.role}' in {args.max_programs} "
+              f"programs — nothing to write (try a larger --max-programs)")
+        return
 
     layers = sorted(next(iter(all_results.values())))
     with open(os.path.join(out_dir, "per_layer.csv"), "w", newline="") as f:
@@ -96,6 +120,51 @@ def run_perturbation(args, tokenizer, model, leading_special, device, out_dir):
                     continue
                 sims = probe_cosine(all_results["baseline"], res)
                 w.writerow([s] + [f"{sims[li]:.4f}" for li in layers])
+
+    if args.patch and "baseline" in all_results:
+        run_perturbation_patching(args, tokenizer, model, leading_special, device,
+                                  out_dir, all_results)
+
+
+def _write_patching_csv(out_dir, readout_layer, rows):
+    """rows: list of (condition, recovery_by_layer, n_pairs, m_clean, m_corrupt)."""
+    layers = sorted({li for _, rec, *_ in rows for li in rec})
+    with open(os.path.join(out_dir, "patching.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["condition", "readout_layer", "n_pairs", "m_clean", "m_corrupt"]
+                   + [f"recovery_layer_{li}" for li in layers])
+        for cond, rec, n_pairs, m_clean, m_corrupt in rows:
+            w.writerow([cond, readout_layer, n_pairs, f"{m_clean:.4f}", f"{m_corrupt:.4f}"]
+                       + [f"{rec.get(li, float('nan')):.4f}" for li in layers])
+
+
+def run_perturbation_patching(args, tokenizer, model, leading_special, device,
+                              out_dir, all_results):
+    layers = find_decoder_layers(model)
+    # Patch/read on the raw residual stream: index 0 is embeddings (nothing
+    # upstream to patch) and the final index is post-final-norm (patching the
+    # pre-norm residual there is inconsistent), so restrict to 1..n_layers-1.
+    readout_layer = _patch_readout_layer(best_layer(all_results["baseline"]), layers)
+    probe = all_results["baseline"][readout_layer]["probe"]
+    clean = _by_pid(load_rows(args.dataset, "python_perturbations", args.split,
+                              strategy="baseline", max_programs=args.max_programs))
+    print(f"patching (readout layer {readout_layer}, {len(clean)} clean programs)")
+
+    rows = []
+    for strategy in _relevant_strategies(args.role):
+        if strategy == "baseline":
+            continue
+        corrupt = _by_pid(load_rows(args.dataset, "python_perturbations", args.split,
+                                    strategy=strategy, max_programs=args.max_programs))
+        rec, n, mc, mx = patch_experiment(clean, corrupt, args.role, tokenizer, model,
+                                          layers, leading_special, device, probe,
+                                          readout_layer, max_pairs=args.max_pairs,
+                                          min_gap=args.patch_min_gap)
+        peak = max(rec, key=rec.get) if rec else None
+        print(f"  [{strategy}] {n} pairs  M_clean={mc:.3f} M_corrupt={mx:.3f}"
+              + (f"  peak recovery layer {peak}={rec[peak]:.3f}" if peak else "  (no pairs)"))
+        rows.append((strategy, rec, n, mc, mx))
+    _write_patching_csv(out_dir, readout_layer, rows)
 
 
 def run_crosslang(args, tokenizer, model, leading_special, device, out_dir):
@@ -132,6 +201,36 @@ def run_crosslang(args, tokenizer, model, leading_special, device, out_dir):
                         f"{in_results[in_best]['test_f1']:.4f}",
                         f"{xfer[py_best]['acc']:.4f}", f"{xfer[py_best]['f1']:.4f}"])
 
+    if args.patch:
+        run_crosslang_patching(args, tokenizer, model, leading_special, device,
+                               out_dir, py_results, py_best)
+
+
+def run_crosslang_patching(args, tokenizer, model, leading_special, device,
+                           out_dir, py_results, py_best):
+    layers = find_decoder_layers(model)
+    readout_layer = _patch_readout_layer(py_best, layers)  # raw residual stream only
+    probe = py_results[readout_layer]["probe"]
+    clean = _by_pid(load_rows(args.dataset, "multilingual_baseline", args.split,
+                              language="Python", max_programs=args.max_programs))
+    print(f"patching (readout layer {readout_layer}, {len(clean)} Python programs)")
+
+    rows = []
+    for language in LANGUAGES:
+        if language == "Python":
+            continue
+        corrupt = _by_pid(load_rows(args.dataset, "multilingual_baseline", args.split,
+                                    language=language, max_programs=args.max_programs))
+        rec, n, mc, mx = patch_experiment(clean, corrupt, args.role, tokenizer, model,
+                                          layers, leading_special, device, probe,
+                                          readout_layer, max_pairs=args.max_pairs,
+                                          min_gap=args.patch_min_gap)
+        peak = max(rec, key=rec.get) if rec else None
+        print(f"  [{language}] {n} pairs  M_clean={mc:.3f} M_corrupt={mx:.3f}"
+              + (f"  peak recovery layer {peak}={rec[peak]:.3f}" if peak else "  (no pairs)"))
+        rows.append((language, rec, n, mc, mx))
+    _write_patching_csv(out_dir, readout_layer, rows)
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
@@ -142,6 +241,12 @@ def main():
     ap.add_argument("--split", default="train")
     ap.add_argument("--max-programs", type=int, default=None)
     ap.add_argument("--out", default="results/unified")
+    ap.add_argument("--no-patch", dest="patch", action="store_false",
+                    help="skip the activation-patching stage")
+    ap.add_argument("--max-pairs", type=int, default=150,
+                    help="max clean/corrupt pairs per condition for patching")
+    ap.add_argument("--patch-min-gap", type=float, default=0.02,
+                    help="min |M_clean - M_corrupt| for a pair to count")
     args = ap.parse_args()
 
     device = ("cuda" if torch.cuda.is_available()
