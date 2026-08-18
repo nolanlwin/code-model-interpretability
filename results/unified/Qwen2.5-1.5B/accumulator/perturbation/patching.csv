@@ -1,0 +1,6 @@
+condition,readout_layer,n_pairs,m_clean,m_corrupt,recovery_layer_1,recovery_layer_2,recovery_layer_3,recovery_layer_4,recovery_layer_5,recovery_layer_6,recovery_layer_7,recovery_layer_8,recovery_layer_9
+random_nouns,9,40,0.9530,0.2677,0.7504,0.7641,0.8043,0.8062,0.8268,0.9559,0.9551,0.6400,1.0000
+single_chars,9,40,0.9878,0.7020,0.6350,0.5463,0.6630,0.6655,0.7050,0.8503,0.8993,-0.1910,1.0000
+all_same,9,27,0.9449,0.3589,0.3004,0.3315,0.4714,0.5297,0.5115,0.6746,0.6666,0.7360,1.0000
+numeric_vars,9,40,0.8469,0.0041,0.5530,0.6712,0.6077,0.6446,0.6695,0.8162,0.8166,0.7292,1.0000
+misleading_accumulator,9,40,0.9570,0.5669,0.5639,0.5932,0.6205,0.6261,0.6738,0.8027,0.7969,0.2344,1.0000

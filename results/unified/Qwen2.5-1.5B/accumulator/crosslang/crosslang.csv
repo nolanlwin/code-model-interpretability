@@ -1,0 +1,8 @@
+language,programs,indomain_best_layer,indomain_test_f1,transfer_acc_at_py_best,transfer_f1_at_py_best
+Python,100,6,0.9230,,
+Java,114,13,0.9516,0.9409,0.7304
+C++,150,9,0.9479,0.9336,0.7029
+C,95,13,0.9709,0.9278,0.6435
+C#,114,9,0.9558,0.9416,0.7388
+Javascript,148,9,0.9464,0.9100,0.6957
+PHP,145,9,0.9530,0.9116,0.6367

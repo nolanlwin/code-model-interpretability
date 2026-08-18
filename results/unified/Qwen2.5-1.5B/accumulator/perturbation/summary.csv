@@ -1,0 +1,7 @@
+strategy,best_layer,test_acc,test_f1,delta_f1_vs_baseline
+baseline,6,0.9907,0.9476,
+random_nouns,5,0.9918,0.9479,+0.0003
+single_chars,11,0.9896,0.9348,-0.0128
+all_same,4,0.9917,0.9777,+0.0301
+numeric_vars,9,0.9533,0.8337,-0.1139
+misleading_accumulator,7,1.0000,1.0000,+0.0524
