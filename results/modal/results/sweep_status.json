@@ -1,0 +1,32 @@
+{
+  "completed": [
+    {
+      "mode": "perturbation",
+      "model": "bigcode/starcoder2-7b"
+    },
+    {
+      "mode": "crosslang",
+      "model": "Qwen/Qwen2.5-1.5B"
+    },
+    {
+      "mode": "crosslang",
+      "model": "Qwen/Qwen2.5-Coder-1.5B"
+    },
+    {
+      "mode": "crosslang",
+      "model": "bigcode/starcoder2-7b"
+    }
+  ],
+  "failed": [],
+  "skipped": [
+    {
+      "mode": "perturbation",
+      "model": "Qwen/Qwen2.5-1.5B"
+    },
+    {
+      "mode": "perturbation",
+      "model": "Qwen/Qwen2.5-Coder-1.5B"
+    }
+  ],
+  "running": null
+}

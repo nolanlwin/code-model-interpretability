@@ -9,6 +9,12 @@ Hidden states accumulate in float16 so 7B models fit Colab RAM.
 """
 
 from collections import defaultdict
+import gc
+import json
+import mmap
+import os
+import shutil
+import tempfile
 
 import numpy as np
 import torch
@@ -103,23 +109,154 @@ def build_token_dataset(rows, role, tokenizer):
     return dataset, skipped
 
 
-def extract_hidden_states(dataset, tokenizer, model, leading_special, device):
+class DiskLayers(dict):
+    """int -> path to a float16 memmap. Load one layer at a time, then close()."""
+
+    def __init__(self, paths, n_used, cache_dir=None):
+        super().__init__(paths)
+        self.n_used = int(n_used)
+        self.cache_dir = cache_dir
+
+    def close(self, delete=True):
+        self.clear()
+        if delete and self.cache_dir and os.path.isdir(self.cache_dir):
+            shutil.rmtree(self.cache_dir, ignore_errors=True)
+        self.cache_dir = None
+        gc.collect()
+
+
+def _release_mmap_pages(mm):
+    """Flush and drop page-cache for a write memmap so RSS does not track file size."""
+    mm.flush()
+    buf = getattr(mm, "_mmap", None)
+    if buf is None:
+        return
+    try:
+        buf.madvise(mmap.MADV_DONTNEED)
+    except (AttributeError, OSError):
+        pass
+
+
+def dump_exists(dump_dir):
+    return os.path.isfile(os.path.join(dump_dir, "meta.json")) and os.path.isfile(
+        os.path.join(dump_dir, "labels.npy"))
+
+
+def load_hidden_dump(dump_dir):
+    """Reload a dump written by extract_hidden_states (layer_*.npy + sidecars)."""
+    with open(os.path.join(dump_dir, "meta.json")) as f:
+        meta = json.load(f)
+    hidden = DiskLayers(
+        {li: os.path.join(dump_dir, f"layer_{li}.npy") for li in range(meta["n_layers"])},
+        n_used=meta["n_used"],
+        cache_dir=dump_dir,
+    )
+    labels = np.load(os.path.join(dump_dir, "labels.npy"), allow_pickle=True)
+    programs = np.load(os.path.join(dump_dir, "programs.npy"), allow_pickle=True)
+    return hidden, labels, programs
+
+
+def _write_dump_sidecar(cache_dir, n_layers, n_used, labels, programs):
+    np.save(os.path.join(cache_dir, "labels.npy"), labels)
+    np.save(os.path.join(cache_dir, "programs.npy"), programs)
+    with open(os.path.join(cache_dir, "meta.json"), "w") as f:
+        json.dump({"n_layers": int(n_layers), "n_used": int(n_used)}, f)
+
+
+def load_layer_f32(hidden_by_layer, li):
+    """Load a single layer as float32 and drop the mmap so RAM can be reclaimed."""
+    src = hidden_by_layer[li]
+    n_used = getattr(hidden_by_layer, "n_used", None)
+    if isinstance(src, str):
+        mm = np.load(src, mmap_mode="r")
+        sl = mm[:n_used] if n_used is not None else mm
+        X = np.array(sl, dtype=np.float32, copy=True)
+        del mm, sl
+        gc.collect()
+        return X
+    sl = src[:n_used] if n_used is not None else src
+    X = np.array(sl, dtype=np.float32, copy=True)
+    gc.collect()
+    return X
+
+
+def extract_hidden_states(dataset, tokenizer, model, leading_special, device,
+                          out_dir=None):
     """Returns (hidden_by_layer fp16, labels, program_ids) — program identity
-    is carried per token so splits can group by program downstream."""
-    all_hidden, all_labels, all_programs = defaultdict(list), [], []
+    is carried per token so splits can group by program downstream.
+
+    Layer matrices are disk-backed memmaps so 400+ programs × 29 layers
+    do not have to sit in RAM at once (Kaggle OOM'd the in-memory concat).
+    """
+    n_tokens = 0
+    for sample in dataset:
+        enc = tokenizer(sample["code"], return_tensors="pt", truncation=True,
+                        max_length=MAX_SEQ_LEN, padding=False)
+        n_content = max(enc["input_ids"].shape[1] - leading_special, 0)
+        n_tokens += min(len(sample["labels"]), n_content)
+    if n_tokens == 0:
+        raise ValueError("no tokens to extract")
+
+    cache_root = os.environ.get("HIDDEN_CACHE_DIR", tempfile.gettempdir())
+    os.makedirs(cache_root, exist_ok=True)
+    cache_dir = out_dir or tempfile.mkdtemp(prefix="hidden_states_", dir=cache_root)
+    os.makedirs(cache_dir, exist_ok=True)
+    memmaps, all_labels, all_programs = None, [], []
+    offset = 0
     with torch.no_grad():
-        for sample in tqdm(dataset, desc="hidden states", leave=False):
+        for i, sample in enumerate(tqdm(dataset, desc="hidden states", leave=False)):
             enc = tokenizer(sample["code"], return_tensors="pt", truncation=True,
                             max_length=MAX_SEQ_LEN, padding=False).to(device)
             n_content = enc["input_ids"].shape[1] - leading_special
             labels = sample["labels"][:n_content]
-            for li, hs in enumerate(model(**enc).hidden_states):
-                content = hs[0, leading_special:leading_special + len(labels)]
-                all_hidden[li].append(content.half().cpu().numpy())
+            n = len(labels)
+            if n == 0:
+                continue
+            out = model(**enc).hidden_states
+            if memmaps is None:
+                dim = int(out[0].shape[-1])
+                memmaps = {
+                    li: np.lib.format.open_memmap(
+                        os.path.join(cache_dir, f"layer_{li}.npy"),
+                        mode="w+", dtype=np.float16, shape=(n_tokens, dim),
+                    )
+                    for li in range(len(out))
+                }
+            for li, hs in enumerate(out):
+                content = hs[0, leading_special:leading_special + n].half().cpu().numpy()
+                memmaps[li][offset:offset + n] = content
             all_labels.extend(labels)
-            all_programs.extend([sample["program_id"]] * len(labels))
-    hidden = {li: np.concatenate(v) for li, v in all_hidden.items()}
-    return hidden, np.array(all_labels), np.array(all_programs)
+            all_programs.extend([sample["program_id"]] * n)
+            offset += n
+            del out
+            if str(device).startswith("cuda"):
+                torch.cuda.empty_cache()
+            if i % 20 == 19:
+                for mm in memmaps.values():
+                    _release_mmap_pages(mm)
+            gc.collect()
+    if memmaps is None:
+        raise ValueError("no hidden states written")
+    n_layers = len(memmaps)
+    for mm in memmaps.values():
+        _release_mmap_pages(mm)
+        buf = getattr(mm, "_mmap", None)
+        if buf is not None:
+            try:
+                buf.close()
+            except BufferError:
+                pass
+    del memmaps
+    gc.collect()
+    hidden = DiskLayers(
+        {li: os.path.join(cache_dir, f"layer_{li}.npy") for li in range(n_layers)},
+        n_used=offset,
+        cache_dir=cache_dir,
+    )
+    labels = np.array(all_labels)
+    programs = np.array(all_programs)
+    _write_dump_sidecar(cache_dir, n_layers, offset, labels, programs)
+    return hidden, labels, programs
 
 
 def train_probes(hidden_by_layer, labels, program_ids, seeds=SEEDS, C=1.0,
@@ -148,14 +285,17 @@ def train_probes(hidden_by_layer, labels, program_ids, seeds=SEEDS, C=1.0,
         store_fits = not fitted  # first VALID seed keeps the reusable probes
         val_f1, test_preds = [], []
         for li in layers:
-            X = hidden_by_layer[li].astype(np.float32)
+            X = load_layer_f32(hidden_by_layer, li)
             scaler = StandardScaler().fit(X[tr])
             clf = LogisticRegression(max_iter=2000, class_weight="balanced",
                                      random_state=seed, C=C)
-            clf.fit(scaler.transform(X[tr]), labels[tr])
-            p_tr = clf.predict(scaler.transform(X[tr]))
+            X_tr = scaler.transform(X[tr])
+            clf.fit(X_tr, labels[tr])
+            p_tr = clf.predict(X_tr)
             p_va = clf.predict(scaler.transform(X[val]))
             p_te = clf.predict(scaler.transform(X[te]))
+            del X, X_tr
+            gc.collect()
             acc[li]["train_acc"].append(accuracy_score(labels[tr], p_tr))
             acc[li]["test_acc"].append(accuracy_score(labels[te], p_te))
             acc[li]["train_f1"].append(macro_f1(labels[tr], p_tr))
@@ -217,12 +357,14 @@ def control_selectivity(hidden_by_layer, labels, program_ids, results,
         tr, val, te = hash_split(program_ids, seed)
         if min(len(tr), len(te)) == 0 or len(set(labels_c[tr])) < 2:
             continue
-        X = hidden_by_layer[li].astype(np.float32)
+        X = load_layer_f32(hidden_by_layer, li)
         scaler = StandardScaler().fit(X[tr])
         clf = LogisticRegression(max_iter=2000, class_weight="balanced",
                                  random_state=seed, C=C)
         clf.fit(scaler.transform(X[tr]), labels_c[tr])
         f1s.append(macro_f1(labels_c[te], clf.predict(scaler.transform(X[te]))))
+        del X
+        gc.collect()
     control = float(np.mean(f1s)) if f1s else float("nan")
     results[META]["control_f1"] = control
     results[META]["selectivity"] = results[META]["test_f1_mean"] - control
@@ -242,8 +384,10 @@ def cross_evaluate(source_results, target_hidden, target_labels):
         if li not in target_hidden:
             continue
         scaler = source_results[li]["scaler"]
-        pred = source_results[li]["probe"].predict(
-            scaler.transform(target_hidden[li].astype(np.float32)))
+        X = load_layer_f32(target_hidden, li)
+        pred = source_results[li]["probe"].predict(scaler.transform(X))
+        del X
+        gc.collect()
         out[li] = {
             "acc": accuracy_score(target_labels, pred),
             "f1": macro_f1(target_labels, pred),

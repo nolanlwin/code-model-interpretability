@@ -1,0 +1,5 @@
+language,programs,indomain_selected_layer,indomain_test_f1_mean,indomain_ci_low,indomain_ci_high,transfer_acc_at_py_best,transfer_f1_at_py_best
+Python,400,18,0.9794,0.9673,0.9870,,
+C++,606,10,0.9907,0.9871,0.9931,0.9931,0.9332
+Javascript,285,5,0.9867,0.9721,0.9930,0.9980,0.9571
+C,97,8,0.9856,0.9700,0.9933,0.9844,0.8861
