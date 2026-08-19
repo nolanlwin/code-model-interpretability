@@ -1,0 +1,7 @@
+condition,readout_layer,n_pairs,m_clean,m_corrupt,recovery_layer_1,recovery_layer_2,recovery_layer_3,recovery_layer_4,recovery_layer_5,recovery_layer_6,recovery_layer_7,recovery_layer_8,recovery_layer_9,recovery_layer_10,recovery_layer_11,recovery_layer_12,recovery_layer_13,recovery_layer_14,recovery_layer_15,recovery_layer_16,recovery_layer_17,recovery_layer_18,recovery_layer_19,recovery_layer_20,recovery_layer_21,recovery_layer_22
+Java,22,9,0.9998,0.7921,-0.8907,-0.5763,-0.2355,-0.2716,0.0665,0.2476,0.4069,0.5599,0.6136,0.6709,0.6845,0.7186,0.8087,0.9290,0.9922,0.9913,0.9949,0.9958,0.9973,0.9987,1.0004,1.0000
+C++,22,10,0.9995,0.7903,-0.7410,-0.4828,-0.2214,-0.2343,0.0577,0.2184,0.3360,0.4732,0.5236,0.6378,0.6852,0.7355,0.7609,0.8579,0.9233,0.9587,0.9807,0.9869,0.9925,0.9983,1.0006,1.0000
+C,22,0,0.0000,0.0000,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
+C#,22,11,0.9998,0.8215,-0.6195,-0.3780,-0.1269,-0.1714,0.1236,0.3677,0.5431,0.6567,0.7002,0.8130,0.8405,0.8352,0.8667,0.9359,0.9924,0.9928,0.9953,0.9968,0.9976,0.9994,1.0006,1.0000
+Javascript,22,13,0.9996,0.8268,-0.7204,-0.4981,-0.1703,-0.1413,0.0672,0.3009,0.3861,0.5064,0.5835,0.7388,0.7546,0.8033,0.8049,0.8533,0.9066,0.9571,0.9780,0.9838,0.9914,0.9981,1.0003,1.0000
+PHP,22,0,0.0000,0.0000,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
