@@ -1,0 +1,10 @@
+backend: dafny
+strict: false
+cli_js: "/Users/naingoolwin/Projects/forall-nolanlwin/agent/target/debug/forall"
+adapters:
+  typescript:
+    proof: lemmascript-dafny
+    extensions: [ts, tsx]
+  python:
+    proof: none
+    extensions: [py]

@@ -58,7 +58,11 @@ if [ -n "$MODEL_SLUG" ]; then
       SA=outputs/activations_xlcost/${A}_${SPLIT}_${MODEL_SLUG}
       SB=outputs/activations_xlcost/${B}_${SPLIT}_${MODEL_SLUG}
       if [ -d "$SA" ] && [ -d "$SB" ]; then
-        RESULT=${OUT}/probe_${ROLE}_${A}_to_${B}.json
+        # MODEL_SLUG belongs in the name: a probe result depends on the model,
+        # unlike the baselines. Without it, rerunning with a different model
+        # finds the previous run's file, skips on existence, and the exporter
+        # publishes the old model's scores.
+        RESULT=${OUT}/probe_${ROLE}_${A}_to_${B}_${MODEL_SLUG}.json
         echo "=== probe $ROLE: $A -> $B"
         [ -s "$RESULT" ] || python scripts/crosslang.py run \
           --train-store "$SA" --test-store "$SB" --role "$ROLE" --output "$RESULT"
@@ -70,5 +74,9 @@ if [ -n "$MODEL_SLUG" ]; then
   done
 fi
 
-python scripts/export_crosslang.py --in "$OUT" --out results/lp4fm
+# --model so the table cannot mix models, and so a legacy model-free probe
+# file from an earlier run is not mistaken for this one.
+EXPORT_MODEL=""
+[ -n "$MODEL_SLUG" ] && EXPORT_MODEL="--model $MODEL_SLUG"
+python scripts/export_crosslang.py --in "$OUT" --out results/lp4fm $EXPORT_MODEL
 echo "=== done. results/lp4fm/SUMMARY.md"
