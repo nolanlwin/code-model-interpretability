@@ -11,33 +11,33 @@ across languages.
 
 Read every cell against its own `majority` and `shuffled` controls.
 
-**ρ** is the macro-F1 movement from ONE test occurrence of the smallest class changing its prediction. Measured, not assumed: it spans **0.0001–0.0017** across these cells. The smallest effect in the table still clears the largest ρ by 88×, because these folds hold thousands of occurrences rather than the 2,000-capped samples of the within-language runs. Resolution is not the binding constraint on this experiment — worth stating precisely because it *was* the binding constraint on the probing work, where ten of twelve runs fell below their own ρ.
+**ρ** is the macro-F1 movement from ONE test occurrence of the smallest class changing its prediction. Measured, not assumed: it spans **0.0003–0.0020** across these cells. The smallest effect in the table still clears the largest ρ by 57×, because these folds hold thousands of occurrences rather than the 2,000-capped samples of the within-language runs. Resolution is not the binding constraint on this experiment — worth stating precisely because it *was* the binding constraint on the probing work, where ten of twelve runs fell below their own ρ.
 
 | role | source → target | n test | masked best | name only | probe | majority | shuffled | ρ |
 |---|---|---|---|---|---|---|---|---|
-| accumulator | JavaScript → PHP | 4817 | **0.952** | 0.827 | not run | 0.425 | 0.476 | 0.0003 |
-| accumulator | JavaScript → Python | 15698 | **0.853** | 0.851 | not run | 0.369 | 0.508 | 0.0001 |
-| accumulator | PHP → JavaScript | 4879 | **0.953** | 0.837 | not run | 0.424 | 0.497 | 0.0003 |
-| accumulator | PHP → Python | 4316 | **0.841** | 0.813 | not run | 0.375 | 0.532 | 0.0002 |
-| accumulator | Python → JavaScript | 13019 | **0.809** | 0.844 | not run | 0.420 | 0.491 | 0.0001 |
-| accumulator | Python → PHP | 3530 | **0.865** | 0.802 | not run | 0.417 | 0.516 | 0.0003 |
-| index_key | JavaScript → PHP | 4817 | **0.948** | 0.763 | not run | 0.456 | 0.470 | 0.0004 |
-| index_key | JavaScript → Python | 15698 | **0.897** | 0.756 | not run | 0.412 | 0.503 | 0.0001 |
-| index_key | PHP → JavaScript | 4879 | **0.950** | 0.773 | not run | 0.455 | 0.469 | 0.0004 |
-| index_key | PHP → Python | 4316 | **0.861** | 0.726 | not run | 0.419 | 0.498 | 0.0003 |
-| index_key | Python → JavaScript | 13019 | **0.911** | 0.797 | not run | 0.441 | 0.486 | 0.0001 |
-| index_key | Python → PHP | 3530 | **0.896** | 0.760 | not run | 0.439 | 0.486 | 0.0004 |
-| iterator | JavaScript → PHP | 4817 | **0.920** | 0.788 | not run | 0.480 | 0.453 | 0.0007 |
-| iterator | JavaScript → Python | 15698 | **0.717** | 0.689 | not run | 0.475 | 0.497 | 0.0002 |
-| iterator | PHP → JavaScript | 4879 | **0.979** | 0.837 | not run | 0.480 | 0.470 | 0.0007 |
-| iterator | PHP → Python | 4316 | **0.609** | 0.729 | not run | 0.473 | 0.459 | 0.0006 |
-| iterator | Python → JavaScript | 13019 | **0.770** | 0.647 | not run | 0.491 | 0.447 | 0.0005 |
-| iterator | Python → PHP | 3530 | **0.839** | 0.712 | not run | 0.489 | 0.472 | 0.0017 |
+| accumulator | JavaScript → PHP | 1976 | **0.951** | 0.897 | 0.904 | 0.361 | 0.470 | 0.0005 |
+| accumulator | JavaScript → Python | 3341 | **0.813** | 0.873 | 0.875 | 0.415 | 0.473 | 0.0004 |
+| accumulator | PHP → JavaScript | 1903 | **0.954** | 0.897 | 0.918 | 0.372 | 0.490 | 0.0005 |
+| accumulator | PHP → Python | 1377 | **0.782** | 0.824 | 0.833 | 0.276 | 0.439 | 0.0008 |
+| accumulator | Python → JavaScript | 3294 | **0.785** | 0.874 | 0.918 | 0.370 | 0.504 | 0.0003 |
+| accumulator | Python → PHP | 1478 | **0.736** | 0.845 | 0.874 | 0.271 | 0.466 | 0.0007 |
+| index_key | JavaScript → PHP | 1976 | **0.940** | 0.834 | 0.897 | 0.384 | 0.478 | 0.0005 |
+| index_key | JavaScript → Python | 3341 | **0.859** | 0.787 | 0.883 | 0.330 | 0.497 | 0.0003 |
+| index_key | PHP → JavaScript | 1903 | **0.964** | 0.838 | 0.880 | 0.376 | 0.516 | 0.0005 |
+| index_key | PHP → Python | 1377 | **0.839** | 0.782 | 0.854 | 0.387 | 0.515 | 0.0008 |
+| index_key | Python → JavaScript | 3294 | **0.871** | 0.822 | 0.915 | 0.314 | 0.470 | 0.0003 |
+| index_key | Python → PHP | 1478 | **0.858** | 0.838 | 0.874 | 0.419 | 0.459 | 0.0008 |
+| iterator | JavaScript → PHP | 1976 | **0.937** | 0.862 | 0.906 | 0.448 | 0.488 | 0.0008 |
+| iterator | JavaScript → Python | 3341 | **0.774** | 0.733 | 0.939 | 0.444 | 0.472 | 0.0005 |
+| iterator | PHP → JavaScript | 1903 | **0.965** | 0.873 | 0.851 | 0.446 | 0.478 | 0.0008 |
+| iterator | PHP → Python | 1377 | **0.576** | 0.788 | 0.865 | 0.428 | 0.462 | 0.0010 |
+| iterator | Python → JavaScript | 3294 | **0.790** | 0.769 | 0.918 | 0.466 | 0.484 | 0.0007 |
+| iterator | Python → PHP | 1478 | **0.741** | 0.788 | 0.902 | 0.475 | 0.438 | 0.0020 |
 
 ## What this says
 
-- Masked-context transfer reaches **0.979** (iterator, PHP → JavaScript) with no model and the variable name removed.
-- The name alone is the strongest feature in only **2/18** cells, so this is not simply shared identifier conventions.
+- Masked-context transfer reaches **0.965** (iterator, PHP → JavaScript) with no model and the variable name removed.
+- The name alone is the strongest feature in only **6/18** cells, so this is not simply shared identifier conventions.
 - Majority and shuffled-label controls sit near chance everywhere, so the
   transfer is real rather than an artifact of class imbalance.
 - **Transfer is asymmetric**: compare the two directions of any pair in the
@@ -49,25 +49,3 @@ Any probe result on this task has to be read against these numbers, not
 against majority chance.
 
 Figures: `heatmap_accumulator.png`, `heatmap_index_key.png`, `heatmap_iterator.png`
-
-## Does transfer survive renaming the source?
-
-Python is renamed before training — C1 `v1,v2,…`, C2 `a,b,c,…`,
-C4 random nouns — and the target language is left untouched. The
-variable name is masked in the features either way, so what changes
-is the SURROUNDING identifiers. A signal that survives is carried by
-structure (operators, syntax); one that collapses was lexical.
-
-Each cell is `masked best (its own shuffled control)`. The
-conditions do not share a control — renaming changes the corpus, so
-C1, C2 and C4 each get their own — and pairing a renamed value with
-the original's control, or vice versa, would misstate the headroom.
-
-| role | target | original | C1 | C2 | C4 |
-|---|---|---|---|---|---|
-| accumulator | JavaScript | 0.809 (0.491) | 0.790 (0.568) | 0.789 (0.565) | 0.793 (0.562) |
-| accumulator | PHP | 0.865 (0.516) | 0.768 (0.462) | 0.786 (0.463) | 0.817 (0.455) |
-| index_key | JavaScript | 0.911 (0.486) | 0.845 (0.511) | 0.871 (0.529) | 0.878 (0.503) |
-| index_key | PHP | 0.896 (0.486) | 0.880 (0.479) | 0.879 (0.492) | 0.879 (0.477) |
-| iterator | JavaScript | 0.770 (0.447) | 0.662 (0.478) | 0.555 (0.475) | 0.624 (0.465) |
-| iterator | PHP | 0.839 (0.472) | 0.650 (0.420) | 0.538 (0.403) | 0.630 (0.401) |
