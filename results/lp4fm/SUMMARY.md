@@ -49,3 +49,25 @@ Any probe result on this task has to be read against these numbers, not
 against majority chance.
 
 Figures: `heatmap_accumulator.png`, `heatmap_index_key.png`, `heatmap_iterator.png`
+
+## Does transfer survive renaming the source?
+
+Python is renamed before training — C1 `v1,v2,…`, C2 `a,b,c,…`,
+C4 random nouns — and the target language is left untouched. The
+variable name is masked in the features either way, so what changes
+is the SURROUNDING identifiers. A signal that survives is carried by
+structure (operators, syntax); one that collapses was lexical.
+
+Each cell is `masked best (its own shuffled control)`. The
+conditions do not share a control — renaming changes the corpus, so
+C1, C2 and C4 each get their own — and pairing a renamed value with
+the original's control, or vice versa, would misstate the headroom.
+
+| role | target | original | C1 | C2 | C4 |
+|---|---|---|---|---|---|
+| accumulator | JavaScript | 0.809 (0.491) | 0.790 (0.568) | 0.789 (0.565) | 0.793 (0.562) |
+| accumulator | PHP | 0.865 (0.516) | 0.768 (0.462) | 0.786 (0.463) | 0.817 (0.455) |
+| index_key | JavaScript | 0.911 (0.486) | 0.845 (0.511) | 0.871 (0.529) | 0.878 (0.503) |
+| index_key | PHP | 0.896 (0.486) | 0.880 (0.479) | 0.879 (0.492) | 0.879 (0.477) |
+| iterator | JavaScript | 0.770 (0.447) | 0.662 (0.478) | 0.555 (0.475) | 0.624 (0.465) |
+| iterator | PHP | 0.839 (0.472) | 0.650 (0.420) | 0.538 (0.403) | 0.630 (0.401) |

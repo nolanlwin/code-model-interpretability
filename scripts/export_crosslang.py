@@ -33,7 +33,11 @@ import numpy as np  # noqa: E402
 
 INK, INK2, SURFACE = "#0b0b0b", "#52514e", "#fcfcfb"
 LANG_LABEL = {"python": "Python", "javascript": "JavaScript", "php": "PHP"}
-BASE_RE = re.compile(r"out_(\w+?)_(python|javascript|php)_to_(python|javascript|php)\.json$")
+# Sources may carry a renaming condition: out_<role>_C1python_to_<lang>.json.
+# Without the optional group these cells are silently skipped, which is how a
+# whole experiment can vanish from a summary that still looks complete.
+BASE_RE = re.compile(
+    r"out_(\w+?)_(C\d)?(python|javascript|php)_to_(python|javascript|php)\.json$")
 PROBE_RE = re.compile(r"probe_(\w+?)_(python|javascript|php)_to_(python|javascript|php)\.json$")
 
 
@@ -82,7 +86,7 @@ def heatmap(rows, role: str, out: Path):
     langs = sorted({r["source"] for r in rows} | {r["target"] for r in rows})
     grid = np.full((len(langs), len(langs)), np.nan)
     for r in rows:
-        if r["role"] != role:
+        if r["role"] != role or r.get("condition", "original") != "original":
             continue
         grid[langs.index(r["source"]), langs.index(r["target"])] = r["masked_best"]
     fig, ax = plt.subplots(figsize=(4.4, 3.8), facecolor=SURFACE)
@@ -145,11 +149,12 @@ def main(argv=None) -> int:
         if not m:
             continue
         d = json.loads(f.read_text())
-        role, a, b = m.groups()
+        role, cond, a, b = m.groups()
+        cond = cond or "original"
         agg = d["aggregate"]
         rho, small, small_n = resolution(d.get("test_predictions") or [])
         rows.append({
-            "role": role, "source": a, "target": b,
+            "role": role, "condition": cond, "source": a, "target": b,
             "n_train": d["n_train"], "n_test": d["n_test"],
             "pairing": d["pairing"],
             "name_only": round(agg["name_only"]["macro_f1"], 4),
@@ -164,7 +169,7 @@ def main(argv=None) -> int:
             "git_commit": (d.get("git_commit") or "")[:12],
             **{k: None for k in ("probe_transfer", "probe_indomain",
                                  "probe_shuffled_source", "probe_rho", "probe_model")},
-            **cells.get((role, a, b), {}),
+            **(cells.get((role, a, b), {}) if cond == "original" else {}),
         })
     if not rows:
         print(f"no transfer results in {src}")
@@ -178,8 +183,12 @@ def main(argv=None) -> int:
     roles = sorted({r["role"] for r in rows})
     figs = [heatmap(rows, role, dst) for role in roles]
 
-    rhos = [r["rho"] for r in rows if r["rho"]]
-    effects = [r["masked_best"] - r["shuffled_labels"] for r in rows]
+    # These sentences describe the matrix table, which shows ORIGINAL rows
+    # only. Computing them over renamed rows too would quote counts the reader
+    # cannot reconcile with what is printed above them.
+    orig = [r for r in rows if r.get("condition", "original") == "original"]
+    rhos = [r["rho"] for r in orig if r["rho"]]
+    effects = [r["masked_best"] - r["shuffled_labels"] for r in orig]
     ratio = (min(effects) / max(rhos)) if rhos else float("nan")
     RHO_SENTENCE = (
         "**ρ** is the macro-F1 movement from ONE test occurrence of the smallest "
@@ -212,6 +221,8 @@ def main(argv=None) -> int:
         "|---|---|---|---|---|---|---|---|---|",
     ]
     for r in sorted(rows, key=lambda r: (r["role"], r["source"], r["target"])):
+        if r.get("condition", "original") != "original":
+            continue
         rho_txt = "—" if r["rho"] is None else f"{r['rho']:.4f}"
         pr = r.get("probe_transfer")
         probe_txt = "not run" if pr is None else f"{pr:.3f}"
@@ -220,14 +231,14 @@ def main(argv=None) -> int:
             f"{r['n_test']} | **{r['masked_best']:.3f}** | {r['name_only']:.3f} | "
             f"{probe_txt} | {r['majority']:.3f} | {r['shuffled_labels']:.3f} | {rho_txt} |")
 
-    best = max(rows, key=lambda r: r["masked_best"])
-    name_wins = sum(1 for r in rows if r["name_only"] >= r["masked_best"])
+    best = max(orig, key=lambda r: r["masked_best"])
+    name_wins = sum(1 for r in orig if r["name_only"] >= r["masked_best"])
     lines += [
         "", "## What this says", "",
         f"- Masked-context transfer reaches **{best['masked_best']:.3f}** "
         f"({best['role']}, {LANG_LABEL[best['source']]} → {LANG_LABEL[best['target']]}) "
         "with no model and the variable name removed.",
-        f"- The name alone is the strongest feature in only **{name_wins}/{len(rows)}** "
+        f"- The name alone is the strongest feature in only **{name_wins}/{len(orig)}** "
         "cells, so this is not simply shared identifier conventions.",
         "- Majority and shuffled-label controls sit near chance everywhere, so the",
         "  transfer is real rather than an artifact of class imbalance.",
@@ -240,6 +251,45 @@ def main(argv=None) -> int:
         "against majority chance.",
         "", "Figures: " + ", ".join(f"`{p.name}`" for p in figs),
     ]
+    ren = [r for r in rows if r.get("condition", "original") != "original"]
+    if ren:
+        base_by = {(r["role"], r["target"]): r["masked_best"]
+                   for r in rows if r.get("condition", "original") == "original"
+                   and r["source"] == "python"}
+        lines += [
+            "", "## Does transfer survive renaming the source?", "",
+            "Python is renamed before training — C1 `v1,v2,…`, C2 `a,b,c,…`,",
+            "C4 random nouns — and the target language is left untouched. The",
+            "variable name is masked in the features either way, so what changes",
+            "is the SURROUNDING identifiers. A signal that survives is carried by",
+            "structure (operators, syntax); one that collapses was lexical.", "",
+            "Each cell is `masked best (its own shuffled control)`. The",
+            "conditions do not share a control — renaming changes the corpus, so",
+            "C1, C2 and C4 each get their own — and pairing a renamed value with",
+            "the original's control, or vice versa, would misstate the headroom.",
+            "",
+            "| role | target | original | C1 | C2 | C4 |",
+            "|---|---|---|---|---|---|",
+        ]
+        for role in sorted({r["role"] for r in ren}):
+            for tgt in sorted({r["target"] for r in ren}):
+                base = base_by.get((role, tgt))
+                if base is None:
+                    continue
+                cells_ = {r["condition"]: r for r in ren
+                          if r["role"] == role and r["target"] == tgt}
+                base_row = next((r for r in rows
+                                 if r.get("condition", "original") == "original"
+                                 and r["role"] == role and r["target"] == tgt
+                                 and r["source"] == "python"), None)
+                base_txt = ("—" if base_row is None else
+                            f"{base_row['masked_best']:.3f} ({base_row['shuffled_labels']:.3f})")
+                got = " | ".join(
+                    (f"{cells_[c]['masked_best']:.3f} ({cells_[c]['shuffled_labels']:.3f})"
+                     if c in cells_ else "—")
+                    for c in ("C1", "C2", "C4"))
+                lines.append(f"| {role} | {LANG_LABEL[tgt]} | {base_txt} | {got} |")
+
     (dst / "SUMMARY.md").write_text("\n".join(lines) + "\n")
     print(f"wrote {len(rows)} cells, summary.csv, SUMMARY.md, {len(figs)} figures -> {dst}")
     return 0
