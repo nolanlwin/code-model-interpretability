@@ -1,0 +1,174 @@
+{
+  "entries": [
+    {
+      "conservative_billed_seconds": 69.0,
+      "details": {},
+      "elapsed_seconds": 18.519696474075317,
+      "ended_at": 1787170360.521149,
+      "entry_id": "fc-01M0DTECNQ4VJ67CNXV21GS58D:preflight",
+      "estimated_usd": 0.0030398333333333336,
+      "hourly_usd": 0.15860000000000002,
+      "outcome": "ok",
+      "phase": "preflight",
+      "resource": "cpu2-8g",
+      "started_at": 1787170342.0014524,
+      "worker": {
+        "function_call_id": "fc-01M0DTECNQ4VJ67CNXV21GS58D",
+        "input_id": "in-01M0DTECNS0XP2R9V9DFDZTYVP:1787170337466-0",
+        "task_id": "ta-01M0DTEDAH5HDJCC0K8DXPMBER"
+      }
+    },
+    {
+      "conservative_billed_seconds": 69.0,
+      "details": {
+        "model_id": "Qwen/Qwen2.5-1.5B"
+      },
+      "elapsed_seconds": 25.785547971725464,
+      "ended_at": 1787170423.3243291,
+      "entry_id": "fc-01M0DTFF3Q5FV71D85MGNK5NM3:qwen_smoke",
+      "estimated_usd": 0.019599833333333334,
+      "hourly_usd": 1.0226000000000002,
+      "outcome": "ok",
+      "phase": "qwen_smoke",
+      "resource": "l4-2-16g",
+      "started_at": 1787170397.5387812,
+      "worker": {
+        "function_call_id": "fc-01M0DTFF3Q5FV71D85MGNK5NM3",
+        "input_id": "in-01M0DTFF3VZPV9JA8XA1RKBERZ:1787170372731-0",
+        "task_id": "ta-01M0DTG176QSRN4AQCG7EG42KR"
+      }
+    },
+    {
+      "conservative_billed_seconds": 69.0,
+      "details": {
+        "model_id": "Qwen/Qwen2.5-1.5B"
+      },
+      "elapsed_seconds": 57.89196228981018,
+      "ended_at": 1787170676.8898306,
+      "entry_id": "fc-01M0DTPS6QGS1ASF2Y46GZSVRN:extract_probe:Qwen/Qwen2.5-1.5B",
+      "estimated_usd": 0.019599833333333334,
+      "hourly_usd": 1.0226000000000002,
+      "outcome": "ok",
+      "phase": "extract_probe:Qwen/Qwen2.5-1.5B",
+      "resource": "l4-2-16g",
+      "started_at": 1787170618.9978683,
+      "worker": {
+        "function_call_id": "fc-01M0DTPS6QGS1ASF2Y46GZSVRN",
+        "input_id": "in-01M0DTPS6VY5RQJXHEPGPGSJ0K:1787170612443-0",
+        "task_id": "ta-01M0DTPW0YN06AAR5CXH98800R"
+      }
+    },
+    {
+      "conservative_billed_seconds": 69.0,
+      "details": {
+        "model_id": "Qwen/Qwen2.5-1.5B"
+      },
+      "elapsed_seconds": 35.46054148674011,
+      "ended_at": 1787170720.2891295,
+      "entry_id": "fc-01M0DTRT1W0SB08MCVSM317DZF:fit_probe:Qwen/Qwen2.5-1.5B",
+      "estimated_usd": 0.009706,
+      "hourly_usd": 0.5064,
+      "outcome": "ok",
+      "phase": "fit_probe:Qwen/Qwen2.5-1.5B",
+      "resource": "cpu8-16g",
+      "started_at": 1787170684.828588,
+      "worker": {
+        "function_call_id": "fc-01M0DTRT1W0SB08MCVSM317DZF",
+        "input_id": "in-01M0DTRT1Z5YSBSV3HG21322XV:1787170678847-0",
+        "task_id": "ta-01M0DTRTV2NNJB7PD6CXNNY8PR"
+      }
+    },
+    {
+      "conservative_billed_seconds": 69.0,
+      "details": {
+        "dtype": "float16",
+        "layers": null,
+        "model_id": "Qwen/Qwen2.5-1.5B",
+        "schedule": "behavior"
+      },
+      "elapsed_seconds": 36.308185338974,
+      "ended_at": 1787170766.4091516,
+      "entry_id": "fc-01M0DTT724SQ4RM5W9E19WR1JJ:sweep:Qwen/Qwen2.5-1.5B:behavior:float16",
+      "estimated_usd": 0.019599833333333334,
+      "hourly_usd": 1.0226000000000002,
+      "outcome": "ok",
+      "phase": "sweep:Qwen/Qwen2.5-1.5B:behavior:float16",
+      "resource": "l4-2-16g",
+      "started_at": 1787170730.1009662,
+      "worker": {
+        "function_call_id": "fc-01M0DTT724SQ4RM5W9E19WR1JJ",
+        "input_id": "in-01M0DTT727JBW83X9YK664FNF9:1787170724936-0",
+        "task_id": "ta-01M0DTT82FZMCFYD39XCMM4ECR"
+      }
+    },
+    {
+      "conservative_billed_seconds": 69.0,
+      "details": {
+        "dtype": "float16",
+        "layers": null,
+        "model_id": "Qwen/Qwen2.5-1.5B",
+        "schedule": "primary"
+      },
+      "elapsed_seconds": 34.68514633178711,
+      "ended_at": 1787170814.326537,
+      "entry_id": "fc-01M0DTVW26P1ED4PMSN18Q8YKC:sweep:Qwen/Qwen2.5-1.5B:primary:float16",
+      "estimated_usd": 0.019599833333333334,
+      "hourly_usd": 1.0226000000000002,
+      "outcome": "ok",
+      "phase": "sweep:Qwen/Qwen2.5-1.5B:primary:float16",
+      "resource": "l4-2-16g",
+      "started_at": 1787170779.6413906,
+      "worker": {
+        "function_call_id": "fc-01M0DTVW26P1ED4PMSN18Q8YKC",
+        "input_id": "in-01M0DTVW28JBYDH520JPSHBWTW:1787170779209-0",
+        "task_id": "ta-01M0DTT82FZMCFYD39XCMM4ECR"
+      }
+    },
+    {
+      "conservative_billed_seconds": 69.0,
+      "details": {
+        "model_id": "Qwen/Qwen2.5-1.5B"
+      },
+      "elapsed_seconds": 41.68864607810974,
+      "ended_at": 1787170875.4357042,
+      "entry_id": "fc-01M0DTXCYYK2GCQG6G2WHNJAV8:summarize:Qwen/Qwen2.5-1.5B",
+      "estimated_usd": 0.004853,
+      "hourly_usd": 0.2532,
+      "outcome": "ok",
+      "phase": "summarize:Qwen/Qwen2.5-1.5B",
+      "resource": "cpu4-8g",
+      "started_at": 1787170833.7470582,
+      "worker": {
+        "function_call_id": "fc-01M0DTXCYYK2GCQG6G2WHNJAV8",
+        "input_id": "in-01M0DTXCZ1F1NZBRZHN8ZJ78Z9:1787170829282-0",
+        "task_id": "ta-01M0DTXDC9ECZQXT1E6NTH9SHR"
+      }
+    },
+    {
+      "conservative_billed_seconds": 313.97055345773697,
+      "details": {
+        "models": [
+          "Qwen/Qwen2.5-1.5B"
+        ],
+        "resume": true
+      },
+      "elapsed_seconds": 273.0178725719452,
+      "ended_at": 1787170882.9169922,
+      "entry_id": "fc-01M0DTPHVMR3EX11VJTHSSFA7W:controller",
+      "estimated_usd": 0.011041297796597082,
+      "hourly_usd": 0.1266,
+      "outcome": "ok",
+      "phase": "controller",
+      "resource": "cpu2-4g",
+      "started_at": 1787170609.8991196,
+      "worker": {
+        "function_call_id": "fc-01M0DTPHVMR3EX11VJTHSSFA7W",
+        "input_id": "in-01M0DTPHW2MHY7TNN50DY05JGX:1787170604953-0",
+        "task_id": "ta-01M0DTPJGHG529J7XSQ2QWV7AR"
+      }
+    }
+  ],
+  "estimated_spent_usd": 0.10703946446326375,
+  "schema_version": 2,
+  "updated_at": 1787170882.9169922
+}

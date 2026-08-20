@@ -145,3 +145,8 @@ datasets/
 # XLCoST canonical exports; regenerate with scripts/xlcost_data.py
 data/xlcost/
 data/xlcost_renamed/
+
+# Patching hidden-state dumps (too large; live on the Modal volume)
+**/hidden.npy
+**/labels.npy
+**/programs.npy

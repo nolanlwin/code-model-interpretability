@@ -1,0 +1,14 @@
+{
+  "available": true,
+  "baseline_probe_gap_vs_behavior_spearman": {
+    "ci_high": 0.2856479039046928,
+    "ci_low": 0.023260886059056043,
+    "point": 0.16419070463841318
+  },
+  "interpretation_note": "Patched-probe movement is descriptive because full-residual replacement directly changes the probed vector.",
+  "patched_probe_movement_vs_behavior_spearman": {
+    "ci_high": 0.2856479039046928,
+    "ci_low": 0.023260886059056043,
+    "point": 0.16419070463841318
+  }
+}

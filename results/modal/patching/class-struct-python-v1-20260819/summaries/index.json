@@ -1,0 +1,13 @@
+{
+  "summaries": [
+    {
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "kind": "eval",
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "model_revision": "8faed761d45a263340a0528343f099c05c9a4323",
+      "path": "summaries/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/eval/summary.csv",
+      "prompt_sha256": "6077e73c158616cf5f9175e4cf49daa2e4b2016ebc8afd12edc708572e79bd7b"
+    }
+  ]
+}

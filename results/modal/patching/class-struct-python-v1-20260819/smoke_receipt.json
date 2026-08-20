@@ -1,0 +1,43 @@
+{
+  "completed_at": 1787170422.3013248,
+  "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+  "gate": {
+    "smoke": {
+      "checks": {
+        "class_D_positive_6_of_8": true,
+        "exact_8_pair_ids": true,
+        "exact_row_cube": true,
+        "function_below_class_6_of_8": true,
+        "layer0_within_tau": true,
+        "max_drift_le_0_01": true,
+        "mean_denoise_positive": true,
+        "mean_gap_positive": true,
+        "mean_noise_positive": true,
+        "same_source_within_tau": true,
+        "target_gt_placebo": true,
+        "target_gt_random": true
+      },
+      "diagnostics": {
+        "denoise_sign_5_of_8": false,
+        "function_D_negative_6_of_8": false,
+        "noise_sign_5_of_8": true
+      },
+      "max_drift": 0.0,
+      "n_class": 8,
+      "n_target_denoise": 8,
+      "n_target_noise": 8,
+      "paper_evidence": false,
+      "pass": true,
+      "probe_index": 18,
+      "tau": 0.05
+    }
+  },
+  "model_id": "Qwen/Qwen2.5-1.5B",
+  "pass": true,
+  "prompt_sha256": "522f9b2be880a861af22b6d7948f8837a67fb00897e73e02c7de094676a27425",
+  "worker": {
+    "function_call_id": "fc-01M0DTFF3Q5FV71D85MGNK5NM3",
+    "input_id": "in-01M0DTFF3VZPV9JA8XA1RKBERZ:1787170372731-0",
+    "task_id": "ta-01M0DTG176QSRN4AQCG7EG42KR"
+  }
+}
