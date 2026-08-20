@@ -11,35 +11,28 @@ across languages.
 
 Read every cell against its own `majority` and `shuffled` controls.
 
-**ρ** is the macro-F1 movement from ONE test occurrence of the smallest
-class changing its prediction. It lands at 0.0001–0.0004 here, three to
-four orders of magnitude below every effect in the table, because these
-folds hold thousands of occurrences rather than the 2,000-capped samples
-of the within-language runs. Resolution is not the binding constraint on
-this experiment — which is worth stating precisely because it *was* the
-binding constraint on the probing work, where ten of twelve runs fell
-below their own ρ.
+**ρ** is the macro-F1 movement from ONE test occurrence of the smallest class changing its prediction. Measured, not assumed: it spans **0.0001–0.0017** across these cells. The smallest effect in the table still clears the largest ρ by 88×, because these folds hold thousands of occurrences rather than the 2,000-capped samples of the within-language runs. Resolution is not the binding constraint on this experiment — worth stating precisely because it *was* the binding constraint on the probing work, where ten of twelve runs fell below their own ρ.
 
-| role | source → target | n test | masked best | name only | majority | shuffled | ρ |
-|---|---|---|---|---|---|---|---|
-| accumulator | JavaScript → PHP | 4817 | **0.952** | 0.827 | 0.425 | 0.476 | 0.0003 |
-| accumulator | JavaScript → Python | 15698 | **0.853** | 0.851 | 0.369 | 0.508 | 0.0001 |
-| accumulator | PHP → JavaScript | 4879 | **0.953** | 0.837 | 0.424 | 0.497 | 0.0003 |
-| accumulator | PHP → Python | 4316 | **0.841** | 0.813 | 0.375 | 0.532 | 0.0002 |
-| accumulator | Python → JavaScript | 13019 | **0.809** | 0.844 | 0.420 | 0.491 | 0.0001 |
-| accumulator | Python → PHP | 3530 | **0.865** | 0.802 | 0.417 | 0.516 | 0.0003 |
-| index_key | JavaScript → PHP | 4817 | **0.948** | 0.763 | 0.456 | 0.470 | 0.0004 |
-| index_key | JavaScript → Python | 15698 | **0.897** | 0.756 | 0.412 | 0.503 | 0.0001 |
-| index_key | PHP → JavaScript | 4879 | **0.950** | 0.773 | 0.455 | 0.469 | 0.0004 |
-| index_key | PHP → Python | 4316 | **0.861** | 0.726 | 0.419 | 0.498 | 0.0003 |
-| index_key | Python → JavaScript | 13019 | **0.911** | 0.797 | 0.441 | 0.486 | 0.0001 |
-| index_key | Python → PHP | 3530 | **0.896** | 0.760 | 0.439 | 0.486 | 0.0004 |
-| iterator | JavaScript → PHP | 4817 | **0.920** | 0.788 | 0.480 | 0.453 | 0.0007 |
-| iterator | JavaScript → Python | 15698 | **0.717** | 0.689 | 0.475 | 0.497 | 0.0002 |
-| iterator | PHP → JavaScript | 4879 | **0.979** | 0.837 | 0.480 | 0.470 | 0.0007 |
-| iterator | PHP → Python | 4316 | **0.609** | 0.729 | 0.473 | 0.459 | 0.0006 |
-| iterator | Python → JavaScript | 13019 | **0.770** | 0.647 | 0.491 | 0.447 | 0.0005 |
-| iterator | Python → PHP | 3530 | **0.839** | 0.712 | 0.489 | 0.472 | 0.0017 |
+| role | source → target | n test | masked best | name only | probe | majority | shuffled | ρ |
+|---|---|---|---|---|---|---|---|---|
+| accumulator | JavaScript → PHP | 4817 | **0.952** | 0.827 | not run | 0.425 | 0.476 | 0.0003 |
+| accumulator | JavaScript → Python | 15698 | **0.853** | 0.851 | not run | 0.369 | 0.508 | 0.0001 |
+| accumulator | PHP → JavaScript | 4879 | **0.953** | 0.837 | not run | 0.424 | 0.497 | 0.0003 |
+| accumulator | PHP → Python | 4316 | **0.841** | 0.813 | not run | 0.375 | 0.532 | 0.0002 |
+| accumulator | Python → JavaScript | 13019 | **0.809** | 0.844 | not run | 0.420 | 0.491 | 0.0001 |
+| accumulator | Python → PHP | 3530 | **0.865** | 0.802 | not run | 0.417 | 0.516 | 0.0003 |
+| index_key | JavaScript → PHP | 4817 | **0.948** | 0.763 | not run | 0.456 | 0.470 | 0.0004 |
+| index_key | JavaScript → Python | 15698 | **0.897** | 0.756 | not run | 0.412 | 0.503 | 0.0001 |
+| index_key | PHP → JavaScript | 4879 | **0.950** | 0.773 | not run | 0.455 | 0.469 | 0.0004 |
+| index_key | PHP → Python | 4316 | **0.861** | 0.726 | not run | 0.419 | 0.498 | 0.0003 |
+| index_key | Python → JavaScript | 13019 | **0.911** | 0.797 | not run | 0.441 | 0.486 | 0.0001 |
+| index_key | Python → PHP | 3530 | **0.896** | 0.760 | not run | 0.439 | 0.486 | 0.0004 |
+| iterator | JavaScript → PHP | 4817 | **0.920** | 0.788 | not run | 0.480 | 0.453 | 0.0007 |
+| iterator | JavaScript → Python | 15698 | **0.717** | 0.689 | not run | 0.475 | 0.497 | 0.0002 |
+| iterator | PHP → JavaScript | 4879 | **0.979** | 0.837 | not run | 0.480 | 0.470 | 0.0007 |
+| iterator | PHP → Python | 4316 | **0.609** | 0.729 | not run | 0.473 | 0.459 | 0.0006 |
+| iterator | Python → JavaScript | 13019 | **0.770** | 0.647 | not run | 0.491 | 0.447 | 0.0005 |
+| iterator | Python → PHP | 3530 | **0.839** | 0.712 | not run | 0.489 | 0.472 | 0.0017 |
 
 ## What this says
 
