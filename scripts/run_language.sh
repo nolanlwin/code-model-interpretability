@@ -21,11 +21,14 @@ echo "=== [1/6] tokenizer gate: $MODEL_ID"
 python scripts/tokenizer_gate.py run --models "$MODEL_ID" --strict-version
 
 echo "=== [2/6] corpus: $LANGUAGE/$SPLIT"
-[ -s "$CANON" ] || python scripts/xlcost_data.py build \
+[ -s "${CANON}.stats.json" ] || python scripts/xlcost_data.py build \
   --language "$LANGUAGE" --split "$SPLIT" --out-dir data/xlcost
 
 echo "=== [3/6] occurrences"
-[ -s "$OCC" ] || python scripts/xlcost_occurrences.py extract \
+# NOT [ -s "$OCC" ]: true for a half-written file, so an interrupted
+# extraction would be skipped and silently reused. The .stats.json is
+# written only after the loop completes, so it is the completion marker.
+[ -s "${OCC}.stats.json" ] || python scripts/xlcost_occurrences.py extract \
   --input "$CANON" --output "$OCC"
 
 echo "=== [4/6] activation extraction -> $STORE"
