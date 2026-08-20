@@ -21,8 +21,9 @@ when a variable-role classifier is moved across languages.
 
 \paragraph{Only three languages are genuinely parallel.} Shared problem ids
 are abundant for Python/JavaScript/PHP ($2{,}953$, $1{,}529$ and $1{,}145$
-pairwise) and scarce for every other pair in XLCoST---Java, C++, C\# and C
-share between $11$ and $175$ problems with Python, out of roughly $9{,}000$.
+pairwise) and scarce for every other pair in XLCoST---Python shares $66$
+problems with Java, $74$ with C++, $62$ with C\# and $14$ with C, out of
+roughly $9{,}000$.
 Unmatched transfer confounds ``roles do not transfer'' with ``different
 problems,'' so we report the matched triangle and treat the rest as
 unavailable rather than weak.
@@ -110,22 +111,27 @@ substantially carried by what the variables were \emph{called}.
 
 \paragraph{This refines, rather than contradicts, the within-language
 picture.} Section~\ref{sec:index} reports index as the role that suffers most
-under renaming ($\Delta\mathrm{F1} = -0.272$), and Section~\ref{sec:accum}
-reports accumulator \emph{improving} under the same manipulation
-($+0.079$). Those results use C5, which supplies \emph{misleading} names---
-accumulator-style names on index variables---while C1/C2/C4 merely remove
-lexical information. Read together, the index representation is damaged by
-names that actively point the wrong way but barely affected by names being
-taken away: the structural signal alone suffices, and the lexical channel is
-a liability rather than a support. A claim that index is uniformly
-name-dependent would be wrong; across languages it is the most
-name-invariant of the three roles we test.
+under misleading renaming ($\Delta\mathrm{F1} = -0.272$), and
+Section~\ref{sec:accum} reports accumulator \emph{improving} under its own
+($+0.079$). The two manipulations are role-specific and opposite in
+direction: the index condition puts accumulator-style names onto index
+variables, the accumulator condition puts index-style names onto accumulator
+variables. Both supply names that point the wrong way, which is what C1/C2/C4
+do not do---those merely remove lexical information.
+
+Read together, the index representation is damaged by names that actively
+mislead but barely affected by names being taken away: the structural signal
+alone suffices, and the lexical channel is a liability rather than a support.
+A claim that index is uniformly name-dependent would be wrong; across
+languages it is the most name-invariant of the three roles we test.
 
 \paragraph{What is missing.} Every number in this section is model-free. The
 comparison this experiment exists to enable---how a probe on the model's
 residual stream performs on the identical cells---is not yet run, so we make
-no claim about what the model adds. The apparatus for it is implemented and
-tested (\texttt{scripts/crosslang.py}); it needs activation stores for the
-three languages. Until those exist, the honest reading of this section is a
+no claim about what the model adds. The apparatus for it is implemented, with a
+regression suite over synthetic stores whose separability is planted by
+construction (\texttt{scripts/crosslang.py},
+\texttt{tests/test\_crosslang.py}); it needs activation stores for the three
+languages. Until those exist, the honest reading of this section is a
 strong lower bound: any probe reported on cross-lingual role transfer must be
 compared against $0.95$, not against majority chance.
