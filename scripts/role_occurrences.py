@@ -326,6 +326,9 @@ def occurrence_rows(code: str, language: str, role: str, problem_id: str,
 def cmd_extract(args: argparse.Namespace) -> int:
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
+    # See xlcost_occurrences.cmd_extract: the marker must never outlive the
+    # file it describes, or an interrupted rewrite inherits the old one.
+    Path(str(out) + ".stats.json").unlink(missing_ok=True)
     n_prog = n_rows = n_with = 0
     per_var = Counter()
     with out.open("w", encoding="utf-8") as f:

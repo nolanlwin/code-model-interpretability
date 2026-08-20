@@ -338,7 +338,16 @@ def cmd_run(args: argparse.Namespace) -> int:
                 raise SystemExit("v1 renames Python only")
             targets: dict[str, set[str]] = {}
             for r in rows:
-                targets.setdefault(str(r.get("function")), set()).add(str(r["variable"]))
+                # rename_program looks targets up by ast node.name, i.e. the
+                # BARE function name. role_occurrences.py puts a scope id
+                # ("name@start-end") in `function` to keep same-named functions
+                # distinct, and carries the bare name in `function_name`.
+                # Keying on the scope id would match nothing, so C3/C5 -- the
+                # conditions that rename only the targets -- would drop every
+                # program with drop_reason "no_edits". C1/C2/C4 rename all
+                # locals and would mask the bug.
+                fn_key = str(r.get("function_name") or r.get("function"))
+                targets.setdefault(fn_key, set()).add(str(r["variable"]))
             new_code, st = rename_program(rec["code"], pid, args.condition, targets)
             if new_code is None:
                 n_drop += 1
