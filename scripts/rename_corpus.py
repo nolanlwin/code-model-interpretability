@@ -325,7 +325,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     out_c.parent.mkdir(parents=True, exist_ok=True)
     out_o.parent.mkdir(parents=True, exist_ok=True)
 
-    n_ok = n_drop = n_id_mismatch = 0
+    n_ok = n_drop = n_id_mismatch = n_dup_fn = 0
     drop_reasons: dict[str, int] = {}
     with out_c.open("w", encoding="utf-8") as fc, out_o.open("w", encoding="utf-8") as fo:
         for pid in sorted(wanted_problems):
@@ -336,6 +336,26 @@ def cmd_run(args: argparse.Namespace) -> int:
             language = rec["language"]
             if language != "Python":
                 raise SystemExit("v1 renames Python only")
+            # rename_program keys targets by bare ast node.name, so a program
+            # with two same-named functions would merge their target sets and
+            # apply the union to BOTH definitions. Under C3/C5 that renames a
+            # non-target local in the sibling function, and the identity gate
+            # cannot catch it: the gate only checks the spans of rows it was
+            # given, not edits made elsewhere.
+            #
+            # Incidence is 0/3250 in the XLCoST Python corpus, so refusing
+            # costs nothing measurable and cannot mis-rename. Counted, not
+            # silent.
+            try:
+                _tree = ast.parse(rec["code"])
+                _names = [n.name for n in ast.walk(_tree)
+                          if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+            except SyntaxError:
+                _names = []
+            if len(_names) != len(set(_names)):
+                n_dup_fn += 1
+                continue
+
             targets: dict[str, set[str]] = {}
             for r in rows:
                 # rename_program looks targets up by ast node.name, i.e. the
@@ -415,6 +435,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         "programs_dropped": n_drop,
         "drop_reasons": drop_reasons,
         "id_preservation_failures": n_id_mismatch,
+        "duplicate_function_names_skipped": n_dup_fn,
         "out_canonical": str(out_c),
         "out_occurrences": str(out_o),
     }
