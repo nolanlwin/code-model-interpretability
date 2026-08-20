@@ -69,7 +69,9 @@ cells, so this is not simply shared identifier conventions: it is the
 surrounding code. Resolution is not the limiting factor---one test occurrence
 of the smallest class moves macro-F1 by $\rho \in [0.0003, 0.0020]$ here,
 because these folds hold thousands of occurrences, and the smallest effect in
-the table clears the largest $\rho$ by a factor of $74$.
+the table---measured against its own shuffled-label control, as in
+\texttt{results/lp4fm/SUMMARY.md}---clears the largest $\rho$ by a factor
+of $57$.
 
 \paragraph{Transfer is asymmetric, along a typological axis.} Two comparisons
 make the point, and they are distinct. Holding the source fixed, iterator
@@ -149,7 +151,7 @@ internally consistent but are not row-comparable with the capped table above.}
 \toprule
 role & headroom retained & mean $\Delta$ \\
 \midrule
-index\_key  & 90\% & $-0.032$ \\
+index\_key  & 89\% & $-0.032$ \\
 accumulator & 83\% & $-0.047$ \\
 iterator    & \textbf{49\%} & $\mathbf{-0.195}$ \\
 \bottomrule
