@@ -234,17 +234,30 @@ def main(argv=None) -> int:
     existing = dst / "summary.csv"
     if existing.exists():
         import csv as _csv
+        # The model belongs in the key. Store directories and probe filenames
+        # are model-scoped but summary.csv is not, so exporting a second model
+        # into the same directory produces the same 18 cells with different
+        # numbers and replaces the first model's results in place. Keying on
+        # the model makes that show up as dropping every row of the previous
+        # one, which is what it is. One directory per model.
         key = lambda r: (r.get("role"), r.get("condition") or "original",
-                         r.get("source"), r.get("target"))
+                         r.get("source"), r.get("target"),
+                         (r.get("probe_model") or "") or None)
         with existing.open(newline="") as fh:
             had = {key(r) for r in _csv.DictReader(fh)}
         lost = sorted(had - {key(r) for r in rows})
         if lost and not args.allow_drop:
             conds = sorted({k[1] for k in lost})
+            models = sorted({k[4] for k in lost if k[4]})
             print(f"REFUSING to overwrite {existing}: {len(lost)} published "
                   f"row(s) are not in this run, covering condition(s) {conds}.")
+            if models:
+                print(f"    they carry probe results for {models} -- if this run "
+                      "is a different model, export it to its own directory "
+                      "(--out results/lp4fm_<model>) rather than over this one.")
             for k in lost[:8]:
-                print(f"    would drop: role={k[0]} condition={k[1]} {k[2]}->{k[3]}")
+                print(f"    would drop: role={k[0]} condition={k[1]} {k[2]}->{k[3]}"
+                      + (f" model={k[4]}" if k[4] else ""))
             if len(lost) > 8:
                 print(f"    ... and {len(lost) - 8} more")
             print("Recompute them, or pass --allow-drop if they are genuinely "

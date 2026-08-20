@@ -22,8 +22,13 @@ when a variable-role classifier is moved across languages.
 
 \paragraph{Only three languages are genuinely parallel.} Shared problem ids
 are abundant for Python/JavaScript/PHP ($2{,}953$, $1{,}529$ and $1{,}145$
-pairwise) and scarce for every other pair in XLCoST---Python shares $66$
-problems with Java, $74$ with C++, $62$ with C\# and $14$ with C, out of
+pairwise) and scarce for every other pair in XLCoST. We computed the full
+$6\times 6$ overlap matrix rather than one row of it
+(\texttt{results/lp4fm/xlcost\_problem\_overlap.csv}), because the limitation
+it documents is stronger than a note about Python: \emph{no} pair outside this
+triangle reaches $500$ shared problems, including pairs that share a language
+family. Java and JavaScript share $85$ problems, C++ and JavaScript $75$, and
+even C\# and Java---both C-family, both statically typed---share only $175$ of
 roughly $9{,}000$.
 Unmatched transfer confounds ``roles do not transfer'' with ``different
 problems,'' so we report the matched triangle and treat the rest as
@@ -179,7 +184,11 @@ scale is untested, and a second model is the single most valuable addition to
 this section. Only three of XLCoST's languages share problems at rates that
 permit matched transfer, so ``typologically close'' is instantiated by exactly
 one pair (JavaScript/PHP) and the boundary by exactly one language (Python);
-the axis is a two-point contrast, not a gradient. And the renaming conditions
+the axis is a two-point contrast, not a gradient. The overlap matrix shows
+this is a property of the benchmark rather than a choice we could revisit with
+more compute---the best C-family pair outside the triangle shares $175$
+problems---so widening the axis requires a different parallel corpus, not a
+larger run of this one. And the renaming conditions
 were run on the source language only, so they say what happens when the probe
 is trained on stripped names, not when it is evaluated on them.
 

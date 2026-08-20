@@ -112,5 +112,64 @@ def run() -> int:
     return 1 if failures else 0
 
 
+
+
+
+def run_model_case() -> int:
+    """A second model must not silently replace the first model's numbers.
+
+    Store directories and probe filenames carry the model slug; summary.csv
+    does not. Without the model in the drop key, exporting model B over model
+    A's directory yields the same (role, condition, source, target) cells with
+    different numbers and overwrites A in place.
+    """
+    failures = 0
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        src, dst = td / "in", td / "out"
+        src.mkdir(); dst.mkdir()
+        _write_inputs(src, ("original",))
+
+        def probe(model):
+            for role in ROLES:
+                for a in LANGS:
+                    for b in LANGS:
+                        if a == b:
+                            continue
+                        slug = model.split("/")[-1].lower().replace(".", "").replace("-", "")
+                        (src / f"probe_{role}_{a}_to_{b}_{slug}.json").write_text(json.dumps({
+                            "transfer_macro_f1_mean": 0.9, "indomain_macro_f1_mean": 0.93,
+                            "shuffled_source_macro_f1_mean": 0.49,
+                            "resolution_rho": 0.001, "model_id": model}))
+
+        probe("Qwen/Qwen2.5-Coder-1.5B")
+        r = _run(src, dst)
+        ok = r.returncode == 0
+        failures += not ok
+        print(f"  {'OK  ' if ok else 'FAIL'} publishes model A (rc={r.returncode})")
+
+        for f in src.glob("probe_*.json"):
+            f.unlink()
+        probe("bigcode/starcoder2-7b")
+        r = _run(src, dst)
+        ok = r.returncode == 1 and "REFUSING" in r.stdout
+        failures += not ok
+        print(f"  {'OK  ' if ok else 'FAIL'} refuses to overwrite model A with model B "
+              f"(rc={r.returncode})")
+        told = "own directory" in r.stdout and "Qwen2.5-Coder-1.5B" in r.stdout
+        failures += not told
+        print(f"  {'OK  ' if told else 'FAIL'} names the model at risk and the fix")
+
+        r = _run(src, dst / "b")
+        ok = r.returncode == 0
+        failures += not ok
+        print(f"  {'OK  ' if ok else 'FAIL'} model B exports cleanly to its own directory")
+    return failures
+
+
 if __name__ == "__main__":
-    sys.exit(run())
+    rc = run()
+    print()
+    extra = run_model_case()
+    print("\nALL PASS" if not extra else f"\n{extra} FAILURE(S)")
+    sys.exit(1 if (rc or extra) else 0)
