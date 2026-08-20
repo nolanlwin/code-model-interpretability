@@ -36,6 +36,35 @@ LANG_LABEL = {"python": "Python", "javascript": "JavaScript", "php": "PHP"}
 NAME_RE = re.compile(r"out_(\w+?)_(python|javascript|php)_to_(python|javascript|php)\.json$")
 
 
+def resolution(preds: list[dict]) -> tuple[float | None, str | None, int | None]:
+    """(rho, smallest class, its count) for a transfer cell's target fold.
+
+    rho is the macro-F1 movement caused by ONE occurrence of the smallest
+    class changing its prediction. Ten of twelve within-language probing runs
+    turned out to sit below their own rho; a transfer matrix is 18 cells, so
+    quoting any of them without it repeats the mistake at scale.
+    """
+    if not preds:
+        return None, None, None
+    from sklearn.metrics import f1_score
+    seed0 = [q for q in preds if int(q.get("seed", 0)) == 0] or preds
+    y = [q["y_true"] for q in seed0]
+    counts = {}
+    for v in y:
+        counts[v] = counts.get(v, 0) + 1
+    if len(counts) < 2:
+        return None, None, None
+    small = min(counts, key=counts.get)
+    big = max(counts, key=counts.get)
+    arr = np.array(y)
+    flipped = arr.copy()
+    flipped[np.where(arr == small)[0][0]] = big
+    labels = sorted(counts)
+    rho = (f1_score(arr, arr, average="macro", labels=labels, zero_division=0)
+           - f1_score(arr, flipped, average="macro", labels=labels, zero_division=0))
+    return float(rho), small, int(counts[small])
+
+
 def masked_best(agg: dict) -> float:
     """Best feature that does NOT see the variable name.
 
@@ -97,6 +126,7 @@ def main(argv=None) -> int:
         d = json.loads(f.read_text())
         role, a, b = m.groups()
         agg = d["aggregate"]
+        rho, small, small_n = resolution(d.get("test_predictions") or [])
         rows.append({
             "role": role, "source": a, "target": b,
             "n_train": d["n_train"], "n_test": d["n_test"],
@@ -108,6 +138,10 @@ def main(argv=None) -> int:
             "masked_best": round(masked_best(agg), 4),
             "majority": round(d["majority_macro_f1"], 4),
             "shuffled_labels": round(d["shuffled_label_control_macro_f1"], 4),
+            "rho": None if rho is None else round(rho, 4),
+            "over_shuffled_in_rho": (None if not rho else
+                round((masked_best(agg) - d["shuffled_label_control_macro_f1"]) / rho, 1)),
+            "smallest_class": small, "smallest_n": small_n,
             "git_commit": (d.get("git_commit") or "")[:12],
         })
     if not rows:
@@ -135,14 +169,24 @@ def main(argv=None) -> int:
         "",
         "Read every cell against its own `majority` and `shuffled` controls.",
         "",
-        "| role | source → target | n test | masked best | name only | majority | shuffled |",
-        "|---|---|---|---|---|---|---|",
+        "**ρ** is the macro-F1 movement from ONE test occurrence of the smallest",
+        "class changing its prediction. It lands at 0.0001–0.0004 here, three to",
+        "four orders of magnitude below every effect in the table, because these",
+        "folds hold thousands of occurrences rather than the 2,000-capped samples",
+        "of the within-language runs. Resolution is not the binding constraint on",
+        "this experiment — which is worth stating precisely because it *was* the",
+        "binding constraint on the probing work, where ten of twelve runs fell",
+        "below their own ρ.",
+        "",
+        "| role | source → target | n test | masked best | name only | majority | shuffled | ρ |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for r in sorted(rows, key=lambda r: (r["role"], r["source"], r["target"])):
+        rho_txt = "—" if r["rho"] is None else f"{r['rho']:.4f}"
         lines.append(
             f"| {r['role']} | {LANG_LABEL[r['source']]} → {LANG_LABEL[r['target']]} | "
             f"{r['n_test']} | **{r['masked_best']:.3f}** | {r['name_only']:.3f} | "
-            f"{r['majority']:.3f} | {r['shuffled_labels']:.3f} |")
+            f"{r['majority']:.3f} | {r['shuffled_labels']:.3f} | {rho_txt} |")
 
     best = max(rows, key=lambda r: r["masked_best"])
     name_wins = sum(1 for r in rows if r["name_only"] >= r["masked_best"])
