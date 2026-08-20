@@ -1,0 +1,4 @@
+role,source,target,masked_best_raw,masked_best_normalised,delta
+iterator,php,javascript,0.9787,0.9787,+0.0000
+iterator,php,python,0.6087,0.6087,+0.0000
+iterator,python,javascript,0.7702,0.7702,+0.0000

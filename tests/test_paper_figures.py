@@ -23,6 +23,7 @@ TEX = ROOT / "lp4fm_paper" / "section_results.tex"
 CAPPED = ROOT / "results" / "lp4fm" / "summary.csv"
 UNCAPPED = ROOT / "results" / "lp4fm" / "summary_renaming_uncapped.csv"
 OVERLAP = ROOT / "results" / "lp4fm" / "xlcost_problem_overlap.csv"
+WSCHECK = ROOT / "results" / "lp4fm" / "whitespace_normalisation_check.csv"
 
 f = lambda r, k: float(r[k])
 
@@ -103,6 +104,20 @@ def run() -> int:
          ov.get(("javascript", "python")) == 2953 and ov.get(("javascript", "php")) == 1529
          and ov.get(("php", "python")) == 1145),
     ]
+
+    # The section claims normalising whitespace moves transfer by less than
+    # 0.001. That is a measurement, so it has to come from a committed file.
+    if WSCHECK.exists():
+        ws = list(csv.DictReader(WSCHECK.open()))
+        checks += [
+            ("whitespace check covers the decisive pairs",
+             {(r["source"], r["target"]) for r in ws}
+             >= {("php", "python"), ("php", "javascript")}),
+            ("normalising whitespace moves transfer by < 0.001",
+             all(abs(float(r["delta"])) < 0.001 for r in ws)),
+        ]
+    else:
+        checks.append(("whitespace normalisation check present", False))
 
     # Renaming table: uncapped file, must still reproduce the published values.
     for role, pct, delta in (("index_key", 89, -0.032), ("accumulator", 83, -0.047),
