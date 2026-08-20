@@ -11,7 +11,7 @@ across languages.
 
 Read every cell against its own `majority` and `shuffled` controls.
 
-**ρ** is the macro-F1 movement from ONE test occurrence of the smallest class changing its prediction. Measured, not assumed: it spans **0.0001–0.0017** across these cells. The smallest effect in the table still clears the largest ρ by 47×, because these folds hold thousands of occurrences rather than the 2,000-capped samples of the within-language runs. Resolution is not the binding constraint on this experiment — worth stating precisely because it *was* the binding constraint on the probing work, where ten of twelve runs fell below their own ρ.
+**ρ** is the macro-F1 movement from ONE test occurrence of the smallest class changing its prediction. Measured, not assumed: it spans **0.0001–0.0017** across these cells. The smallest effect in the table still clears the largest ρ by 88×, because these folds hold thousands of occurrences rather than the 2,000-capped samples of the within-language runs. Resolution is not the binding constraint on this experiment — worth stating precisely because it *was* the binding constraint on the probing work, where ten of twelve runs fell below their own ρ.
 
 | role | source → target | n test | masked best | name only | probe | majority | shuffled | ρ |
 |---|---|---|---|---|---|---|---|---|
@@ -37,7 +37,7 @@ Read every cell against its own `majority` and `shuffled` controls.
 ## What this says
 
 - Masked-context transfer reaches **0.979** (iterator, PHP → JavaScript) with no model and the variable name removed.
-- The name alone is the strongest feature in only **2/36** cells, so this is not simply shared identifier conventions.
+- The name alone is the strongest feature in only **2/18** cells, so this is not simply shared identifier conventions.
 - Majority and shuffled-label controls sit near chance everywhere, so the
   transfer is real rather than an artifact of class imbalance.
 - **Transfer is asymmetric**: compare the two directions of any pair in the
@@ -58,11 +58,16 @@ variable name is masked in the features either way, so what changes
 is the SURROUNDING identifiers. A signal that survives is carried by
 structure (operators, syntax); one that collapses was lexical.
 
-| role | target | original | C1 | C2 | C4 | shuffled |
-|---|---|---|---|---|---|---|
-| accumulator | JavaScript | 0.809 | 0.790 | 0.789 | 0.793 | 0.568 |
-| accumulator | PHP | 0.865 | 0.768 | 0.786 | 0.817 | 0.462 |
-| index_key | JavaScript | 0.911 | 0.845 | 0.871 | 0.878 | 0.511 |
-| index_key | PHP | 0.896 | 0.880 | 0.879 | 0.879 | 0.479 |
-| iterator | JavaScript | 0.770 | 0.662 | 0.555 | 0.624 | 0.478 |
-| iterator | PHP | 0.839 | 0.650 | 0.538 | 0.630 | 0.420 |
+Each cell is `masked best (its own shuffled control)`. The
+conditions do not share a control — renaming changes the corpus, so
+C1, C2 and C4 each get their own — and pairing a renamed value with
+the original's control, or vice versa, would misstate the headroom.
+
+| role | target | original | C1 | C2 | C4 |
+|---|---|---|---|---|---|
+| accumulator | JavaScript | 0.809 (0.491) | 0.790 (0.568) | 0.789 (0.565) | 0.793 (0.562) |
+| accumulator | PHP | 0.865 (0.516) | 0.768 (0.462) | 0.786 (0.463) | 0.817 (0.455) |
+| index_key | JavaScript | 0.911 (0.486) | 0.845 (0.511) | 0.871 (0.529) | 0.878 (0.503) |
+| index_key | PHP | 0.896 (0.486) | 0.880 (0.479) | 0.879 (0.492) | 0.879 (0.477) |
+| iterator | JavaScript | 0.770 (0.447) | 0.662 (0.478) | 0.555 (0.475) | 0.624 (0.465) |
+| iterator | PHP | 0.839 (0.472) | 0.650 (0.420) | 0.538 (0.403) | 0.630 (0.401) |
