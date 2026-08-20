@@ -38,7 +38,14 @@ LANG_LABEL = {"python": "Python", "javascript": "JavaScript", "php": "PHP"}
 # whole experiment can vanish from a summary that still looks complete.
 BASE_RE = re.compile(
     r"out_(\w+?)_(C\d)?(python|javascript|php)_to_(python|javascript|php)\.json$")
-PROBE_RE = re.compile(r"probe_(\w+?)_(python|javascript|php)_to_(python|javascript|php)\.json$")
+# Probe results depend on the MODEL; baselines do not. The model therefore
+# belongs in the probe filename, or a second model's run silently overwrites
+# nothing and the exporter publishes the first model's scores beside the
+# second model's stores. The trailing group is optional so older files still
+# parse, and they are reported as model "unknown".
+PROBE_RE = re.compile(
+    r"probe_(\w+?)_(python|javascript|php)_to_(python|javascript|php)"
+    r"(?:_([A-Za-z0-9]+))?\.json$")
 
 
 def resolution(preds: list[dict]) -> tuple[float | None, str | None, int | None]:
@@ -119,6 +126,9 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--in", dest="src", default="outputs/crosslang")
     ap.add_argument("--out", dest="dst", default="results/lp4fm")
+    ap.add_argument("--model", default=None,
+                    help="select probe results for one model when several are "
+                         "present; matched against model_id or the filename slug")
     args = ap.parse_args(argv)
     src, dst = Path(args.src), Path(args.dst)
     dst.mkdir(parents=True, exist_ok=True)
@@ -128,12 +138,17 @@ def main(argv=None) -> int:
     # They are keyed into ONE row per (role, source, target), because the entire
     # point is reading the probe against its baseline in a single line.
     cells: dict = {}
+    seen_models: set = set()
     for f in sorted(src.glob("probe_*.json")):
         m = PROBE_RE.search(f.name)
         if not m:
             continue
         d = json.loads(f.read_text())
-        role, a, b = m.groups()
+        role, a, b, fname_model = m.groups()
+        model = d.get("model_id") or fname_model or "unknown"
+        if args.model and model != args.model and fname_model != args.model:
+            continue
+        seen_models.add(model)
         cells[(role, a, b)] = {
             "probe_transfer": round(d["transfer_macro_f1_mean"], 4),
             "probe_indomain": round(d["indomain_macro_f1_mean"], 4),
@@ -142,6 +157,13 @@ def main(argv=None) -> int:
                           else round(d["resolution_rho"], 4)),
             "probe_model": d.get("model_id"),
         }
+
+    if len(seen_models) > 1:
+        raise SystemExit(
+            f"probe results from more than one model are present: "
+            f"{sorted(seen_models)}. One table cannot carry both, so pass "
+            f"--model to choose, rather than have the exporter pick silently."
+        )
 
     rows = []
     for f in sorted(src.glob("out_*.json")):
