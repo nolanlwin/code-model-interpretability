@@ -79,7 +79,12 @@ def main(argv=None) -> int:
     marker.unlink(missing_ok=True)          # never outlive the file it describes
     dst.write_text("\n".join(json.dumps(r) for r in out) + "\n", encoding="utf-8")
     summary = {"input": args.input, "output": str(dst), "seed": args.seed,
-               "max_per_role": args.max_per_role, "roles": args.roles or "all",
+               # Always a list, never the string "all": callers compare this
+               # against their own requested roles to decide whether a cached
+               # cap is stale, and list("all") is ['a','l','l'], which matches
+               # no request and would silently re-cap forever. Empty means
+               # "every role"; per_role below reports what was actually kept.
+               "max_per_role": args.max_per_role, "roles": list(args.roles),
                "occurrences_in": len(rows), "occurrences_out": len(out),
                "problems_out": len({r["problem_id"] for r in out}), "per_role": stats}
     marker.write_text(json.dumps(summary, indent=1), encoding="utf-8")

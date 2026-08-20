@@ -1,0 +1,65 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/session-start.sh",
+            "timeout": 30,
+            "statusMessage": "forall context"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "apply_patch|write|edit|Write|Edit|ApplyPatch|exec_command|ExecCommand|shell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/pre-tool-use.sh",
+            "timeout": 30,
+            "statusMessage": "forall gate"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch|write|edit|Write|Edit|ApplyPatch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/post-edit.sh",
+            "timeout": 120,
+            "statusMessage": "forall sync"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/post-tool-use-browser.sh",
+            "timeout": 15,
+            "statusMessage": "forall browser evidence"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/stop.sh",
+            "timeout": 300,
+            "statusMessage": "forall check"
+          }
+        ]
+      }
+    ]
+  }
+}
