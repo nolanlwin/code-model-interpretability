@@ -146,7 +146,14 @@ def main(argv=None) -> int:
         d = json.loads(f.read_text())
         role, a, b, fname_model = m.groups()
         model = d.get("model_id") or fname_model or "unknown"
-        if args.model and model != args.model and fname_model != args.model:
+        # With --model given, a file must positively identify itself as that
+        # model. A legacy name carries no slug, so it can only match on the
+        # model_id recorded inside it; falling back to "accept because we
+        # cannot tell" is how a previous run's scores get published under a
+        # new model's heading.
+        if args.model and args.model not in (fname_model, model) \
+                and not str(model).lower().replace(".", "").replace("-", "") \
+                        .endswith(args.model):
             continue
         seen_models.add(model)
         cells[(role, a, b)] = {
