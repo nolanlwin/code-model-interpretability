@@ -13,24 +13,24 @@ Read every cell against its own `majority` and `shuffled` controls.
 
 | role | source → target | n test | masked best | name only | majority | shuffled |
 |---|---|---|---|---|---|---|
-| accumulator | JavaScript → PHP | 4817 | **0.952** | 0.827 | 0.425 | 0.476 |
-| accumulator | JavaScript → Python | 15698 | **0.853** | 0.851 | 0.369 | 0.508 |
-| accumulator | PHP → JavaScript | 4879 | **0.953** | 0.837 | 0.424 | 0.497 |
-| accumulator | PHP → Python | 4316 | **0.841** | 0.813 | 0.375 | 0.532 |
-| accumulator | Python → JavaScript | 13019 | **0.809** | 0.844 | 0.420 | 0.491 |
-| accumulator | Python → PHP | 3530 | **0.865** | 0.802 | 0.417 | 0.516 |
-| index_key | JavaScript → PHP | 4817 | **0.948** | 0.763 | 0.456 | 0.470 |
-| index_key | JavaScript → Python | 15698 | **0.897** | 0.756 | 0.412 | 0.503 |
-| index_key | PHP → JavaScript | 4879 | **0.950** | 0.773 | 0.455 | 0.469 |
-| index_key | PHP → Python | 4316 | **0.861** | 0.726 | 0.419 | 0.498 |
-| index_key | Python → JavaScript | 13019 | **0.911** | 0.797 | 0.441 | 0.486 |
-| index_key | Python → PHP | 3530 | **0.896** | 0.760 | 0.439 | 0.486 |
-| iterator | JavaScript → PHP | 4817 | **0.920** | 0.788 | 0.480 | 0.453 |
-| iterator | JavaScript → Python | 15698 | **0.717** | 0.689 | 0.475 | 0.497 |
-| iterator | PHP → JavaScript | 4879 | **0.979** | 0.837 | 0.480 | 0.470 |
-| iterator | PHP → Python | 4316 | **0.609** | 0.729 | 0.473 | 0.459 |
-| iterator | Python → JavaScript | 13019 | **0.770** | 0.647 | 0.491 | 0.447 |
-| iterator | Python → PHP | 3530 | **0.839** | 0.712 | 0.489 | 0.472 |
+| accumulator | JavaScript → PHP | 4817 | **0.952** | 0.827 | 0.425 | 0.482 |
+| accumulator | JavaScript → Python | 15698 | **0.853** | 0.851 | 0.369 | 0.503 |
+| accumulator | PHP → JavaScript | 4879 | **0.953** | 0.837 | 0.424 | 0.487 |
+| accumulator | PHP → Python | 4316 | **0.841** | 0.813 | 0.375 | 0.518 |
+| accumulator | Python → JavaScript | 13019 | **0.809** | 0.844 | 0.420 | 0.499 |
+| accumulator | Python → PHP | 3530 | **0.865** | 0.802 | 0.417 | 0.526 |
+| index_key | JavaScript → PHP | 4817 | **0.948** | 0.763 | 0.456 | 0.475 |
+| index_key | JavaScript → Python | 15698 | **0.897** | 0.756 | 0.412 | 0.509 |
+| index_key | PHP → JavaScript | 4879 | **0.950** | 0.773 | 0.455 | 0.468 |
+| index_key | PHP → Python | 4316 | **0.861** | 0.726 | 0.419 | 0.510 |
+| index_key | Python → JavaScript | 13019 | **0.911** | 0.797 | 0.441 | 0.480 |
+| index_key | Python → PHP | 3530 | **0.896** | 0.760 | 0.439 | 0.492 |
+| iterator | JavaScript → PHP | 4817 | **0.920** | 0.788 | 0.480 | 0.454 |
+| iterator | JavaScript → Python | 15698 | **0.717** | 0.689 | 0.475 | 0.491 |
+| iterator | PHP → JavaScript | 4879 | **0.979** | 0.837 | 0.480 | 0.466 |
+| iterator | PHP → Python | 4316 | **0.609** | 0.729 | 0.473 | 0.465 |
+| iterator | Python → JavaScript | 13019 | **0.770** | 0.647 | 0.491 | 0.451 |
+| iterator | Python → PHP | 3530 | **0.839** | 0.712 | 0.489 | 0.447 |
 
 ## What this says
 
