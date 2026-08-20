@@ -320,6 +320,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         ids = set(json.loads(Path(args.sample_ids).read_text(encoding="utf-8")))
         wanted_problems = {i.split(":")[0] for i in ids}
 
+    # Same rule as the extractors: clear the completion marker before
+    # rewriting, so an interrupted run cannot inherit the previous one.
+    Path(str(args.out_occurrences) + ".stats.json").unlink(missing_ok=True)
     out_c = Path(args.out_canonical)
     out_o = Path(args.out_occurrences)
     out_c.parent.mkdir(parents=True, exist_ok=True)

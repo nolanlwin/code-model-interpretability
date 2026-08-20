@@ -33,12 +33,14 @@ echo "=== [1b] GPU gate: hooks must write where they claim"
 python scripts/causal.py sanity --model-id "$MODEL_ID"
 
 echo "=== [2/5] corpus: $LANGUAGE/$SPLIT"
-[ -s "$CANON" ] || python scripts/xlcost_data.py build \
+[ -s "${CANON}.stats.json" ] || python scripts/xlcost_data.py build \
   --language "$LANGUAGE" --split "$SPLIT" --out-dir data/xlcost
 
 echo "=== [3/5] occurrences (all roles, shared across target roles)"
 mkdir -p outputs/role_occ
-[ -s "$OCC" ] || python scripts/role_occurrences.py extract \
+# Guard on the COMPLETION MARKER, not on file size: [ -s ] is true for a
+# half-written file, so an interrupted run would be silently reused.
+[ -s "${OCC}.stats.json" ] || python scripts/role_occurrences.py extract \
   --input "$CANON" --role all --output "$OCC"
 
 mkdir -p "$OUT"

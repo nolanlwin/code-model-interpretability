@@ -21,7 +21,7 @@ for slug in $LANGS; do
   esac
   CANON=data/xlcost/${slug}_${SPLIT}.jsonl
   OCC=outputs/role_occ/all_${slug}_${SPLIT}.jsonl
-  [ -s "$CANON" ] || python scripts/xlcost_data.py build \
+  [ -s "${CANON}.stats.json" ] || python scripts/xlcost_data.py build \
     --language "$L" --split "$SPLIT" --out-dir data/xlcost
   echo "=== occurrences: $L (all roles)"
   # NOT [ -s "$OCC" ]: that is true for a half-written file, and a run
