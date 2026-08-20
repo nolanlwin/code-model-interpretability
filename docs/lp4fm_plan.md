@@ -89,13 +89,20 @@ One store per (language, model) covers every role in the file.
 |---|---|---|
 | R1 | `role_occurrences.py extract --role all` for Python, JS, PHP | CPU, minutes |
 | R2 | cap to ~3,000 occurrences per role per language, sampled by whole problems (same rule as `probe.py`) | CPU, seconds |
-| R3 | `extract_activations.py` — 3 languages × 1 model | **GPU, the expensive step** |
+| R3 | `extract_activations.py --label-field role` — 3 languages × 1 model | **GPU, the expensive step** |
 | R4 | transfer matrix: 3×3 per role, probe + baseline + shuffled control | CPU once R3 exists |
 | R5 | add the other two models only if the R4 result holds | GPU |
 
 R2 matters: uncapped, Python alone yields ~34k accumulator+iterator
 occurrences, and the probe caps at 2,000 anyway. Capping by whole problems
 keeps the probe's own cap meaningful and bounds GPU cost.
+
+`--label-field role` in R3 is not optional. The store has one label slot,
+named `occurrence_type`; the two producers disagree about what fills it.
+`role_occurrences.py` writes `role`, the boolean workstream writes
+`occurrence_type`. Extract without the flag and every stored label is null,
+and `probe.py` then drops every record — after the GPU session is spent. The
+chosen field is stamped into `meta.json` so a store cannot be misread later.
 
 Start with **one model** (Qwen2.5-Coder-1.5B). If the baseline transfers as
 well as the probe, more models will not change the conclusion and the GPU is
