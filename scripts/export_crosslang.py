@@ -81,7 +81,13 @@ def model_slug(model_id: str | None) -> str | None:
     """Filename slug for a model id, matching how the runners build it."""
     if not model_id:
         return None
-    return model_id.split("/")[-1].lower().replace(".", "").replace("-", "")
+    # Strip every non-alphanumeric, not just "." and "-". A random-init
+    # control records its identity as "<repo>#random-init-s<seed>", and a "#"
+    # surviving into the filename slug does not match PROBE_RE's [A-Za-z0-9]+,
+    # so the probe file would be skipped and the table published with an empty
+    # probe column. Trained model ids contain only "." and "-", so this leaves
+    # every existing slug unchanged.
+    return re.sub(r"[^a-z0-9]", "", model_id.split("/")[-1].lower())
 
 
 def masked_best(agg: dict) -> float:
