@@ -108,7 +108,17 @@ def cmd_run(args: argparse.Namespace) -> int:
             "canonical_sha256": canon_sha,
             "occurrences_sha256": occ_sha,
             "max_length": args.max_length,
+            # Resuming with a different --label-field would append records
+            # labelled from one field to records labelled from another, while
+            # meta.json kept advertising the original. The probe would then
+            # train on two incompatible class schemes, or die with a
+            # single-class error, with nothing in the store to explain why.
+            # Stores written before this flag existed have no label_field key
+            # and were necessarily occurrence_type, so that is the default on
+            # both sides of the comparison.
+            "label_field": args.label_field,
         }
+        meta.setdefault("label_field", "occurrence_type")
         legacy = [k for k in ("canonical_sha256", "occurrences_sha256") if k not in meta]
         mismatch = {
             k: (meta.get(k), v)
