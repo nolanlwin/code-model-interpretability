@@ -350,12 +350,26 @@ def cmd_run(args: argparse.Namespace) -> int:
             # Carry ORIGINAL occurrence_ids by span mapping (C3 merges bindings,
             # so recomputed ids cannot match — the id must travel with the span).
             # Gate: extraction on the renamed code must find an occurrence at
-            # every mapped span with the same occurrence_type.
-            new_rows, pstats = program_occurrence_rows(language, new_code, pid)
+            # every mapped span with the same label.
+            #
+            # The re-extraction has to use the SAME producer that made the
+            # input, or the gate compares two different labelling schemes and
+            # rejects everything. The boolean workstream writes
+            # `occurrence_type` via program_occurrence_rows;
+            # role_occurrences.py writes `role` and finds a different set of
+            # sites entirely.
+            if args.label_field == "role":
+                from role_occurrences import ROLES as _ROLES
+                from role_occurrences import occurrence_rows as _role_rows
+                new_rows = [row for rl in _ROLES
+                            for row in _role_rows(new_code, language, rl, pid)]
+                pstats = {"parse_error": not new_rows}
+            else:
+                new_rows, pstats = program_occurrence_rows(language, new_code, pid)
             if pstats["parse_error"]:
                 n_id_mismatch += 1
                 continue
-            sites = {tuple(r["source_span"]): r["occurrence_type"] for r in new_rows}
+            sites = {tuple(r["source_span"]): r[args.label_field] for r in new_rows}
             mapped, gate_ok = [], True
             for r in rows:
                 m = map_span(edits, int(r["source_span"][0]), int(r["source_span"][1]))
@@ -364,7 +378,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                     break
                 ns, ne, new_name = m
                 var = new_name if new_name is not None else r["variable"]
-                if new_code[ns:ne] != var or sites.get((ns, ne)) != r["occurrence_type"]:
+                if new_code[ns:ne] != var or sites.get((ns, ne)) != r[args.label_field]:
                     gate_ok = False
                     break
                 mapped.append(
@@ -467,6 +481,12 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--out-canonical", required=True)
     r.add_argument("--out-occurrences", required=True)
     r.add_argument("--sample-ids", help="restrict to problems containing these occurrence ids")
+    r.add_argument("--label-field", default="occurrence_type",
+                   choices=["occurrence_type", "role"],
+                   help="which field the identity gate compares, and therefore "
+                        "which extractor re-reads the renamed code: "
+                        "'occurrence_type' for the boolean workstream, 'role' "
+                        "for role_occurrences.py output")
     sub.add_parser("verify")
     args = ap.parse_args(argv)
     return cmd_verify(args) if args.cmd == "verify" else cmd_run(args)
