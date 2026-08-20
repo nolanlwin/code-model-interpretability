@@ -140,6 +140,11 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
+    # Remove any previous completion marker BEFORE truncating the output.
+    # Callers guard re-extraction on this file, so a marker left over from an
+    # earlier complete run would vouch for a partial rewrite if this one is
+    # interrupted.
+    Path(str(out) + ".stats.json").unlink(missing_ok=True)
     n_prog = n_parse_err = n_rows = n_span_dropped = 0
     dedup: set = set()
     with out.open("w", encoding="utf-8") as f:

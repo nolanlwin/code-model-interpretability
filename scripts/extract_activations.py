@@ -40,7 +40,18 @@ from token_alignment import char_span_to_token_indices, tokenize_for_alignment  
 from tokenizer_gate import FAST_OVERRIDE  # noqa: E402
 
 
-def load_model_and_tokenizer(model_id: str, device: str, dtype_flag: str):
+def random_init_id(model_id: str, seed: int) -> str:
+    """The identity a randomly initialised model records.
+
+    It must differ from the trained model's, or the store, the probe results
+    and the exported table all claim to be the trained model. The '#' keeps it
+    from ever being mistaken for a HuggingFace repo id.
+    """
+    return f"{model_id}#random-init-s{seed}"
+
+
+def load_model_and_tokenizer(model_id: str, device: str, dtype_flag: str,
+                             random_init: bool = False, random_seed: int = 0):
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizerFast
 
@@ -58,7 +69,22 @@ def load_model_and_tokenizer(model_id: str, device: str, dtype_flag: str):
         dtype = torch.float32 if device == "cpu" else torch.float16
     else:
         dtype = {"fp16": torch.float16, "bf16": torch.bfloat16, "fp32": torch.float32}[dtype_flag]
-    model = AutoModelForCausalLM.from_pretrained(model_id, dtype=dtype).to(device).eval()
+    if random_init:
+        # Same architecture, same tokenizer, same everything except learned
+        # weights. This is the control for "would any encoder do?" -- if a
+        # probe reads roles as well off an untrained network as off a trained
+        # one, it is reading the input distribution rather than anything the
+        # model learned, and no result about the model survives it.
+        from transformers import AutoConfig
+
+        torch.manual_seed(random_seed)
+        cfg = AutoConfig.from_pretrained(model_id)
+        model = AutoModelForCausalLM.from_config(cfg).to(dtype).to(device).eval()
+        print(f"RANDOM INIT (seed {random_seed}): weights are untrained; "
+              f"identity recorded as {random_init_id(model_id, random_seed)}",
+              flush=True)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_id, dtype=dtype).to(device).eval()
     return model, tok, device
 
 
@@ -94,7 +120,13 @@ def cmd_run(args: argparse.Namespace) -> int:
         out_dir / "index.jsonl", out_dir / "shard.npy", out_dir / "meta.json",
     )
 
-    model, tok, device = load_model_and_tokenizer(args.model_id, args.device, args.dtype)
+    model, tok, device = load_model_and_tokenizer(
+        args.model_id, args.device, args.dtype,
+        random_init=args.random_init, random_seed=args.random_seed)
+    # Everything downstream keys on this: the store's meta.json, the probe
+    # result's model_id, and the exporter's refusal to mix models.
+    recorded_model_id = (random_init_id(args.model_id, args.random_seed)
+                         if args.random_init else args.model_id)
     n_layers = model.config.num_hidden_layers
     hidden = model.config.hidden_size
 
@@ -103,12 +135,22 @@ def cmd_run(args: argparse.Namespace) -> int:
     if meta_path.is_file():
         meta = json.loads(meta_path.read_text())
         expected = {
-            "model_id": args.model_id,
+            "model_id": recorded_model_id,
             "n_occurrences": n_total,
             "canonical_sha256": canon_sha,
             "occurrences_sha256": occ_sha,
             "max_length": args.max_length,
+            # Resuming with a different --label-field would append records
+            # labelled from one field to records labelled from another, while
+            # meta.json kept advertising the original. The probe would then
+            # train on two incompatible class schemes, or die with a
+            # single-class error, with nothing in the store to explain why.
+            # Stores written before this flag existed have no label_field key
+            # and were necessarily occurrence_type, so that is the default on
+            # both sides of the comparison.
+            "label_field": args.label_field,
         }
+        meta.setdefault("label_field", "occurrence_type")
         legacy = [k for k in ("canonical_sha256", "occurrences_sha256") if k not in meta]
         mismatch = {
             k: (meta.get(k), v)
@@ -129,7 +171,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             )
     else:
         meta = {
-            "model_id": args.model_id,
+            "model_id": recorded_model_id,
             "canonical": str(args.canonical),
             "occurrences": str(args.occurrences),
             "canonical_sha256": canon_sha,
@@ -137,6 +179,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             "n_occurrences": n_total,
             "shape": [n_total, n_layers + 1, hidden],
             "dtype": "float16",
+            "label_field": args.label_field,
             "pooling": "mean",
             "max_length": args.max_length,
             "layer_indexing": "0 = embedding (pre-transformer)",
@@ -165,7 +208,13 @@ def cmd_run(args: argparse.Namespace) -> int:
                 "occurrence_id": occ["occurrence_id"],
                 "problem_id": pid,
                 "language": occ.get("language"),
-                "occurrence_type": occ.get("occurrence_type"),
+                # The store has ONE label slot, always called occurrence_type.
+                # --label-field says which occurrence field fills it, because
+                # the two producers disagree: the boolean workstream writes
+                # `occurrence_type`, role_occurrences.py writes `role`. Reading
+                # the wrong one stores nulls, and probe.py then drops every
+                # record -- after the GPU time is spent.
+                "occurrence_type": occ.get(args.label_field),
                 "variable": occ.get("variable"),
                 "function": occ.get("function"),
                 "detection_pattern": occ.get("detection_pattern"),
@@ -233,8 +282,19 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--out-dir", required=True)
     r.add_argument("--device", default="auto", choices=["auto", "cuda", "mps", "cpu"])
     r.add_argument("--dtype", default="auto", choices=["auto", "fp16", "bf16", "fp32"])
+    r.add_argument("--random-init", action="store_true",
+                   help="use the architecture and tokenizer of --model-id but "
+                        "UNTRAINED weights; the control for whether a probe "
+                        "result reflects anything the model learned")
+    r.add_argument("--random-seed", type=int, default=0,
+                   help="seed for --random-init, recorded in the store identity")
     r.add_argument("--max-length", type=int, default=2048)
     r.add_argument("--max-occurrences", type=int, default=0, help="0 = all")
+    r.add_argument("--label-field", default="occurrence_type",
+                   choices=["occurrence_type", "role"],
+                   help="which occurrence field becomes the store's label: "
+                        "'occurrence_type' for the boolean workstream, 'role' "
+                        "for role_occurrences.py output (cross-lingual work)")
     r.add_argument("--log-every", type=int, default=200)
     sub.add_parser("verify")
     args = ap.parse_args(argv)

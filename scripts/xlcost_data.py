@@ -127,6 +127,12 @@ def build_split(language: str, split: str, out_dir: Path) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     lang_slug = language.lower().replace("++", "pp").replace("#", "sharp")
     out = out_dir / f"{lang_slug}_{split}.jsonl"
+    # Per-output completion marker so callers can guard on "finished" rather
+    # than "non-empty". Cleared first: a marker from an earlier complete build
+    # must not vouch for an interrupted rewrite. build_manifest.json is shared
+    # across languages and splits, so it cannot serve this purpose.
+    marker = Path(str(out) + ".stats.json")
+    marker.unlink(missing_ok=True)
     with out.open("w", encoding="utf-8") as f:
         for k in kept:
             f.write(json.dumps(k) + "\n")
@@ -141,6 +147,7 @@ def build_split(language: str, split: str, out_dir: Path) -> dict:
         "unique_problems": n_problems,
         "output": str(out),
     }
+    marker.write_text(json.dumps(stats, indent=1), encoding="utf-8")
     print(json.dumps(stats))
     return stats
 
