@@ -77,6 +77,13 @@ def resolution(preds: list[dict]) -> tuple[float | None, str | None, int | None]
     return float(rho), small, int(counts[small])
 
 
+def model_slug(model_id: str | None) -> str | None:
+    """Filename slug for a model id, matching how the runners build it."""
+    if not model_id:
+        return None
+    return model_id.split("/")[-1].lower().replace(".", "").replace("-", "")
+
+
 def masked_best(agg: dict) -> float:
     """Best feature that does NOT see the variable name.
 
@@ -146,14 +153,24 @@ def main(argv=None) -> int:
         d = json.loads(f.read_text())
         role, a, b, fname_model = m.groups()
         model = d.get("model_id") or fname_model or "unknown"
-        # With --model given, a file must positively identify itself as that
-        # model. A legacy name carries no slug, so it can only match on the
-        # model_id recorded inside it; falling back to "accept because we
-        # cannot tell" is how a previous run's scores get published under a
-        # new model's heading.
-        if args.model and args.model not in (fname_model, model) \
-                and not str(model).lower().replace(".", "").replace("-", "") \
-                        .endswith(args.model):
+        inner = model_slug(d.get("model_id"))
+
+        # The model_id recorded inside the file is authoritative: it comes
+        # from the store's meta.json. The filename slug is a convenience. If
+        # both are present they must AGREE -- a file named for one model whose
+        # contents identify another is a corrupt artifact, and choosing either
+        # identity would publish one model's scores under the other's name.
+        if fname_model and inner and fname_model != inner:
+            raise SystemExit(
+                f"{f.name}: filename says model {fname_model!r} but model_id "
+                f"inside says {d.get('model_id')!r} (slug {inner!r}). Refusing "
+                "to guess which is right; delete or rename the file."
+            )
+
+        # Selection matches the authoritative identity when there is one, and
+        # falls back to the filename only for files that record no model_id.
+        identity = inner or fname_model
+        if args.model and identity != args.model:
             continue
         seen_models.add(model)
         cells[(role, a, b)] = {
