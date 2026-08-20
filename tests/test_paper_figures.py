@@ -156,7 +156,10 @@ def run() -> int:
                 known.add(f"{float(r[k]):.3f}")
     derived = {"0.952", "0.893", "0.785", "0.887", "0.390", "0.107", "0.166",
                "0.006", "0.165", "0.013", "0.038", "0.015", "0.032", "0.047",
-               "0.195", "0.272", "0.079", "0.039"}
+               "0.195", "0.272", "0.079", "0.039",
+               # a stated bound, not a measured cell: the whitespace check
+               # above verifies every measured delta falls under it
+               "0.001"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
     if unknown:
