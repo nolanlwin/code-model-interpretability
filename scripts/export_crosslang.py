@@ -139,8 +139,6 @@ def main(argv=None) -> int:
             "majority": round(d["majority_macro_f1"], 4),
             "shuffled_labels": round(d["shuffled_label_control_macro_f1"], 4),
             "rho": None if rho is None else round(rho, 4),
-            "over_shuffled_in_rho": (None if not rho else
-                round((masked_best(agg) - d["shuffled_label_control_macro_f1"]) / rho, 1)),
             "smallest_class": small, "smallest_n": small_n,
             "git_commit": (d.get("git_commit") or "")[:12],
         })
