@@ -24,7 +24,10 @@ for slug in $LANGS; do
   [ -s "$CANON" ] || python scripts/xlcost_data.py build \
     --language "$L" --split "$SPLIT" --out-dir data/xlcost
   echo "=== occurrences: $L (all roles)"
-  [ -s "$OCC" ] || python scripts/role_occurrences.py extract \
+  # NOT [ -s "$OCC" ]: that is true for a half-written file, and a run
+  # interrupted mid-extraction would then be skipped and silently reused.
+  # cmd_extract writes the .stats.json only after the loop completes.
+  [ -s "${OCC}.stats.json" ] || python scripts/role_occurrences.py extract \
     --input "$CANON" --role all --output "$OCC"
 done
 
