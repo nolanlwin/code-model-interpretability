@@ -1,0 +1,6 @@
+condition,readout_layer,n_pairs,m_clean,m_corrupt,recovery_layer_1,recovery_layer_2,recovery_layer_3,recovery_layer_4,recovery_layer_5,recovery_layer_6
+random_nouns,6,150,0.9989,0.1376,0.9905,0.9305,0.9942,0.9958,0.9983,1.0000
+single_chars,6,150,0.9963,0.6138,0.8599,0.7995,0.9355,0.9631,0.9827,1.0000
+all_same,6,150,0.9988,0.1424,0.8083,0.8997,0.9608,0.9860,0.9977,1.0000
+numeric_vars,6,150,0.9988,0.0566,0.9662,0.9611,0.9909,0.9968,0.9988,1.0000
+misleading_iterator,6,150,0.9988,0.2864,0.8202,0.8348,0.9162,0.9463,0.9829,1.0000
