@@ -33,7 +33,37 @@ import numpy as np  # noqa: E402
 
 INK, INK2, SURFACE = "#0b0b0b", "#52514e", "#fcfcfb"
 LANG_LABEL = {"python": "Python", "javascript": "JavaScript", "php": "PHP"}
-NAME_RE = re.compile(r"out_(\w+?)_(python|javascript|php)_to_(python|javascript|php)\.json$")
+BASE_RE = re.compile(r"out_(\w+?)_(python|javascript|php)_to_(python|javascript|php)\.json$")
+PROBE_RE = re.compile(r"probe_(\w+?)_(python|javascript|php)_to_(python|javascript|php)\.json$")
+
+
+def resolution(preds: list[dict]) -> tuple[float | None, str | None, int | None]:
+    """(rho, smallest class, its count) for a transfer cell's target fold.
+
+    rho is the macro-F1 movement caused by ONE occurrence of the smallest
+    class changing its prediction. Ten of twelve within-language probing runs
+    turned out to sit below their own rho; a transfer matrix is 18 cells, so
+    quoting any of them without it repeats the mistake at scale.
+    """
+    if not preds:
+        return None, None, None
+    from sklearn.metrics import f1_score
+    seed0 = [q for q in preds if int(q.get("seed", 0)) == 0] or preds
+    y = [q["y_true"] for q in seed0]
+    counts = {}
+    for v in y:
+        counts[v] = counts.get(v, 0) + 1
+    if len(counts) < 2:
+        return None, None, None
+    small = min(counts, key=counts.get)
+    big = max(counts, key=counts.get)
+    arr = np.array(y)
+    flipped = arr.copy()
+    flipped[np.where(arr == small)[0][0]] = big
+    labels = sorted(counts)
+    rho = (f1_score(arr, arr, average="macro", labels=labels, zero_division=0)
+           - f1_score(arr, flipped, average="macro", labels=labels, zero_division=0))
+    return float(rho), small, int(counts[small])
 
 
 def masked_best(agg: dict) -> float:
@@ -89,14 +119,35 @@ def main(argv=None) -> int:
     src, dst = Path(args.src), Path(args.dst)
     dst.mkdir(parents=True, exist_ok=True)
 
+    # Two producers write into this directory and they have different
+    # schemas: baselines.py transfer -> out_*.json, crosslang.py -> probe_*.json.
+    # They are keyed into ONE row per (role, source, target), because the entire
+    # point is reading the probe against its baseline in a single line.
+    cells: dict = {}
+    for f in sorted(src.glob("probe_*.json")):
+        m = PROBE_RE.search(f.name)
+        if not m:
+            continue
+        d = json.loads(f.read_text())
+        role, a, b = m.groups()
+        cells[(role, a, b)] = {
+            "probe_transfer": round(d["transfer_macro_f1_mean"], 4),
+            "probe_indomain": round(d["indomain_macro_f1_mean"], 4),
+            "probe_shuffled_source": round(d["shuffled_source_macro_f1_mean"], 4),
+            "probe_rho": (None if d.get("resolution_rho") is None
+                          else round(d["resolution_rho"], 4)),
+            "probe_model": d.get("model_id"),
+        }
+
     rows = []
     for f in sorted(src.glob("out_*.json")):
-        m = NAME_RE.search(f.name)
+        m = BASE_RE.search(f.name)
         if not m:
             continue
         d = json.loads(f.read_text())
         role, a, b = m.groups()
         agg = d["aggregate"]
+        rho, small, small_n = resolution(d.get("test_predictions") or [])
         rows.append({
             "role": role, "source": a, "target": b,
             "n_train": d["n_train"], "n_test": d["n_test"],
@@ -108,7 +159,12 @@ def main(argv=None) -> int:
             "masked_best": round(masked_best(agg), 4),
             "majority": round(d["majority_macro_f1"], 4),
             "shuffled_labels": round(d["shuffled_label_control_macro_f1"], 4),
+            "rho": None if rho is None else round(rho, 4),
+            "smallest_class": small, "smallest_n": small_n,
             "git_commit": (d.get("git_commit") or "")[:12],
+            **{k: None for k in ("probe_transfer", "probe_indomain",
+                                 "probe_shuffled_source", "probe_rho", "probe_model")},
+            **cells.get((role, a, b), {}),
         })
     if not rows:
         print(f"no transfer results in {src}")
@@ -121,6 +177,21 @@ def main(argv=None) -> int:
 
     roles = sorted({r["role"] for r in rows})
     figs = [heatmap(rows, role, dst) for role in roles]
+
+    rhos = [r["rho"] for r in rows if r["rho"]]
+    effects = [r["masked_best"] - r["shuffled_labels"] for r in rows]
+    ratio = (min(effects) / max(rhos)) if rhos else float("nan")
+    RHO_SENTENCE = (
+        "**ρ** is the macro-F1 movement from ONE test occurrence of the smallest "
+        f"class changing its prediction. Measured, not assumed: it spans "
+        f"**{min(rhos):.4f}–{max(rhos):.4f}** across these cells. The smallest "
+        f"effect in the table still clears the largest ρ by {ratio:.0f}×, because "
+        "these folds hold thousands of occurrences rather than the 2,000-capped "
+        "samples of the within-language runs. Resolution is not the binding "
+        "constraint on this experiment — worth stating precisely because it *was* "
+        "the binding constraint on the probing work, where ten of twelve runs "
+        "fell below their own ρ."
+    ) if rhos else "ρ unavailable: no test predictions in these results."
 
     lines = [
         "# Cross-lingual transfer — surface baseline", "",
@@ -135,14 +206,19 @@ def main(argv=None) -> int:
         "",
         "Read every cell against its own `majority` and `shuffled` controls.",
         "",
-        "| role | source → target | n test | masked best | name only | majority | shuffled |",
-        "|---|---|---|---|---|---|---|",
+        RHO_SENTENCE,
+        "",
+        "| role | source → target | n test | masked best | name only | probe | majority | shuffled | ρ |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for r in sorted(rows, key=lambda r: (r["role"], r["source"], r["target"])):
+        rho_txt = "—" if r["rho"] is None else f"{r['rho']:.4f}"
+        pr = r.get("probe_transfer")
+        probe_txt = "not run" if pr is None else f"{pr:.3f}"
         lines.append(
             f"| {r['role']} | {LANG_LABEL[r['source']]} → {LANG_LABEL[r['target']]} | "
             f"{r['n_test']} | **{r['masked_best']:.3f}** | {r['name_only']:.3f} | "
-            f"{r['majority']:.3f} | {r['shuffled_labels']:.3f} |")
+            f"{probe_txt} | {r['majority']:.3f} | {r['shuffled_labels']:.3f} | {rho_txt} |")
 
     best = max(rows, key=lambda r: r["masked_best"])
     name_wins = sum(1 for r in rows if r["name_only"] >= r["masked_best"])

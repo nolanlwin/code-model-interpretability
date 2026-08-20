@@ -43,5 +43,29 @@ for ROLE in $ROLES; do
   done; done
 done
 
+# Probe transfer, if role-labelled activation stores exist. They are built by
+#   extract_activations.py --label-field role
+# and are the only part of this workflow that needs a GPU. Without them the
+# baseline matrix above still stands on its own.
+MODEL_SLUG=${MODEL_SLUG:-}
+if [ -n "$MODEL_SLUG" ]; then
+  for ROLE in $ROLES; do
+    for A in $LANGS; do for B in $LANGS; do
+      [ "$A" = "$B" ] && continue
+      SA=outputs/activations_xlcost/${A}_${SPLIT}_${MODEL_SLUG}
+      SB=outputs/activations_xlcost/${B}_${SPLIT}_${MODEL_SLUG}
+      if [ -d "$SA" ] && [ -d "$SB" ]; then
+        RESULT=${OUT}/probe_${ROLE}_${A}_to_${B}.json
+        echo "=== probe $ROLE: $A -> $B"
+        [ -s "$RESULT" ] || python scripts/crosslang.py run \
+          --train-store "$SA" --test-store "$SB" --role "$ROLE" --output "$RESULT"
+      else
+        echo "    skip probe $ROLE $A->$B: no store (build with "
+        echo "    extract_activations.py --label-field role)"
+      fi
+    done; done
+  done
+fi
+
 python scripts/export_crosslang.py --in "$OUT" --out results/lp4fm
 echo "=== done. results/lp4fm/SUMMARY.md"
