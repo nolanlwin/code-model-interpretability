@@ -133,6 +133,9 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--in", dest="src", default="outputs/crosslang")
     ap.add_argument("--out", dest="dst", default="results/lp4fm")
+    ap.add_argument("--allow-drop", action="store_true",
+                    help="permit republishing a table that omits rows the "
+                         "existing summary.csv contains")
     ap.add_argument("--model", default=None,
                     help="select probe results for one model when several are "
                          "present; matched against model_id or the filename slug")
@@ -221,6 +224,36 @@ def main(argv=None) -> int:
         print(f"no transfer results in {src}")
         return 1
 
+    # This rewrites the whole table from whatever inputs happen to be present,
+    # so a run that computes fewer conditions than a previous one silently
+    # deletes the rest. That is how the C1/C2/C4 renaming cells were lost: a
+    # session that recomputed only `original` republished an 18-row table over
+    # a 36-row one, and the paper table built on those rows kept its numbers
+    # while its evidence left the repository. Refuse instead, and say exactly
+    # what would go.
+    existing = dst / "summary.csv"
+    if existing.exists():
+        import csv as _csv
+        key = lambda r: (r.get("role"), r.get("condition") or "original",
+                         r.get("source"), r.get("target"))
+        with existing.open(newline="") as fh:
+            had = {key(r) for r in _csv.DictReader(fh)}
+        lost = sorted(had - {key(r) for r in rows})
+        if lost and not args.allow_drop:
+            conds = sorted({k[1] for k in lost})
+            print(f"REFUSING to overwrite {existing}: {len(lost)} published "
+                  f"row(s) are not in this run, covering condition(s) {conds}.")
+            for k in lost[:8]:
+                print(f"    would drop: role={k[0]} condition={k[1]} {k[2]}->{k[3]}")
+            if len(lost) > 8:
+                print(f"    ... and {len(lost) - 8} more")
+            print("Recompute them, or pass --allow-drop if they are genuinely "
+                  "superseded (they stay recoverable in git history).")
+            return 1
+        if lost:
+            print(f"dropping {len(lost)} previously published row(s) "
+                  f"(--allow-drop): conditions {sorted({k[1] for k in lost})}")
+
     with (dst / "summary.csv").open("w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0]))
         w.writeheader()
@@ -297,6 +330,33 @@ def main(argv=None) -> int:
         "against majority chance.",
         "", "Figures: " + ", ".join(f"`{p.name}`" for p in figs),
     ]
+
+    # When the probe column is populated the paragraph above understates the
+    # table: it describes the baseline alone. Report where the probe wins,
+    # which is the comparison the experiment exists to make.
+    probed = [r for r in orig if r.get("probe_transfer") not in (None, "")]
+    if probed:
+        near = [r for r in probed if "python" not in (r["source"], r["target"])]
+        far = [r for r in probed if "python" in (r["source"], r["target"])]
+        d = lambda r: float(r["probe_transfer"]) - float(r["masked_best"])
+        mean = lambda g, k: sum(float(r[k]) for r in g) / len(g)
+        wins = sum(1 for r in probed if d(r) > 0)
+        lines[-1:-1] = [
+            "",
+            "## What the probe adds",
+            "",
+            f"- The probe beats the masked baseline in **{wins}/{len(probed)}** cells.",
+        ]
+        if near and far:
+            lines[-1:-1] = [
+                f"- Typologically close pairs (no Python), n={len(near)}: baseline "
+                f"{mean(near,'masked_best'):.3f}, probe {mean(near,'probe_transfer'):.3f}.",
+                f"- Pairs involving Python, n={len(far)}: baseline "
+                f"{mean(far,'masked_best'):.3f}, probe {mean(far,'probe_transfer'):.3f}.",
+                "- The baseline tracks typological distance; the probe does not. The "
+                "model's contribution is largest exactly where surface similarity is "
+                "least, and near zero where n-grams already saturate.",
+            ]
     ren = [r for r in rows if r.get("condition", "original") != "original"]
     if ren:
         base_by = {(r["role"], r["target"]): r["masked_best"]

@@ -4,9 +4,10 @@
 % and exported to results/lp4fm/ by scripts/export_crosslang.py.
 % Regenerate rather than editing figures by hand.
 %
-% NOT YET WRITTEN: the probe half. Every number below is model-free.
-% See "What is missing" at the end -- do not remove that paragraph until
-% the probe columns are filled.
+% The probe half is now filled (Qwen2.5-Coder-1.5B). Baselines and probe are
+% computed on the SAME capped sample -- see notebooks/colab_crosslang_gpu.ipynb.
+% The renaming table alone comes from the earlier uncapped run, kept in
+% results/lp4fm/summary_renaming_uncapped.csv; its caption says so.
 % ============================================================
 
 \section{Cross-lingual transfer of variable roles}
@@ -38,44 +39,86 @@ feature.
 
 \begin{table}[t]
 \centering
-\caption{Cross-lingual transfer with \textbf{no model}: a character $n$-gram
-classifier fitted on the source language, evaluated on the target, matched on
-shared problems, variable name masked. Every cell is far above its own
-majority and shuffled-label controls.}
+\caption{Cross-lingual role transfer over all six ordered pairs of
+Python/JavaScript/PHP, matched on shared problems. \emph{Masked} is a
+character $n$-gram classifier with no model and the variable's own name
+removed; \emph{probe} is a linear probe on the residual stream of
+Qwen2.5-Coder-1.5B, fitted on the source language and evaluated on the target.
+Both are computed on the same capped sample. Note the ranges, not just the
+maxima: the baseline spans $0.39$ macro-F1, the probe $0.11$.}
 \label{tab:crosslang}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-role & masked-context transfer & majority & shuffled labels \\
+role & masked-context & probe & majority & shuffled labels \\
 \midrule
-accumulator & 0.809--0.953 & 0.369--0.425 & 0.476--0.532 \\
-index\_key  & 0.861--0.950 & 0.412--0.456 & 0.469--0.503 \\
-iterator    & 0.609--\textbf{0.979} & 0.473--0.491 & 0.447--0.497 \\
+accumulator & 0.736--0.954 & 0.833--0.918 & 0.271--0.415 & 0.439--0.504 \\
+index\_key  & 0.839--0.964 & 0.854--0.915 & 0.314--0.419 & 0.459--0.516 \\
+iterator    & 0.576--\textbf{0.965} & 0.851--0.939 & 0.428--0.475 & 0.438--0.488 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Transfer reaches macro-F1 $0.979$ without a language model and without the
-variable's name. The name alone is the strongest feature in only $2$ of $18$
+Transfer reaches macro-F1 $0.965$ without a language model and without the
+variable's name. The name alone is the strongest feature in only $6$ of $18$
 cells, so this is not simply shared identifier conventions: it is the
 surrounding code. Resolution is not the limiting factor---one test occurrence
-of the smallest class moves macro-F1 by $\rho \in [0.0001, 0.0017]$ here,
+of the smallest class moves macro-F1 by $\rho \in [0.0003, 0.0020]$ here,
 because these folds hold thousands of occurrences, and the smallest effect in
-the table clears the largest $\rho$ by a factor of $88$.
+the table clears the largest $\rho$ by a factor of $74$.
 
 \paragraph{Transfer is asymmetric, along a typological axis.} Two comparisons
 make the point, and they are distinct. Holding the source fixed, iterator
-transfers from PHP to JavaScript at $0.979$ but from PHP to Python at
-$0.609$: the same trained classifier, applied to a brace language and to an
-indentation language, differing by $0.370$. Holding the \emph{pair} fixed and
-reversing direction, Python$\rightarrow$PHP reaches $0.839$ while
-PHP$\rightarrow$Python reaches $0.609$, a gap of $0.230$---so the asymmetry
+transfers from PHP to JavaScript at $0.965$ but from PHP to Python at
+$0.576$: the same trained classifier, applied to a brace language and to an
+indentation language, differing by $0.39$. Holding the \emph{pair} fixed and
+reversing direction, Python$\rightarrow$PHP reaches $0.741$ while
+PHP$\rightarrow$Python reaches $0.576$, a gap of $0.165$---so the asymmetry
 is directional, not merely a property of which languages are involved.
 
 In both comparisons the pairs sharing C-family statement syntax transfer
 better, and every poor cell involves Python, whose block structure is
 indentation rather than braces. This is a property of the languages, not of
-a model---there is no model here---and it is the clearest evidence in this
-study that what transfers is surface structure.
+the surface model, and it is the clearest evidence in this study that what
+$n$-grams transfer is surface structure.
+
+\paragraph{The probe is flat exactly where the baseline collapses.} Running a
+linear probe on the residual stream over the identical cells does not
+uniformly beat the surface baseline, and the pattern of where it wins is the
+result. Split the eighteen cells by whether Python is involved:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+ & JavaScript$\leftrightarrow$PHP & pairs involving Python & change \\
+\midrule
+masked-context & 0.952 & 0.785 & $-0.166$ \\
+probe          & 0.893 & 0.887 & $-0.006$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The division is total: the baseline beats the probe in all six cells
+of the typologically close pair, and the probe beats the baseline in all twelve
+cells involving Python, with no exceptions. Every one of the eighteen gaps
+clears its own $\rho$, the smallest ($0.015$) by a factor of $3.8$.
+
+The two rows say different things. Between JavaScript and PHP---both C-family,
+both brace-delimited---character $n$-grams already reach $0.952$, and the
+residual stream adds nothing to a signal the surface has saturated. Across the
+typological boundary the baseline loses $0.166$ while the probe loses $0.006$.
+The extreme case is iterator from PHP to Python, where the baseline falls to
+$0.576$ and the probe holds at $0.865$. Across all eighteen cells the
+baseline's spread is $0.390$ and the probe's is $0.107$: the surface measure
+varies $3.7\times$ as much as the representational one.
+
+So the asymmetry of the previous paragraph is a property of the surface, not
+of the representation. Under the probe, the same two comparisons that differed
+by $0.389$ and $0.165$ differ by $-0.013$ and $+0.038$---the typological axis
+essentially disappears. The model's contribution is not a uniform increment; it
+is inversely proportional to how much surface similarity the language pair
+already provides. Controls behave: source-shuffled probes score $0.434$--$0.512$,
+and in-domain probes on the source language reach $0.877$--$0.985$, so the
+cross-lingual numbers are not an artifact of a probe that fits anything.
 
 \paragraph{Renaming separates lexical from structural transfer.} We rename
 the source language before training---C1 replaces every local with
@@ -89,9 +132,13 @@ each role's headroom over its own shuffled control survives.
 \begin{table}[t]
 \centering
 \caption{Headroom over the shuffled-label control retained after renaming the
-source language (mean over C1, C2, C4 and both targets). Each condition is
-scored against \emph{its own} control: renaming changes the corpus, so the
-conditions do not share one.}
+source language (mean over C1, C2, C4 and both targets; the renamer supports
+Python, so Python is the source throughout). Each condition is scored against
+\emph{its own} control: renaming changes the corpus, so the conditions do not
+share one. \textbf{Sample:} unlike Table~\ref{tab:crosslang}, these cells come
+from the earlier uncapped run
+(\texttt{results/lp4fm/summary\_renaming\_uncapped.csv}); percentages are
+internally consistent but are not row-comparable with the capped table above.}
 \label{tab:crosslang-rename}
 \begin{tabular}{lcc}
 \toprule
@@ -125,13 +172,18 @@ alone suffices, and the lexical channel is a liability rather than a support.
 A claim that index is uniformly name-dependent would be wrong; across
 languages it is the most name-invariant of the three roles we test.
 
-\paragraph{What is missing.} Every number in this section is model-free. The
-comparison this experiment exists to enable---how a probe on the model's
-residual stream performs on the identical cells---is not yet run, so we make
-no claim about what the model adds. The apparatus for it is implemented, with a
-regression suite over synthetic stores whose separability is planted by
-construction (\texttt{scripts/crosslang.py},
-\texttt{tests/test\_crosslang.py}); it needs activation stores for the three
-languages. Until those exist, the honest reading of this section is a
-strong lower bound: any probe reported on cross-lingual role transfer must be
-compared against $0.95$, not against majority chance.
+\paragraph{What is missing.} Three limits bound what the probe result above
+can be taken to mean. It uses one model, Qwen2.5-Coder-1.5B: whether the
+flatness is a property of code language models generally or of this one at this
+scale is untested, and a second model is the single most valuable addition to
+this section. Only three of XLCoST's languages share problems at rates that
+permit matched transfer, so ``typologically close'' is instantiated by exactly
+one pair (JavaScript/PHP) and the boundary by exactly one language (Python);
+the axis is a two-point contrast, not a gradient. And the renaming conditions
+were run on the source language only, so they say what happens when the probe
+is trained on stripped names, not when it is evaluated on them.
+
+We also report no interventional evidence. A probe that reads a role off the
+residual stream does not establish that the model uses it, and the patching and
+ablation experiments that would test this are reported separately rather than
+on these cross-lingual cells.
