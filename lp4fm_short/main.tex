@@ -13,8 +13,8 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 
-\title{The Medium Constrains the Surface, Not the Representation:\\
-Variable Roles Across Programming-Language Lineages}
+\title{Variable Roles in Code Models:\\
+Surface Transfer Tracks Language Lineage, Probe Transfer Does Not}
 
 \workshoptitle{Linguistic Principles for Foundation Models (LP4FM)}
 
@@ -31,10 +31,12 @@ Variable Roles Across Programming-Language Lineages}
 
 \begin{abstract}
 If language is a design axis rather than a passive carrier, then changing the
-language should change what a model can do. We test this directly in code,
-where the same problem can be written in several languages whose relatedness is fixed independently of our results, by
-their syntactic descent. Fitting a variable-role classifier on one language and
-evaluating it on another, we find that a model-free character $n$-gram baseline with the variable's own name masked is strongly constrained by language relatedness: macro-F1 $0.952$ between
+language should change what a model can do. We test this in code, where the same problem can be written in several
+languages whose relatedness is fixed independently of our results, by their
+syntactic descent. Using XLCoST solutions aligned problem by problem across
+Python, JavaScript, and PHP, we fit a variable-role classifier on one language
+and evaluate it on another over all six ordered pairs. A model-free character $n$-gram baseline with the variable's own name masked is
+strongly constrained by language relatedness: macro-F1 $0.952$ between
 JavaScript and PHP, falling to $0.785$ whenever Python is involved. A linear
 probe on a code model's residual stream moves $0.006$ across the same
 boundary. The probe is not reading the
@@ -58,12 +60,14 @@ fixed, the surface form varying along the C-family/off-side-rule split that
 separates them, and the corpora aligned problem by problem. If the medium
 constrains what a model represents, code is where that constraint can be measured instead of argued.
 
-A \emph{variable role} (accumulator, loop iterator, index key) is a property of
+A single cross-lingual accuracy conflates two things that need separating: how
+far a surface regularity carries across languages, and how far a learned
+representation does. Variable roles make the separation tractable. A
+\emph{variable role} (accumulator, loop iterator, index key) is a property of
 what a variable does, not of what it is called or which language it appears in,
-so roles are a case where the medium ought in principle to be irrelevant.
-Whether it is irrelevant \emph{to a model} is empirical, and it separates two
-things a single accuracy number conflates: how far a surface regularity carries
-across languages, and how far a learned representation does.
+so roles are a case where the medium ought in principle to be irrelevant, and
+whether it is irrelevant \emph{to a model} is then an empirical question with a
+measurable answer.
 
 We contribute a controlled measurement of that separation and a mechanism for
 the part that fails. Over all six ordered pairs of Python, JavaScript, and PHP,
