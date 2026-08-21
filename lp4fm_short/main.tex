@@ -63,7 +63,8 @@ measured instead of argued.
 
 In natural language, transfer tracks relatedness closely enough that typological
 distance is used to choose source
-languages~\citep{lin2019choosing,littell2017uriel}. Whether the same holds for
+languages~\citep{lin2019choosing,littell2017uriel}, and word-order divergence
+alone degrades it~\citep{ahmad2019difficulties}. Whether the same holds for
 programming languages is untested, and a single cross-lingual accuracy conflates
 the two things that would answer it: how far a surface regularity carries, and
 how far a learned representation does. Variable roles make the separation tractable. A
@@ -150,10 +151,9 @@ $5$ of $34$ matching or exceeding it. Any grouping is near-perfectly decodable
 because what the model encodes is language \emph{identity}, and a partition is
 recoverable as a union of identities whether or not it means anything.
 
-What survives is the arrangement: languages occupy distinct, stable regions, and
-the two pairs sitting closest are the two that are historically closest, C
-beside C++ and Java beside C\#. The medium is represented sharply and, at least
-locally, by descent.
+What survives is the arrangement: the two pairs sitting closest are the two that
+are historically closest, C beside C++ and Java beside C\#. The medium is
+represented sharply and, at least locally, by descent.
 
 \section{Role transfer across the lineage boundary}
 \label{sec:transfer}
@@ -196,9 +196,9 @@ artefact of the smaller set.
 probe $0.006$. Across all $18$ cells the probe's scores are far less dispersed than the masked
 baseline's (SD $0.028$ against $0.100$).
 The probe does not uniformly beat the baseline. It loses all six cells of the
-closely related pair, where $n$-grams have already saturated, and that is the
-point. The model contributes nothing where surface similarity is high and a
-great deal where it is low.
+closely related pair, where $n$-grams have already saturated: the model
+contributes nothing where surface similarity is high and a great deal where it
+is low.
 
 \paragraph{Two controls decide what this means.} A flat curve is worthless if the probe reads the input rather than the model,
 and worthless again if it is flat only because it is uniformly poor. An
@@ -258,15 +258,17 @@ resolution, which is the point. Indentation and keywords are not ablated, so
 this bounds punctuation, not syntax in general. We report the aggregate only: single coefficients of a regularised model over
 correlated character $n$-grams are not interpretable one at a time.
 
-\paragraph{Related work.} Probing shows code models encode identifier, type and
-structural information recoverable by linear
-classifiers~\citep{karmakar2021what,troshin2022probing}. We ask what survives a
-change of language, and pair every probe with a model-free baseline on the same
-occurrences. Multilingual encoders carry a separable language-identity
-component~\citep{libovicky2020language}. We find that geometry in a code model,
-and show role transfer is largely insensitive to it. Methodologically we follow
-the argument that a probe score needs a bound on what architecture and labels
-alone supply~\citep{hewitt2019control,voita2020mdl,belinkov2022probing}.
+\paragraph{Related work.} Probing shows code models encode identifier, type and structural information
+recoverable by linear classifiers~\citep{karmakar2021what,troshin2022probing};
+we ask what survives a change of language, pairing every probe with a model-free
+baseline on the same occurrences. Multilingual encoders carry a separable language-identity component and a
+structured
+geometry~\citep{libovicky2020language,chang2022geometry,pires2019multilingual};
+multilingual training also transfers across programming
+languages~\citep{ahmed2022multilingual}. We find that geometry in a code model
+and show role transfer is largely insensitive to it. Methodologically we follow the argument that a probe score needs a bound on what
+architecture and labels alone
+supply~\citep{hewitt2019control,zhang2018language,voita2020mdl,belinkov2022probing}.
 
 \section{Discussion}
 
@@ -285,16 +287,13 @@ shows XLCoST admits no wider version. Both trained models are $1.5$B parameters 
 speaks to scale, and that family has no code-free member.
 
 Role labels come from an AST for Python and regular expressions for the other
-two, and the paths do not carve \emph{iterator} identically: a C-style counter
-that also accumulates is dropped as multi-role in JavaScript and PHP but kept in
-Python, so those cells mix the representational effect with an
-extractor-definition difference. Accumulator and index\_key, whose extractors
-agree far better, show the same direction ($0.782$ and $0.839$
-php$\rightarrow$python against $0.954$ and $0.964$
-php$\rightarrow$javascript). Section~\ref{sec:mechanism} runs on iterator alone,
-its ablation on two of six pairs, its correlations on six points. The probe is
-correlational, and the causal interventions of Appendix~\ref{app:causal} cover a
-different role.
+two, and the paths do not carve \emph{iterator} identically, so those cells mix
+the representational effect with an extractor-definition difference
+(Appendix~\ref{app:labels}); accumulator and index\_key, whose extractors agree
+far better, show the same direction. Section~\ref{sec:mechanism} runs on
+iterator alone, its ablation on two of six pairs, its correlations on six
+points. The probe is correlational, and Appendix~\ref{app:causal}'s
+interventions cover a different role.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
@@ -303,6 +302,19 @@ different role.
 % Tables are emitted by scripts/make_appendix.py from the committed CSVs;
 % editing them here would reintroduce the drift the figure test prevents.
 \input{appendix_generated}
+
+\section{Role-label extraction}
+\label{app:labels}
+Role labels come from an AST walk for Python and from regular expressions for
+JavaScript and PHP, and the two paths do not carve \emph{iterator} identically.
+A C-style counter that also accumulates is dropped as multi-role in JavaScript
+and PHP but retained as an iterator in Python, so the iterator cells mix the
+representational effect with a difference in what the extractors call an
+iterator. The other two roles are less affected and carry the same direction:
+accumulator transfers at $0.782$ php$\rightarrow$python against $0.954$
+php$\rightarrow$javascript, and index\_key at $0.839$ against $0.964$. The
+paper's claim therefore does not rest on the role whose labels agree least
+across the boundary.
 
 \section{Reproducibility}
 \label{app:repro}
