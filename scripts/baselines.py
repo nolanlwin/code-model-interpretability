@@ -25,6 +25,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+import re
+
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -488,11 +490,28 @@ def cmd_transfer(args: argparse.Namespace) -> int:
     if len(set(y_tr.tolist())) < 2:
         raise SystemExit(f"training side has one class only: {set(y_tr.tolist())}")
 
+    def _ws(texts):
+        """Collapse whitespace runs, when --normalize-whitespace is given.
+
+        XLCoST draws Python from the formatted mirror and JavaScript and PHP
+        from the tokenized one, so Python arrives with newlines and indentation
+        while the others arrive flattened onto one line. That makes the
+        typological boundary and the corpus-provenance boundary the same line.
+        This switch equalises the two sides so the difference can be measured
+        rather than argued about; see
+        results/lp4fm/whitespace_normalisation_check.csv.
+        """
+        if not getattr(args, "normalize_whitespace", False):
+            return texts
+        return [None if t is None else re.sub(r"\s+", " ", t).strip() for t in texts]
+
     feats = {
-        "statement_masked": ([r["statement_masked"] for r in tr],
-                             [r["statement_masked"] for r in te]),
-        "line_masked": ([r["line_masked"] for r in tr], [r["line_masked"] for r in te]),
-        "window_masked": ([r["window_masked"] for r in tr], [r["window_masked"] for r in te]),
+        "statement_masked": (_ws([r["statement_masked"] for r in tr]),
+                             _ws([r["statement_masked"] for r in te])),
+        "line_masked": (_ws([r["line_masked"] for r in tr]),
+                        _ws([r["line_masked"] for r in te])),
+        "window_masked": (_ws([r["window_masked"] for r in tr]),
+                          _ws([r["window_masked"] for r in te])),
         "name_only": ([r["variable"] for r in tr], [r["variable"] for r in te]),
     }
 
@@ -587,6 +606,11 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--output", required=True)
     t = sub.add_parser("transfer", help="fit the surface baseline on one language, "
                                         "evaluate on another")
+    t.add_argument("--normalize-whitespace", action="store_true",
+                   help="collapse whitespace runs in the masked features on "
+                        "both sides, to measure whether the formatting "
+                        "difference between XLCoST's two source mirrors "
+                        "explains cross-language transfer differences")
     t.add_argument("--train-occurrences", required=True)
     t.add_argument("--train-canonical", required=True)
     t.add_argument("--test-occurrences", required=True)

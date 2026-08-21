@@ -83,10 +83,22 @@ PHP$\rightarrow$Python reaches $0.576$, a gap of $0.165$---so the asymmetry
 is directional, not merely a property of which languages are involved.
 
 In both comparisons the pairs sharing C-family statement syntax transfer
-better, and every poor cell involves Python, whose block structure is
-indentation rather than braces. This is a property of the languages, not of
-the surface model, and it is the clearest evidence in this study that what
-$n$-grams transfer is surface structure.
+better, and every poor cell involves Python. This is a property of the
+languages, not of the surface model, and it is the clearest evidence in this
+study that what $n$-grams transfer is surface structure.
+
+One confound deserves stating, because the corpus invites it. XLCoST does not
+deliver these languages in the same shape: Python comes from the formatted
+mirror with real newlines and indentation, while JavaScript and PHP come from
+the tokenized one and arrive flattened onto a single line ($100\%$ and $98\%$
+of programs contain no newline at all). The typological boundary and the
+corpus-provenance boundary are the same line, so a classifier keying on layout
+would produce this pattern without any linguistic content. It cannot: the
+character analyser collapses whitespace runs before forming $n$-grams, so line
+structure never becomes a feature, and normalising whitespace on both sides
+changes the transfer scores by less than $0.001$. We therefore describe the
+contrast in terms of statement syntax rather than block delimiters, which is
+what the features can actually see.
 
 \paragraph{The probe is flat exactly where the baseline collapses.} Running a
 linear probe on the residual stream over the identical cells does not

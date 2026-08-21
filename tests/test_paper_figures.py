@@ -25,6 +25,7 @@ UNCAPPED = ROOT / "results" / "lp4fm" / "summary_renaming_uncapped.csv"
 NONCODE = ROOT / "results" / "lp4fm_qwen2515b" / "summary.csv"
 RANDOM = ROOT / "results" / "lp4fm_qwen2515brandominits0" / "summary.csv"
 OVERLAP = ROOT / "results" / "lp4fm" / "xlcost_problem_overlap.csv"
+WSCHECK = ROOT / "results" / "lp4fm" / "whitespace_normalisation_check.csv"
 
 f = lambda r, k: float(r[k])
 
@@ -146,6 +147,36 @@ def run() -> int:
     else:
         checks.append(("three-way tables present", False))
 
+    # The section claims normalising whitespace moves transfer by less than
+    # 0.001. That is a measurement, so it has to come from a committed file.
+    if WSCHECK.exists():
+        ws = list(csv.DictReader(WSCHECK.open()))
+        checks += [
+            ("whitespace check covers the decisive pairs",
+             {(r["source"], r["target"]) for r in ws}
+             >= {("php", "python"), ("php", "javascript")}),
+            # Derived from the two score columns, never read from `delta`:
+            # a stale or hand-edited delta would otherwise certify itself.
+            ("normalising whitespace moves transfer by < 0.001",
+             all(abs(float(r["masked_best_normalised"])
+                     - float(r["masked_best_raw"])) < 0.001 for r in ws)),
+            ("the delta column agrees with the scores beside it",
+             all(abs(float(r["delta"]) - (float(r["masked_best_normalised"])
+                                          - float(r["masked_best_raw"]))) < 1e-9
+                 for r in ws)),
+            # The bound is applied to the capped published table, so it has to
+            # have been measured there. Uncapped iterator php->python is 0.609
+            # and php->javascript 0.979; the capped ones are 0.576 and 0.965.
+            ("measured on the capped sample the paper publishes",
+             all(any(abs(float(r["masked_best_raw"]) - f(c, "masked_best")) < 5e-4
+                     for c in orig
+                     if c["role"] == r["role"] and c["source"] == r["source"]
+                     and c["target"] == r["target"])
+                 for r in ws)),
+        ]
+    else:
+        checks.append(("whitespace normalisation check present", False))
+
     # Renaming table: uncapped file, must still reproduce the published values.
     for role, pct, delta in (("index_key", 89, -0.032), ("accumulator", 83, -0.047),
                              ("iterator", 49, -0.195)):
@@ -184,7 +215,10 @@ def run() -> int:
     derived = {"0.952", "0.893", "0.785", "0.887", "0.390", "0.107", "0.166",
                "0.006", "0.165", "0.013", "0.038", "0.015", "0.032", "0.047",
                "0.195", "0.272", "0.079", "0.039", "0.314", "0.126", "0.111",
-               "0.021", "0.011", "0.575", "0.889", "0.892"}
+               "0.021", "0.011", "0.575", "0.889", "0.892",
+               # a stated bound rather than a measured cell; the whitespace
+               # check above verifies every measured delta falls under it
+               "0.001"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
     if unknown:
