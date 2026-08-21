@@ -66,7 +66,11 @@ def full_transfer_table() -> str:
            "\\midrule"]
     for r in sorted(cap, key=lambda r: (r["role"], r["source"], r["target"])):
         out.append(
-            f"{r['role'].replace('_','\\_')} & "
+            # Escaped outside the f-string expression: a backslash inside one
+            # is a SyntaxError before Python 3.12, and this project supports
+            # 3.11. A 3.12+ interpreter parses it happily, so the failure only
+            # appears on the oldest supported version.
+            r["role"].replace("_", "\\_") + " & "
             f"{LANG[r['source']]}$\\rightarrow${LANG[r['target']]} & {int(r['n_test']):,} & "
             f"{f(r,'masked_best'):.3f} & {f(r,'name_only'):.3f} & "
             f"{f(r,'probe_transfer'):.3f} & {f(r,'majority'):.3f} & "

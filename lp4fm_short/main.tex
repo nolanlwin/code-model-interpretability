@@ -294,13 +294,44 @@ cells.
 
 \section{Reproducibility}
 \label{app:repro}
-Every figure in the main text is regenerated from the committed result files by
-the released pipeline, and a regression test recomputes each of them---including
-the three correlations of Section~\ref{sec:mechanism}---from those files rather
-than quoting them. Section~\ref{sec:lineage} draws on a separate activation-extraction pipeline;
-its layer table, principal-component correlations, and bucket-control figures
-are committed under \texttt{results/lp4fm/language\_geometry/}, and the values
-quoted are read from those files. No claim in
+
+Every figure in the main text is regenerated from committed result files by the
+released pipeline, and a regression test recomputes each of them, including the
+three correlations of Section~\ref{sec:mechanism}, from those files rather than
+quoting them. The appendix tables are emitted by \texttt{make\_appendix.py} from
+the same CSVs and are not written by hand.
+
+\paragraph{Models.} \texttt{Qwen/Qwen2.5-Coder-1.5B} and
+\texttt{Qwen/Qwen2.5-1.5B}, loaded in \texttt{float16}. The untrained control
+instantiates the second model's configuration with randomly initialised weights
+under a fixed seed, and records its identity as
+\texttt{Qwen/Qwen2.5-1.5B\#random-init-s0} so that no downstream artefact can be
+mistaken for the trained run.
+
+\paragraph{Classifiers.} The surface baseline is a \texttt{char\_wb} tf-idf
+vectoriser with $n \in [2,4]$, \texttt{min\_df} $=2$ and at most $60{,}000$
+features, fitted on the source language only, followed by logistic regression
+with $C = 4$, balanced class weights, and at most $2{,}000$ iterations. The
+probe is logistic regression with $C = 1$ on residual activations mean-pooled
+over the occurrence's token span, with the layer chosen on a source-language
+validation fold and results averaged over five seeds.
+
+\paragraph{Compute.} Activation extraction is the only step needing an
+accelerator: one forward pass per program, roughly $8{,}700$ programs per model
+across the three languages, about an hour on a single mid-range GPU, producing
+stores of roughly $1.6$~GB in \texttt{float16} at this scale. Everything else,
+including all surface baselines, the mechanism analyses, and the ablations, is
+CPU-only and runs in minutes.
+
+\paragraph{Data.} Section~\ref{sec:lineage} draws on a separate
+activation-extraction pipeline. Its layer table, principal-component
+correlations, and bucket-control figures are committed under
+\texttt{results/lp4fm/language\_geometry/}, and the values quoted are read from
+those files. No claim in
 Sections~\ref{sec:transfer}--\ref{sec:mechanism} depends on it.
+
+% Mandatory: the template states that papers not including the checklist are
+% desk rejected, and it does not count toward the page limit.
+\input{checklist.tex}
 
 \end{document}
