@@ -259,12 +259,13 @@ this bounds punctuation, not syntax in general. We report the aggregate only: si
 correlated character $n$-grams are not interpretable one at a time.
 
 \paragraph{Related work.} Probing shows code models encode identifier, type and structural information
-recoverable by linear classifiers~\citep{karmakar2021what,troshin2022probing};
-we ask what survives a change of language, pairing every probe with a model-free
-baseline on the same occurrences. Multilingual encoders carry a separable language-identity component and a
+recoverable by linear
+classifiers~\citep{karmakar2021what,troshin2022probing}. We ask what survives a
+change of language, pairing every probe with a model-free baseline on the same
+occurrences. Multilingual encoders carry a separable language-identity component and a
 structured
-geometry~\citep{libovicky2020language,chang2022geometry,pires2019multilingual};
-multilingual training also transfers across programming
+geometry~\citep{libovicky2020language,chang2022geometry,pires2019multilingual},
+and multilingual training transfers across programming
 languages~\citep{ahmed2022multilingual}. We find that geometry in a code model
 and show role transfer is largely insensitive to it. Methodologically we follow the argument that a probe score needs a bound on what
 architecture and labels alone
@@ -287,10 +288,9 @@ shows XLCoST admits no wider version. Both trained models are $1.5$B parameters 
 speaks to scale, and that family has no code-free member.
 
 Role labels come from an AST for Python and regular expressions for the other
-two, and the paths do not carve \emph{iterator} identically, so those cells mix
-the representational effect with an extractor-definition difference
-(Appendix~\ref{app:labels}); accumulator and index\_key, whose extractors agree
-far better, show the same direction. Section~\ref{sec:mechanism} runs on
+two, and the paths do not carve \emph{iterator} identically, so those cells mix the representational effect with an extractor-definition
+difference (Appendix~\ref{app:labels}). Accumulator and index\_key, whose
+extractors agree far better, show the same direction. Section~\ref{sec:mechanism} runs on
 iterator alone, its ablation on two of six pairs, its correlations on six
 points. The probe is correlational, and Appendix~\ref{app:causal}'s
 interventions cover a different role.
