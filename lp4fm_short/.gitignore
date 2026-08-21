@@ -1,6 +1,10 @@
+# Intermediate LaTeX output stays out of the repo; the built PDF does not.
+# main.pdf is tracked deliberately so the draft can be read without a TeX
+# install, and so reviewers see exactly the artefact the numbers were checked
+# against. Rebuild with:
+#   pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
 *.aux
 *.bbl
 *.blg
 *.log
 *.out
-*.pdf
