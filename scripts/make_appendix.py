@@ -111,6 +111,15 @@ def model_table() -> str:
 
 def mechanism_table() -> str:
     m = rows(R / "transfer_mechanism.csv")
+    fig = ["\\begin{figure}[h]\\centering",
+           "\\includegraphics{figures/mechanism_scatter.pdf}",
+           "\\caption{Two candidate explanations for the transfer gap, over the six "
+           "ordered pairs. Left: how much of the source classifier's discriminative "
+           "mass the target realises, which is essentially unrelated to transfer. "
+           "Right: the share of that mass whose sign reverses between a "
+           "source-fitted and a target-fitted classifier, which tracks it closely. "
+           "The cues are present in both groups; what changes is where they point.}",
+           "\\label{fig:mech}", "\\end{figure}", ""]
     a = rows(R / "transfer_mechanism_ablation.csv")
     out = ["\\begin{table}[h]\\centering\\small",
            "\\caption{Transfer mechanism for the iterator role. \\emph{Surviving} is "
@@ -127,6 +136,7 @@ def mechanism_table() -> str:
             f"{f(r,'masked_best_macro_f1'):.3f} & {f(r,'surviving_mass'):.3f} & "
             f"{f(r,'sign_disagreement_mass'):.3f} & {f(r,'coef_agreement'):+.3f} & "
             f"{f(r,'sign_disagreement_mass_source_weighted'):.3f} \\\\")
+    out = fig + out
     out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", "",
             "\\begin{table}[h]\\centering",
             "\\caption{Masking an entire syntactic character class on both sides of "

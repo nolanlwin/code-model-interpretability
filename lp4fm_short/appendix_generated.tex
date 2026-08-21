@@ -69,6 +69,12 @@ Qwen2.5-1.5B (untrained) & 0.590 & 0.568 & 0.575 & --- \\
 \section{Transfer mechanism}
 \label{app:mech}
 
+\begin{figure}[h]\centering
+\includegraphics{figures/mechanism_scatter.pdf}
+\caption{Two candidate explanations for the transfer gap, over the six ordered pairs. Left: how much of the source classifier's discriminative mass the target realises, which is essentially unrelated to transfer. Right: the share of that mass whose sign reverses between a source-fitted and a target-fitted classifier, which tracks it closely. The cues are present in both groups; what changes is where they point.}
+\label{fig:mech}
+\end{figure}
+
 \begin{table}[h]\centering\small
 \caption{Transfer mechanism for the iterator role. \emph{Surviving} is the share of the source classifier's discriminative mass realised in the target; \emph{flip} is the share of that mass whose sign reverses. Surviving mass is uncorrelated with transfer; flipped mass predicts it almost exactly. Source-weighted variants are given for robustness.}
 \label{tab:mech}
