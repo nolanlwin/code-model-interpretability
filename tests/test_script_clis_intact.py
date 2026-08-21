@@ -79,7 +79,17 @@ def run() -> int:
             cache[key] = accepted(script, sub)
         known = cache[key]
         if known is None:
-            continue  # CLI help unreadable; not this test's business
+            # A script a notebook passes flags to must expose an option parser.
+            # Skipping here reopened the exact hole this file exists to close:
+            # the generator that overwrote make_figures.py has no argparse at
+            # all, so its help output lists no options, and a skip would have
+            # let that overwrite through the check unchallenged.
+            failures += 1
+            checked += 1
+            where = f"{script} {sub}" if sub else script
+            print(f"  FAIL {nb}: {where} exposes no options, but the notebook "
+                  f"passes {sorted(flags)}")
+            continue
         missing = sorted(f for f in flags if f not in known)
         checked += 1
         if missing:
