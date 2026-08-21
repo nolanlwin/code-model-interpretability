@@ -1,0 +1,31 @@
+{
+  "smoke": {
+    "checks": {
+      "class_D_positive_6_of_8": true,
+      "exact_8_pair_ids": true,
+      "exact_row_cube": true,
+      "function_below_class_6_of_8": true,
+      "layer0_within_tau": true,
+      "max_drift_le_0_01": true,
+      "mean_denoise_positive": true,
+      "mean_gap_positive": true,
+      "mean_noise_positive": true,
+      "same_source_within_tau": true,
+      "target_gt_placebo": true,
+      "target_gt_random": true
+    },
+    "diagnostics": {
+      "denoise_sign_5_of_8": false,
+      "function_D_negative_6_of_8": false,
+      "noise_sign_5_of_8": true
+    },
+    "max_drift": 0.0,
+    "n_class": 8,
+    "n_target_denoise": 8,
+    "n_target_noise": 8,
+    "paper_evidence": false,
+    "pass": true,
+    "probe_index": 18,
+    "tau": 0.05
+  }
+}

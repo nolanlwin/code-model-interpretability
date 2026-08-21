@@ -1,0 +1,20 @@
+{
+  "complete": true,
+  "dtype": "float16",
+  "extra_examples": [],
+  "finite": true,
+  "layers": null,
+  "missing_examples": [],
+  "model_id": "Qwen/Qwen2.5-1.5B",
+  "n_duplicates": 0,
+  "n_expected": 1152,
+  "n_expected_duplicates": 0,
+  "n_extra": 0,
+  "n_missing": 0,
+  "n_out_of_scope": 0,
+  "n_present": 1152,
+  "probe_link_complete": true,
+  "schedules": [
+    "behavior"
+  ]
+}

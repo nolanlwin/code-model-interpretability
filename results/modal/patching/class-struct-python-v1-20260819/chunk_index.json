@@ -1,0 +1,169 @@
+{
+  "chunks": [
+    {
+      "block_id": 0,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": -1,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 256,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/behavior/baseline/B0000.jsonl",
+      "phase": "behavior",
+      "sha256": "1201297005fa0e341ba337efbef7f42d96de6b143762108d3fa1335ee63276d9"
+    },
+    {
+      "block_id": 1,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": -1,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 256,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/behavior/baseline/B0001.jsonl",
+      "phase": "behavior",
+      "sha256": "6c0d7fd207816e034fb037da982abf13b1704c7a9ddb02fa0da02d9822c7f26b"
+    },
+    {
+      "block_id": 2,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": -1,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 256,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/behavior/baseline/B0002.jsonl",
+      "phase": "behavior",
+      "sha256": "281d97fb02971a0c3190b274f2890a367c8af8af419dd9ecfdd6353de115aca7"
+    },
+    {
+      "block_id": 3,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": -1,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 256,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/behavior/baseline/B0003.jsonl",
+      "phase": "behavior",
+      "sha256": "342f74f104a50d3eeed35f8cab46d83f3a0c1971c50b8174ad16d5e77fe1ea9c"
+    },
+    {
+      "block_id": 4,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": -1,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 128,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/behavior/baseline/B0004.jsonl",
+      "phase": "behavior",
+      "sha256": "162dd55f03d1c38c06a90ebeb6852c011b6a8430e95d9c442a0e3e7498c4ce00"
+    },
+    {
+      "block_id": 0,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 0,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 128,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L000/B0000.jsonl",
+      "phase": "primary",
+      "sha256": "581ed36baeaa879fce81d50e2e190105a0a12552d071623c8a12507472f82515"
+    },
+    {
+      "block_id": 1,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 0,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 128,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L000/B0001.jsonl",
+      "phase": "primary",
+      "sha256": "ab3d8ecc4a7547ba7da50132fe0d0a64115c8246c78599184a215610b10d5a51"
+    },
+    {
+      "block_id": 2,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 0,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 128,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L000/B0002.jsonl",
+      "phase": "primary",
+      "sha256": "ad28d980ec82b4bf5305500c76059a02054c2eba8699dc374885009eef49058d"
+    },
+    {
+      "block_id": 3,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 0,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 128,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L000/B0003.jsonl",
+      "phase": "primary",
+      "sha256": "4d44b7258fa9c125f5680bf8701ba620e872ba92b27d42782be6f5c6434182d6"
+    },
+    {
+      "block_id": 4,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 0,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 64,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L000/B0004.jsonl",
+      "phase": "primary",
+      "sha256": "f764c433d9fe9ace8a06b6ea044ad9f5c52de34ca32e013277362d77df0315ed"
+    },
+    {
+      "block_id": 0,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 18,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 512,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L018/B0000.jsonl",
+      "phase": "primary",
+      "sha256": "e87ec6ab56e97444deb6d596ac8bb8c895302bc1e3c4a08645b2686ebcaaf87a"
+    },
+    {
+      "block_id": 1,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 18,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 512,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L018/B0001.jsonl",
+      "phase": "primary",
+      "sha256": "d02eae23a23057c0c637956ab40d3ed5f120d9d2ce3d2770b643a7784a989a12"
+    },
+    {
+      "block_id": 2,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 18,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 512,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L018/B0002.jsonl",
+      "phase": "primary",
+      "sha256": "4cff618ae6dd6c33aa45482363bb0848704874f2365ef1412ad7faaf141daffb"
+    },
+    {
+      "block_id": 3,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 18,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 512,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L018/B0003.jsonl",
+      "phase": "primary",
+      "sha256": "b9e3f8ca207a94788554abe8c38733c7bb6becd276aa4fece0b6427f9811432f"
+    },
+    {
+      "block_id": 4,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 18,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 256,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/primary/L018/B0004.jsonl",
+      "phase": "primary",
+      "sha256": "c6818cee06e46dcb711bab1d5a241e625153fa57aa0490b36db170130287d153"
+    }
+  ]
+}

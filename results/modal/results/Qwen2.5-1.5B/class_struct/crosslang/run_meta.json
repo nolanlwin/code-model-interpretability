@@ -1,0 +1,8 @@
+{
+ "git_commit": "",
+ "model": "Qwen/Qwen2.5-1.5B",
+ "role": "class_struct",
+ "split": "train",
+ "max_programs": null,
+ "protocol": "hash_split_70_10_20 | val-selected layer | 5 seeds | BCa CIs | control task"
+}

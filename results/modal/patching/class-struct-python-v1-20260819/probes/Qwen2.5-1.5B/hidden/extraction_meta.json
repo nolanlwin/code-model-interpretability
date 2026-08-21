@@ -1,0 +1,18 @@
+{
+  "created_at": 1787170672.6341271,
+  "dataset_revision": "912f6e468df675f11237f3c9b7635f09a6a95584",
+  "dataset_split": "train",
+  "hidden_sha256": "56b212944e71c6536738204a54025483184bb68dc0910b306c8762c40be1bba6",
+  "hidden_size": 1536,
+  "labels_sha256": "e7bc08131ad231d07e06960f7759a88f095e2b977c7f924fa971ed004f6d23ac",
+  "layer": 18,
+  "model_id": "Qwen/Qwen2.5-1.5B",
+  "model_revision": "8faed761d45a263340a0528343f099c05c9a4323",
+  "n_programs": 400,
+  "n_tokens": 146138,
+  "programs_sha256": "23549dac741d78dbaaa37bcd8f178a6b265302ecca98fc4bd5e1445f7a5e0e97",
+  "schema_version": 1,
+  "source_jsonl_sha256": "1729bef9187b6f92a9d162c265c771a9294fffab8d406b1b696cd6234506a4f3",
+  "source_program_ids_sha256": "3692a939f089949c99a86dd424fce09d528648aa43b2f2cadd791a8baf97b0b8",
+  "token_program_ids_sha256": "8a4c0cafb7a5f6d4dd731d6c615921527174a71d864cefe5675ea096e8b800db"
+}

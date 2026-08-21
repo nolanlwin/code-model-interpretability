@@ -1,9 +1,13 @@
-# Minimal dependencies for the unified pipeline (tested versions in comments)
-torch>=2.1            # 2.10.0
-transformers==5.8.0   # pinned: tokenizer offset gate validated on this version
-scipy>=1.10           # BCa bootstrap (pipeline.stats)
-scikit-learn>=1.3     # 1.7.2
-numpy>=1.24           # 2.2.6
-tqdm>=4.64            # 4.67.3
-datasets>=2.18        # 4.8.4  (only for loading from the HF Hub)
-huggingface_hub>=0.23 # 1.7.1  (only for pipeline.hf_upload)
+# Pins for the class_struct Modal patching image (scripts/modal_patching.py).
+# Day-to-day probing still uses the looser ranges in pyproject.toml.
+# Do not treat this file as the team-wide install spec.
+torch==2.6.0
+transformers==5.8.0
+scipy==1.15.3
+scikit-learn==1.7.2
+numpy==2.2.6
+tqdm==4.70.0
+datasets==4.8.4
+huggingface_hub==1.27.0
+modal==1.5.4
+pytest==8.4.1

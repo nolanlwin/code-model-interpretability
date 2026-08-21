@@ -1,0 +1,37 @@
+{
+  "chunks": [
+    {
+      "block_id": 0,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": -1,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 32,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/behavior/baseline/B0000.jsonl",
+      "phase": "behavior",
+      "sha256": "b885e4b5cbae43d4a656f3130185e50858b5bbe28a35e5ee40fe07f2408bc62e"
+    },
+    {
+      "block_id": 0,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 0,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 16,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/smoke/L000/B0000.jsonl",
+      "phase": "smoke",
+      "sha256": "b16491b5593a76e8b320178a04c84b4340634c405f10934cc774918458c7e8de"
+    },
+    {
+      "block_id": 0,
+      "configuration_sha256": "cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae",
+      "dtype": "float16",
+      "layer": 18,
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "n_rows": 64,
+      "path": "chunks/Qwen--Qwen2.5-1.5B/float16/cb9960752d1df6cc/smoke/L018/B0000.jsonl",
+      "phase": "smoke",
+      "sha256": "90c604e499f1f9d69a46827b3d6b16dce8c0f7b3b8447081421f27503f0f6457"
+    }
+  ]
+}

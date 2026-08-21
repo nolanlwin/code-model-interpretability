@@ -1,0 +1,357 @@
+# Class-struct experiments
+
+Randy owns **class_struct** only. Teammates own index, accumulator, iterator, and boolean. This folder holds the probe figures plus this writeup. Raw dumps live under `results/modal/`.
+
+**Headline.** A linear probe can tell class names from function names almost perfectly, including after renaming and across languages. Activation patching at the query-name token does **not** move the model's `isinstance(..., type) is True/False` answer enough to pass the preregistered causal gate. That is a recorded null, not a crashed run.
+
+## Plans we followed
+
+| Document | What it is |
+|---|---|
+| [`PROTOCOL.md`](../../PROTOCOL.md) | Team protocol v1.0, frozen 2026-08-06. Five roles, XLCoST, renaming + cross-language probing. Class-struct is one role. |
+| [`pipeline/README.md`](../../pipeline/README.md) | Unified probing pipeline: one dataset, `perturbation` and `crosslang` via `pipeline/run_experiment.py`. |
+| [`pachingPlanAlgoverse.md`](../../pachingPlanAlgoverse.md) | Activation-patching plan. The filename typo (`paching`) is real; this is the canonical protocol, not a status log. Do not treat it as a changelog. |
+| [`dataset_card/README.md`](../../dataset_card/README.md) | Hub dataset card for the XLCoST variable-role labels. |
+
+Patching is a **new** experiment. The plan says: do not rerun perturbation or crosslang; do not grow `run_experiment.py` into a patching runner.
+
+The causal question, copied from the plan:
+
+> Does class-versus-function information in the residual stream at a later use of an identifier causally affect whether the model predicts that identifier is a type?
+
+## Locked models and data
+
+| Model | Revision | Hidden indices | Probe layer (from perturbation) |
+|---|---|---|---:|
+| `Qwen/Qwen2.5-1.5B` | `8faed761d45a263340a0528343f099c05c9a4323` | 0…28 | 18 |
+| `Qwen/Qwen2.5-Coder-1.5B` | `df3ce67c0e24480f20468b6ef2894622d69eb73b` | 0…28 | 8 |
+| `bigcode/starcoder2-7b` | `bb9afde76d7945da5745592525db122d4d729eb1` | 0…32 | 5 |
+
+Dataset: Hugging Face `dhyuti-n/xlcost-variable-roles`, revision `912f6e468df675f11237f3c9b7635f09a6a95584`. Probe extract uses 400 Python programs with a truthy `roles.class_struct` label.
+
+CSV / Hugging Face `hidden_states[k]` is the residual **entering** decoder block `k`. Index 0 is embeddings / block-0 input.
+
+---
+
+## Experiment A — probing (perturbation + cross-language)
+
+This is the original class_struct work. Linear probes on last-identifier hidden states: can the model’s residual stream linearly separate class names from other identifiers, and does that survive renaming and language transfer?
+
+### Protocol (probing)
+
+- Role: `class_struct`.
+- Split: hash split 70/10/20, validation-selected layer, 5 seeds, BCa CIs, control task.
+- Strategies: `baseline`, `random_nouns`, `single_chars`, `all_same`, `numeric_vars`, `misleading_class_struct`.
+- Cross-language: train on Python, transfer to C++, Javascript, C. Java / C# / PHP were skipped on the first pass.
+
+`all_same` collapsing every name to one token is a **layer-0 cheat**. F1 ≈ 1.0 at layer 0 is expected and is not evidence of a deep class-struct feature.
+
+### Modal (probing)
+
+| Item | Value |
+|---|---|
+| Script | `scripts/modal_class_struct.py` |
+| App | `class-struct-probe` |
+| Environment | `main` (default) |
+| Volume | `class-struct-data` |
+| Remote results | `/results` on that volume |
+| Local pull | `results/modal/results/<model>/class_struct/` |
+| Orchestrator | `scripts/modal_all_and_pull.py` |
+
+GPU extracts hidden states on an L4. sklearn logistic regression runs on **CPU** (8 cores). Do not leave an L4 attached during the probe fit.
+
+Launch / pull:
+
+```bash
+python3 scripts/modal_all_and_pull.py
+
+# if the laptop slept, the sweep keeps going; just pull:
+modal volume get --force class-struct-data /results ./results/modal
+```
+
+`results/modal/results/sweep_status.json` records what finished. Qwen and Coder perturbation were already on the volume (listed as skipped); StarCoder2 perturbation plus all three crosslang jobs completed. Failures: none.
+
+### Numbers — perturbation (best-layer test F1)
+
+| Model | Baseline F1 | Layer | Selectivity | Misleading ΔF1 |
+|---|---:|---:|---|---:|
+| Qwen2.5-1.5B | 0.979 | 18 | +0.55 | −0.004 |
+| Qwen2.5-Coder-1.5B | 0.982 | 8 | +0.55 | −0.004 |
+| StarCoder2-7B | 0.981 | 5 | +0.50 | +0.004 |
+
+Renaming barely hurts (`random_nouns` / `single_chars` / `numeric_vars` stay in the mid-0.95s). Cosine of probe weights vs baseline is high in mid layers for real renames and near zero for `all_same`, which is the expected pattern.
+
+### Numbers — Python → other language transfer F1 (at the Python best layer)
+
+| Model | C++ | Javascript | C |
+|---|---:|---:|---:|
+| Qwen2.5-1.5B | 0.933 | 0.957 | 0.886 |
+| Qwen2.5-Coder-1.5B | 0.918 | 0.913 | 0.885 |
+| StarCoder2-7B | 0.965 | 0.980 | 0.906 |
+
+In-domain F1 on those languages is ~0.98–0.99.
+
+### Figures in this folder
+
+Generated by `scripts/make_class_struct_figures.py` from the CSVs above. Legends sit **below** the axes so they do not cover lines.
+
+```bash
+python scripts/make_class_struct_figures.py \
+    --results-dir results/modal/results \
+    --out results/class_struct
+```
+
+| File | What it shows |
+|---|---|
+| `probe_f1_layer_class_struct.png` | Per-layer probe F1, three models |
+| `delta_f1_class_struct.png` | ΔF1 vs baseline under each rename strategy |
+| `cosine_vs_baseline_class_struct.png` | Probe-weight cosine vs the baseline probe |
+| `cross_language_class_struct.png` | Python → C++ / Javascript / C transfer |
+
+Raw CSVs:
+
+```
+results/modal/results/{Qwen2.5-1.5B,Qwen2.5-Coder-1.5B,starcoder2-7b}/class_struct/
+  perturbation/{per_layer,summary,cosine_vs_baseline}.csv
+  crosslang/crosslang.csv
+```
+
+Git commit that added the three-model dumps: `babd71a` (`Add class_struct perturbation and crosslang runs for three models.`), branch `randyExpV2`.
+
+---
+
+## Experiment B — activation patching
+
+Independent pipeline. Python only. Three model *runs* were planned; Qwen is the gatekeeper.
+
+### Prompt pair and readout
+
+Matched prompts that differ at **exactly one token**, `class` vs `def`:
+
+```python
+class Node():
+    pass
+
+assert isinstance(Node, type) is
+```
+
+```python
+def Node():
+    pass
+
+assert isinstance(Node, type) is
+```
+
+- Clean = class. Corrupt = function.
+- Readout `D = logit(" True") - logit(" False")`.
+- Raw base-model completion. No chat template, no few-shot, no `generate()`, no probability conversion.
+- **Do not patch the `class` / `def` token.** That would just rewrite the keyword the model can already see.
+- Primary span: the name inside `isinstance` (`query_name`).
+- Secondary span: the name in the declaration.
+- Placebo span: the unique `pass` in the body.
+- Denoise = class residual → function prompt. Noise = function residual → class prompt.
+- Recovery = **ratio of means** `mean(effect) / mean(gap)`, never a mean of per-item ratios.
+- 10,000 BCa bootstrap replicates, seed `20260818`, clustered on 48 structural templates.
+
+288 eval pairs (4 prefixes × 3 bodies × 4 gaps × 6 names). 8 smoke pairs never enter the paper cube.
+
+Frozen file hashes:
+
+| File | SHA-256 |
+|---|---|
+| `data/patching/class_struct_python_v1.jsonl` | `6077e73c158616cf5f9175e4cf49daa2e4b2016ebc8afd12edc708572e79bd7b` |
+| `data/patching/class_struct_python_smoke_v1.jsonl` | `522f9b2be880a861af22b6d7948f8837a67fb00897e73e02c7de094676a27425` |
+
+`" True"` / `" False"` token IDs (discovered, then asserted): Qwen/Coder `3007` / `3557`; StarCoder2 `2969` / `3208`.
+
+### Code we added
+
+| Path | Role |
+|---|---|
+| `pipeline/patching.py` | Adapters, hooks, caches, metrics, gates, stats |
+| `pipeline/patching_prompts.py` | Frozen prompt generator + schema/byte/semantic validation |
+| `pipeline/run_patching.py` | CLI: `generate-prompts`, `validate`, `estimate`, `smoke`, `sweep`, `evaluate`, `summarize`, `check-completeness`, `extract-probe`, `fit-probe` |
+| `scripts/modal_patching.py` | Modal image, volumes, preflight, smoke, sequential gated controller |
+| `data/patching/class_struct_python_v1.jsonl` | 288 eval pairs |
+| `data/patching/class_struct_python_smoke_v1.jsonl` | 8 smoke pairs |
+| `tests/test_patching.py` | Library / gate tests |
+| `tests/test_patching_prompts_strict.py` | Prompt hash and tokenizer-shape tests |
+| `tests/test_modal_patching.py` | Controller / volume / resume tests |
+| `pipeline/requirements.txt` | Pins matched to the Modal image (`torch 2.6.0`, `transformers 5.8.0`, `modal 1.5.4`, …) |
+
+`pyproject.toml` only gained `[tool.pytest.ini_options] pythonpath = ["."]`.
+
+Local tests: **66 passed** before the 20260819 launch.
+
+### Modal (patching)
+
+Use environment **`patching`**. Do not write patching results into the `main` probing volume.
+
+| Item | Value |
+|---|---|
+| Script | `scripts/modal_patching.py` |
+| App | `class-struct-patching` (this run was named `csp-v1-20260819`) |
+| Environment | `--env patching` |
+| Results volume | `class-struct-patching-results` (patching env, read-write at `/results`) |
+| Data volume | `class-struct-data` (**main** env, mounted **once**, read-only at `/data`) |
+| HF cache | `/data/hf` (`HF_HOME`, `HF_HUB_CACHE=/data/hf/hub`) |
+| Dataset on volume | `/data/dataset` |
+| Controller | CPU, 4 GiB, 24 h timeout, `max_containers=1`, `retries=0`, **no `.map()`** |
+| Qwen / Coder GPU | L4, 16 GiB |
+| StarCoder2 GPU | L4 32 GiB fp16; L40S 48 GiB if fp32 ever runs |
+| Sequential | one remote function at a time |
+
+Image: `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime`. Offline Hub (`TRANSFORMERS_OFFLINE=1`). Hugging Face secret still used only if a cache miss happens; preflight requires the three pinned revisions already in `/data/hf`.
+
+Controller order, from the plan:
+
+```
+Local tests
+  → Modal CPU/tokenizer preflight
+  → synchronous 8-pair Qwen smoke
+  → detached controller
+      → Qwen probe-prior → behavior / probe-OOD → primary causal → core
+      → Coder (same)
+      → StarCoder2 (same)
+      → expanded + fp32 only for core-complete models
+```
+
+**Qwen failure before `core_complete` stops Coder and Star.** That is by design, not a bug.
+
+Item-forward ceilings: Qwen 90,000; Coder 26,000; StarCoder2 26,000. Spend warn $25, hard stop $50.
+
+### Run IDs
+
+| Run ID | What happened |
+|---|---|
+| `class-struct-python-v1-20260818` | First smoke. Hooks and layer-0 identity were fine. Smoke **failed** the original “function `D < 0`” and same-source `tau = 1e-4` checks. Not the scientific cube. |
+| `class-struct-python-v1-20260819` | After the gate amendments below. Smoke **passed**. Overnight primary on Qwen **completed**. Causal **null**. Frozen result. |
+
+Config SHA for 20260819: `cb9960752d1df6cc3d3e75c34f7395ec3333d50c72f579fc5e1d0db586e749ae`. Code SHA: `9368f2192b629153988992a8202e6ff5df4462fc1edfbd73e0bd9efa608409f6`. Base git commit baked into the image: `babd71a`.
+
+Changing prompts, readout, or gates after this dump needs a **new run ID**.
+
+### Smoke / behavior amendment (kept; causal bar not moved)
+
+Qwen 1.5B base has a True prior on `isinstance(..., type) is`. Class `D` is positive; function `D` is also positive, just smaller. Same-source rewrite in fp16 can move by ~1–2 ULPs (`0.015625–0.03125`) even when the unpatched repeat is exact.
+
+What we changed in code, and what we did **not**:
+
+- `identity_tau`: fp16 floor **0.05** for same-source and layer-0 only.
+- `drift_tau` stays `max(1e-4, 10 × max drift)`, so the causal bar stays **0.10 logit** (`max(0.10, 5*tau)`). The identity floor does **not** raise that bar.
+- Smoke: `function_below_class_6_of_8` instead of `D < 0`. Item-level 5/8 signs moved to diagnostics.
+- Behavior: pair-gap accuracy ≥ 0.60 instead of requiring function `D < 0`. Function accuracy is still recorded as a diagnostic.
+- Residual vectors stored in native dtype (no `.float()` round-trip).
+
+The 0.10 causal threshold, placebo/random CIs, and 0.05 recovery were **not** relaxed.
+
+### Overnight launch
+
+```bash
+modal run --env patching scripts/modal_patching.py::preflight \
+  --run-id class-struct-python-v1-20260819
+
+modal run --env patching scripts/modal_patching.py::qwen_smoke \
+  --run-id class-struct-python-v1-20260819
+
+modal run --detach --env patching --name csp-v1-20260819 \
+  scripts/modal_patching.py::run_all_gated \
+  --run-id class-struct-python-v1-20260819 --resume
+```
+
+App: `https://modal.com/apps/randylimmy/patching/ap-4mZG8UnpXPS2EZDqIQTt2a`
+
+It finished in minutes because Qwen hit `causal_null` → controller state `stopped_qwen_null`. Coder and Star were **not attempted**. Core (all-layer query-target) never ran. Expanded and fp32 never ran. There was no infrastructure failure.
+
+Conservative recorded cost for this dump: **~$0.11**.
+
+### Pull (directory trap)
+
+`modal volume get … ./results/modal/patching/class-struct-python-v1-20260819` fails with `[Errno 21] Is a directory` if that folder already exists. Pull the **parent**:
+
+```bash
+mkdir -p ./results/modal/patching
+modal volume get --force --env patching class-struct-patching-results \
+  /runs/class-struct-python-v1-20260819 \
+  ./results/modal/patching
+```
+
+Local copy: `results/modal/patching/class-struct-python-v1-20260819/`.
+
+### What completed on Qwen 1.5B
+
+| Stage | Result |
+|---|---|
+| Probe extract | 400 programs, 146,138 tokens, layer 18, hidden size 1536 |
+| Probe prior | **pass** — F1 0.9833 vs prior 0.9832; acc 0.9990 vs 0.999 |
+| Behavior (288 pairs) | **pass** (gap-based gate) |
+| Probe OOD | **pass** — query AUC 0.943, declaration AUC 0.905, margin gap +15.8 |
+| Primary patch | **4032 / 4032** rows (L0 identity + L18 battery, both directions, target/placebo/random/same_source) |
+| Causal | **fail** (`causal_null`) |
+| Coder / Star | not attempted |
+
+Behavior in English: class prompts are True (acc 1.00, mean `D` +2.75). Function prompts are **also** True (acc 0.00, mean `D` +1.78). The **gap** is +0.97 [0.91, 1.03]. Pair-gap acc 0.986: class sits more True than its matched function almost always. The model distinguishes class vs def; it just will not say False on `def`.
+
+Causal at the preregistered site (layer 18, `query_name`, 288 pairs):
+
+| Cell | Mean effect | 95% CI | Recovery |
+|---|---:|---|---:|
+| L0 query target denoise / noise | 0.000 | [0, 0] | 0 |
+| L18 placebo denoise | 0.0015 | includes 0 | 0.0015 |
+| L18 query same-source denoise | 0.0004 | includes 0 | 0.0004 |
+| L18 query **target denoise** | **0.0087** | **includes 0** | **0.0089** |
+| L18 query **target noise** | **0.0199** | [0.011, 0.030] | **0.0204** |
+
+Required: mean ≥ 0.10, CI > 0, target−placebo CI > 0, target−random CI > 0, recovery ≥ 0.05, **both** directions.
+
+Identity diagnostics all true (layer 0 and same-source within the fp16 identity τ). The hooks work. The query-name residual at layer 18 does not drive this readout.
+
+### How to read the null
+
+We patched the **name** inside `isinstance`, on purpose. The plan forbids patching `class` / `def`. Linear decodability at that token is real (probe + OOD). Causal sufficiency for this True/False score is not, at the 0.10 bar.
+
+Likely reasons, not yet tested:
+
+1. The decision sits on the keyword token, which we do not patch.
+2. Layer 18 was chosen on XLCost programs, not on these isinstance prompts. The all-layer **core** sweep would test “wrong layer?” and was skipped because the primary gate failed.
+3. Both conditions already prefer True, so there is little behavioral range to flip.
+
+Do not lower 0.10 after seeing the data. Do not claim Coder/Star would have passed. A new exploratory run (new run ID, labeled exploratory) could still run the Qwen core curve or Coder/Star primary-only; that would be a protocol amendment, not a replacement of 20260819.
+
+### Patching artifact map
+
+```
+results/modal/patching/class-struct-python-v1-20260819/
+  overnight_report.md / overnight_report.json
+  status.json              # state = stopped_qwen_null
+  gate_report.json
+  manifest.json            # hashes, schedules, software pins
+  cost_ledger.json
+  lease.json
+  chunk_index.json
+  smoke/                   # 8-pair engineering smoke (not paper evidence)
+  smoke_receipt.json
+  probes/Qwen2.5-1.5B/     # hidden.npy, labels, 5 seed npz, probe_meta.json
+  chunks/.../behavior/     # unpatched 288-pair baselines
+  chunks/.../primary/      # L000 + L018 intervention chunks
+  diagnostics/.../gate_report.json
+  summaries/.../eval/summary.csv
+  summaries/.../eval/probe_link.csv
+  summaries/completeness/
+```
+
+---
+
+## What “finished” means
+
+From the patching plan: a complete result cube **or** a preregistered null. 20260819 is the second kind.
+
+Probing (Experiment A) is complete for three models. Patching (Experiment B) is complete as a Qwen causal-null with Coder/Star skipped by the gatekeeper rule.
+
+## Notes for merging onto main
+
+- `pipeline/probing.py` / `run_experiment.py`: hidden states are memmaps on disk. Default `--phase both` is the old one-shot path. `--dump-root` is optional.
+- `pipeline/requirements.txt`: exact pins for the Modal patching image. `pyproject.toml` is still the loose install for day-to-day probing.
+- `lease.json` is a Modal lock file and is not part of the scientific dump; do not restore it.
+
+Do not treat `pachingPlanAlgoverse.md` as a status file (do not append “what happened” to it). This writeup is the run log. The plan stays the protocol.
