@@ -109,6 +109,29 @@ of the typologically close pair, and the probe beats the baseline in all twelve
 cells involving Python, with no exceptions. Every one of the eighteen gaps
 clears its own $\rho$, the smallest ($0.015$) by a factor of $3.8$.
 
+\paragraph{Flatness is only a finding above an untrained floor.} Two
+observations make that qualification necessary rather than decorative. First,
+a model trained without code---Qwen2.5-1.5B, identical to the code model in
+architecture, scale and tokenizer---is equally flat, averaging $0.892$ against
+the code model's $0.889$. Code pretraining is therefore not what produces the
+language-independent representation. Second, once two very differently trained
+models give indistinguishable numbers, the natural worry is that neither is
+doing the work: a linear probe over pooled token representations might recover
+role from any encoder, in which case the flatness would be a fact about our
+inputs and not about a model.
+
+We ran the control that separates these. An untrained network of the same
+architecture, same tokenizer and randomly initialised weights reaches $0.575$,
+against $0.889$ and $0.892$ for the trained models---a gap of $0.314$, present
+in all eighteen cells, with a minimum per-cell lift of $0.126$. The untrained
+network is itself flat, dropping $0.021$ across the typological boundary, which
+is the point: flatness alone is cheap, because a network that cannot separate
+the roles in any language is trivially insensitive to which language it fails
+in. What distinguishes the trained models is that they are flat \emph{and}
+high. The untrained network is not at chance either---it clears its own
+shuffled control by $0.111$, as random projections of token identity should---so
+$0.575$, not $0.5$, is the floor a representational claim has to clear.
+
 The two rows say different things. Between JavaScript and PHP---both C-family,
 both brace-delimited---character $n$-grams already reach $0.952$, and the
 residual stream adds nothing to a signal the surface has saturated. Across the
@@ -179,11 +202,8 @@ alone suffices, and the lexical channel is a liability rather than a support.
 A claim that index is uniformly name-dependent would be wrong; across
 languages it is the most name-invariant of the three roles we test.
 
-\paragraph{What is missing.} Three limits bound what the probe result above
-can be taken to mean. It uses one model, Qwen2.5-Coder-1.5B: whether the
-flatness is a property of code language models generally or of this one at this
-scale is untested, and a second model is the single most valuable addition to
-this section. Only three of XLCoST's languages share problems at rates that
+\paragraph{What is missing.} Two limits bound what the probe result above
+can be taken to mean. Only three of XLCoST's languages share problems at rates that
 permit matched transfer, so ``typologically close'' is instantiated by exactly
 one pair (JavaScript/PHP) and the boundary by exactly one language (Python);
 the axis is a two-point contrast, not a gradient. The overlap matrix shows
@@ -193,6 +213,12 @@ problems---so widening the axis requires a different parallel corpus, not a
 larger run of this one. And the renaming conditions
 were run on the source language only, so they say what happens when the probe
 is trained on stripped names, not when it is evaluated on them.
+
+Both trained models are $1.5$B parameters from one family. The untrained
+control rules out the probe reading the input rather than the model, and the
+code/non-code pair rules out code pretraining as the cause, but neither speaks
+to scale: whether the gap over the untrained floor widens or narrows with model
+size is untested.
 
 We also report no interventional evidence. A probe that reads a role off the
 residual stream does not establish that the model uses it, and the patching and
