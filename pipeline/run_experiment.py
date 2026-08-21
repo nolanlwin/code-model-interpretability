@@ -14,6 +14,10 @@ Usage:
   python -m pipeline.run_experiment crosslang --role class_struct \
       --model Qwen/Qwen2.5-1.5B --dataset dataset --split train \
       --languages C++ Javascript C
+
+Hidden-state dumps go to disk. `--phase both` (default) is still one GPU
+extract plus sklearn. `--phase extract|probe` and `--dump-root` split that
+across jobs; other roles can ignore those flags.
 """
 
 import argparse

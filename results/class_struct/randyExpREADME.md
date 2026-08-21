@@ -348,6 +348,10 @@ From the patching plan: a complete result cube **or** a preregistered null. 2026
 
 Probing (Experiment A) is complete for three models. Patching (Experiment B) is complete as a Qwen causal-null with Coder/Star skipped by the gatekeeper rule.
 
-## Files we did not put here
+## Notes for merging onto main
 
-Do not treat `pachingPlanAlgoverse.md` as a status file (do not append “what happened” to it). This README is the run log. The plan stays the protocol.
+- `pipeline/probing.py` / `run_experiment.py`: hidden states are memmaps on disk. Default `--phase both` is the old one-shot path. `--dump-root` is optional.
+- `pipeline/requirements.txt`: exact pins for the Modal patching image. `pyproject.toml` is still the loose install for day-to-day probing.
+- `lease.json` is a Modal lock file and is not part of the scientific dump; do not restore it.
+
+Do not treat `pachingPlanAlgoverse.md` as a status file (do not append “what happened” to it). This writeup is the run log. The plan stays the protocol.

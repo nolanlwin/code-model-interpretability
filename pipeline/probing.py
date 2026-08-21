@@ -5,7 +5,9 @@ per-layer logistic regression on STANDARDIZED features, frozen
 problem-hash 70/10/20 splits grouped by program, layer selected on the
 VALIDATION fold, five seeds, macro F1 with program-clustered BCa CIs, a
 random-label control task (selectivity), and provenance stamping.
-Hidden states accumulate in float16 so 7B models fit Colab RAM.
+Hidden states are written as float16 memmaps on disk (one file per layer)
+so large extracts do not concatenate every layer in RAM. Default
+run_experiment `--phase both` is unchanged; `--dump-root` is optional.
 """
 
 from collections import defaultdict
@@ -186,7 +188,8 @@ def extract_hidden_states(dataset, tokenizer, model, leading_special, device,
     is carried per token so splits can group by program downstream.
 
     Layer matrices are disk-backed memmaps so 400+ programs × 29 layers
-    do not have to sit in RAM at once (Kaggle OOM'd the in-memory concat).
+    do not have to sit in RAM at once. Callers that used to get in-memory
+    arrays should load one layer at a time with load_layer_f32.
     """
     n_tokens = 0
     for sample in dataset:

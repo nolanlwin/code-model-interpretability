@@ -1,5 +1,6 @@
-# Reproducible environment for probing and activation patching.
-# Keep this synchronized with scripts/modal_patching.py.
+# Pins for the class_struct Modal patching image (scripts/modal_patching.py).
+# Day-to-day probing still uses the looser ranges in pyproject.toml.
+# Do not treat this file as the team-wide install spec.
 torch==2.6.0
 transformers==5.8.0
 scipy==1.15.3
