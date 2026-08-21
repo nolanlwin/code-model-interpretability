@@ -138,7 +138,7 @@ def mass_by_class(names, m_src, m_tgt, top: int = 4000):
     return dict(sorted(out.items(), key=lambda kv: -kv[1]["mass_source"]))
 
 
-def coefficient_agreement(vec, clf_src, te_texts, y_te, seed):
+def coefficient_agreement(vec, clf_src, Xtr, te_texts, y_te, seed):
     """Do the source's discriminative n-grams mean the same thing in the target?
 
     The survival measure answered the wrong question: roughly 70% of the
@@ -161,9 +161,16 @@ def coefficient_agreement(vec, clf_src, te_texts, y_te, seed):
                                  random_state=seed).fit(Xte, y_te)
     a = clf_src.coef_.ravel()
     b = clf_tgt.coef_.ravel()
-    # Only features the target actually realises can carry an opinion.
+    # Weight by the SAME quantity surviving_mass uses -- |beta| times the
+    # feature's mean tf-idf in the source -- restricted to features the target
+    # actually realises. Weighting by |beta| alone would let an n-gram the
+    # source almost never emits count as much as one it leans on constantly,
+    # and then "share of discriminative mass that flips sign" would not refer
+    # to the mass surviving_mass reports. The two numbers are contrasted
+    # directly in the paper, so they have to be the same measure.
     present = np.asarray(Xte.mean(axis=0)).ravel() > 0
-    w = np.abs(a) * present
+    src_mass = np.asarray(Xtr.mean(axis=0)).ravel()
+    w = np.abs(a) * src_mass * present
     if w.sum() == 0:
         return None
     ma = float((w * a).sum() / w.sum())
@@ -252,7 +259,7 @@ def cmd_survive(args) -> int:
     f1, (vec, clf, Xtr, b) = scored[best_field]
 
     surv = surviving_mass(vec, clf, Xtr, b)
-    agree = coefficient_agreement(vec, clf, b, binarise(te, args.role), args.seed)
+    agree = coefficient_agreement(vec, clf, Xtr, b, binarise(te, args.role), args.seed)
     classes = mass_by_class(surv.pop("_names"), surv.pop("_m_src"), surv.pop("_m_tgt"))
 
     out = {

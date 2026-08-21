@@ -139,13 +139,14 @@ does not predict transfer at all ($r = +0.09$).
 
 What predicts it is whether the surviving features mean the same thing.
 Fitting a second classifier on the target labels in the \emph{same} feature
-space and correlating the two weight vectors, weighted by the source's
-reliance on each feature, gives an agreement that tracks transfer closely
-($r = +0.89$; the mass of features whose sign flips tracks it inversely,
-$r = -0.82$). Between JavaScript and PHP agreement is $0.93$ and $0.91$ with
-only about $6.5\%$ of the mass flipping sign; every pair crossing the Python
-boundary sits between $0.37$ and $0.61$ with $28$--$40\%$ flipping. The cues
-are present on both sides and they point different ways.
+space and correlating the two weight vectors---under the same
+$|\beta_j|\times$tf-idf weighting, so that this and the survival figure above
+refer to one quantity---gives an agreement that tracks transfer closely
+($r = +0.87$), and the share of that mass whose sign flips tracks it inversely
+and slightly more strongly ($r = -0.91$). Between JavaScript and PHP agreement
+is $0.93$ and $0.89$ with about $7\%$ of the mass flipping sign; every pair
+crossing the Python boundary sits between $0.44$ and $0.76$ with $21$--$37\%$
+flipping. The cues are present on both sides and they point different ways.
 
 That realignment is distributed rather than localised, which is the result
 that most constrains the interpretation. Masking a whole syntactic character

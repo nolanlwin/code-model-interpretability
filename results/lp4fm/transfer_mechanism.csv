@@ -1,7 +1,7 @@
 role,source,target,masked_best_field,masked_best_macro_f1,surviving_mass,coef_agreement,sign_disagreement_mass,features,features_absent_in_target
-iterator,php,javascript,window_masked,0.9654,0.7352,0.9297,0.065,9947,2956
-iterator,javascript,php,line_masked,0.9374,0.6976,0.9111,0.0667,10615,3055
-iterator,python,javascript,statement_masked,0.7901,0.8622,0.5299,0.2966,7159,2506
-iterator,javascript,python,window_masked,0.7741,0.7568,0.6122,0.2797,14790,4793
-iterator,python,php,statement_masked,0.741,0.6963,0.372,0.3946,3743,1765
-iterator,php,python,window_masked,0.5756,0.6971,0.411,0.3154,9434,3794
+iterator,php,javascript,window_masked,0.9654,0.7352,0.9339,0.072,9947,2956
+iterator,javascript,php,line_masked,0.9374,0.6976,0.89,0.0675,10615,3055
+iterator,python,javascript,statement_masked,0.7901,0.8622,0.6983,0.2107,7159,2506
+iterator,javascript,python,window_masked,0.7741,0.7568,0.7595,0.2415,14790,4793
+iterator,python,php,statement_masked,0.741,0.6963,0.4433,0.3667,3743,1765
+iterator,php,python,window_masked,0.5756,0.6971,0.502,0.3456,9434,3794
