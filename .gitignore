@@ -145,3 +145,7 @@ datasets/
 # XLCoST canonical exports; regenerate with scripts/xlcost_data.py
 data/xlcost/
 data/xlcost_renamed/
+
+# Installed on its own branch (install-academic-paper-skill) so that a paper
+# pull request is not 368 files of third-party skill and therefore unreviewable.
+.claude/skills/
