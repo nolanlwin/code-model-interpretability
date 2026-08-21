@@ -1,0 +1,20 @@
+role,source,target,feature,macro_f1,ci_low,ci_high,n_problems
+accumulator,javascript,php,window_masked,0.9253,0.9005,0.9496,409
+accumulator,javascript,python,window_masked,0.8454,0.814,0.8724,389
+accumulator,php,javascript,window_masked,0.9526,0.9297,0.9682,409
+accumulator,php,python,window_masked,0.8443,0.8093,0.8726,378
+accumulator,python,javascript,window_masked,0.8532,0.8205,0.8886,389
+accumulator,python,php,window_masked,0.8608,0.8242,0.89,378
+index_key,javascript,php,window_masked,0.8747,0.8225,0.913,409
+index_key,javascript,python,window_masked,0.8776,0.8403,0.9103,389
+index_key,php,javascript,window_masked,0.9309,0.9047,0.9548,409
+index_key,php,python,window_masked,0.8463,0.8003,0.8817,378
+index_key,python,javascript,window_masked,0.8867,0.843,0.9186,389
+index_key,python,php,window_masked,0.8808,0.8376,0.9152,378
+iterator,javascript,php,window_masked,0.8943,0.807,0.9446,409
+iterator,javascript,python,window_masked,0.608,0.5529,0.6727,389
+iterator,php,javascript,window_masked,0.9724,0.9087,0.9938,409
+iterator,php,python,window_masked,0.5643,0.5277,0.6304,378
+iterator,python,javascript,window_masked,0.848,0.7275,0.9101,389
+iterator,python,php,window_masked,0.8131,0.7222,0.8899,378
+ALL,close-pair,python-pairs,boundary effect,-0.1143,-0.1485,-0.0794,432
