@@ -200,20 +200,24 @@ def run() -> int:
             ("mechanism covers all six ordered pairs", len(mech) == 6),
             ("surviving mass does NOT predict transfer (r = +0.09)",
              f'{corr([f(r,"surviving_mass") for r in mech], f1s):+.2f}' == "+0.09"),
-            ("coefficient agreement DOES predict transfer (r = +0.87)",
-             f'{corr([f(r,"coef_agreement") for r in mech], f1s):+.2f}' == "+0.87"),
-            ("sign-flip mass predicts inversely (r = -0.91)",
-             f'{corr([f(r,"sign_disagreement_mass") for r in mech], f1s):+.2f}' == "-0.91"),
+            ("sign-flip mass predicts transfer almost exactly (r = -0.98)",
+             f'{corr([f(r,"sign_disagreement_mass") for r in mech], f1s):+.2f}' == "-0.98"),
+            ("coefficient agreement predicts transfer (r = +0.90)",
+             f'{corr([f(r,"coef_agreement") for r in mech], f1s):+.2f}' == "+0.90"),
+            # The conclusion must not depend on the weighting choice, so the
+            # source-weighted variant is checked to agree in sign and size.
+            ("source-weighted variant gives the same picture (-0.91 / +0.87)",
+             f'{corr([f(r,"sign_disagreement_mass_source_weighted") for r in mech], f1s):+.2f}' == "-0.91"
+             and f'{corr([f(r,"coef_agreement_source_weighted") for r in mech], f1s):+.2f}' == "+0.87"),
             ("~70% of mass survives even in the worst pair",
              all(0.69 <= f(r, "surviving_mass") <= 0.87 for r in mech)),
-            ("close pair agreement 0.89-0.94",
-             all(0.89 <= f(r, "coef_agreement") <= 0.94 for r in near_)),
-            ("python-crossing agreement 0.44-0.76",
-             all(0.44 <= f(r, "coef_agreement") <= 0.76 for r in far_)),
-            ("python-crossing sign-flip 21-37%",
-             all(0.21 <= f(r, "sign_disagreement_mass") <= 0.37 for r in far_)),
-            ("close-pair sign-flip about 7%",
-             all(0.06 <= f(r, "sign_disagreement_mass") <= 0.075 for r in near_)),
+            ("close pair flips only 5-7% of mass",
+             all(0.05 <= f(r, "sign_disagreement_mass") <= 0.075 for r in near_)),
+            ("python-crossing flips 18-37%",
+             all(0.17 <= f(r, "sign_disagreement_mass") <= 0.37 for r in far_)),
+            ("the two bands do not overlap",
+             max(f(r, "sign_disagreement_mass") for r in near_)
+             < min(f(r, "sign_disagreement_mass") for r in far_)),
             # The claim that no syntactic class carries the gap is the one a
             # reviewer will push on, so bound it from the committed numbers.
             ("no ablation moves transfer by more than 0.021",

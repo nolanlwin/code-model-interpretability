@@ -137,16 +137,23 @@ realised in \emph{every} target, including those it transfers to worst
 php$\rightarrow$javascript). Across the six ordered pairs, surviving mass
 does not predict transfer at all ($r = +0.09$).
 
-What predicts it is whether the surviving features mean the same thing.
-Fitting a second classifier on the target labels in the \emph{same} feature
-space and correlating the two weight vectors---under the same
-$|\beta_j|\times$tf-idf weighting, so that this and the survival figure above
-refer to one quantity---gives an agreement that tracks transfer closely
-($r = +0.87$), and the share of that mass whose sign flips tracks it inversely
-and slightly more strongly ($r = -0.91$). Between JavaScript and PHP agreement
-is $0.93$ and $0.89$ with about $7\%$ of the mass flipping sign; every pair
-crossing the Python boundary sits between $0.44$ and $0.76$ with $21$--$37\%$
-flipping. The cues are present on both sides and they point different ways.
+What predicts it is whether the surviving features mean the same thing. We
+fit a second classifier on the target labels in the \emph{same} feature space
+and compare the two weight vectors, weighting each feature by
+$|\beta_j|$ times its mean tf-idf \emph{in the target}---the quantity that
+actually determines a target prediction, and the same one the survival
+numerator above is built from. The share of that mass whose sign flips
+between the two classifiers tracks transfer almost exactly
+($r = -0.98$), and their weighted correlation tracks it positively
+($r = +0.90$). Between JavaScript and PHP only $5$--$7\%$ of the mass points
+the other way; every pair crossing the Python boundary flips $18$--$37\%$.
+The cues are present on both sides and a large share of them point in
+opposite directions.
+
+Weighting instead by mass in the \emph{source} gives the same picture
+($r = -0.91$ and $r = +0.87$), so the conclusion does not rest on that choice;
+both columns are reported in
+\texttt{results/lp4fm/transfer\_mechanism.csv}.
 
 That realignment is distributed rather than localised, which is the result
 that most constrains the interpretation. Masking a whole syntactic character

@@ -161,16 +161,20 @@ def coefficient_agreement(vec, clf_src, Xtr, te_texts, y_te, seed):
                                  random_state=seed).fit(Xte, y_te)
     a = clf_src.coef_.ravel()
     b = clf_tgt.coef_.ravel()
-    # Weight by the SAME quantity surviving_mass uses -- |beta| times the
-    # feature's mean tf-idf in the source -- restricted to features the target
-    # actually realises. Weighting by |beta| alone would let an n-gram the
-    # source almost never emits count as much as one it leans on constantly,
-    # and then "share of discriminative mass that flips sign" would not refer
-    # to the mass surviving_mass reports. The two numbers are contrasted
-    # directly in the paper, so they have to be the same measure.
-    present = np.asarray(Xte.mean(axis=0)).ravel() > 0
+    # Weighting must match surviving_mass's NUMERATOR, which is |beta| times
+    # mean tf-idf in the TARGET. That is not an arbitrary alignment: a
+    # feature's influence on a target prediction is its coefficient times its
+    # tf-idf in the target document, so target-realised mass is the quantity
+    # that decides whether transfer succeeds. Weighting by source tf-idf
+    # instead would let an n-gram the source leans on but the target barely
+    # emits dominate a statistic about the target's behaviour.
+    #
+    # The source-weighted variant is reported alongside rather than discarded,
+    # so that choosing between them cannot be mistaken for choosing the larger
+    # correlation after the fact.
     src_mass = np.asarray(Xtr.mean(axis=0)).ravel()
-    w = np.abs(a) * src_mass * present
+    tgt_mass = np.asarray(Xte.mean(axis=0)).ravel()
+    w = np.abs(a) * tgt_mass
     if w.sum() == 0:
         return None
     ma = float((w * a).sum() / w.sum())
@@ -189,14 +193,30 @@ def coefficient_agreement(vec, clf_src, Xtr, te_texts, y_te, seed):
                 "source_weight": round(float(a[j]), 3),
                 "target_weight": round(float(b[j]), 3)}
                for j in top if flip[j] > 0]
+    def _weighted(wt):
+        if wt.sum() == 0:
+            return None, None
+        ma_, mb_ = float((wt*a).sum()/wt.sum()), float((wt*b).sum()/wt.sum())
+        c_ = float((wt*(a-ma_)*(b-mb_)).sum())
+        va_, vb_ = float((wt*(a-ma_)**2).sum()), float((wt*(b-mb_)**2).sum())
+        if va_ <= 0 or vb_ <= 0:
+            return None, None
+        return (c_/(va_*vb_)**0.5,
+                float((wt*(np.sign(a) != np.sign(b))).sum()/wt.sum()))
+
+    alt_agree, alt_flip = _weighted(np.abs(a) * src_mass * (tgt_mass > 0))
     return {
         "agreement": cov / (va * vb) ** 0.5,
+        "agreement_source_weighted": alt_agree,
+        "sign_disagreement_mass_source_weighted": alt_flip,
         "top_flipped": flipped,
-        "features_compared": int(present.sum()),
+        "features_compared": int((tgt_mass > 0).sum()),
         # Sign flips are the concrete failure: an n-gram the source reads as
         # evidence FOR the role that the target reads as evidence against.
         "sign_disagreement_mass": float(
-            (w * ((np.sign(a) != np.sign(b)) & present)).sum() / w.sum()),
+            # w is already zero wherever the target does not realise the
+            # feature, so no presence mask is needed here.
+            (w * (np.sign(a) != np.sign(b))).sum() / w.sum()),
     }
 
 
@@ -305,7 +325,27 @@ def cmd_ablate(args) -> int:
 
 
 def cmd_verify(_args) -> int:
+    # coefficient_agreement is the statistic the whole mechanism paragraph
+    # rests on, and verify did not touch it -- a rename inside it broke every
+    # run and the self-check still passed. Exercise it on planted data.
+    from sklearn.feature_extraction.text import TfidfVectorizer as _TV
+    src_docs = ["aaa bbb", "aaa ccc", "ddd bbb", "ddd ccc"] * 6
+    y_src = np.array(["target", "target", "other", "other"] * 6)
+    _v = _TV(analyzer="char_wb", ngram_range=(2, 3), min_df=1)
+    _X = _v.fit_transform(src_docs)
+    _clf = LogisticRegression(max_iter=1000).fit(_X, y_src)
+    same = coefficient_agreement(_v, _clf, _X, src_docs, y_src, 0)
+    flipped_y = np.array(["other", "other", "target", "target"] * 6)
+    opp = coefficient_agreement(_v, _clf, _X, src_docs, flipped_y, 0)
+
     checks = [
+        ("agreement runs at all", same is not None),
+        ("identical labels agree strongly", same is not None and same["agreement"] > 0.9),
+        ("inverted labels disagree", opp is not None and opp["agreement"] < -0.9),
+        ("inverted labels flip most of the mass",
+         opp is not None and opp["sign_disagreement_mass"] > 0.8),
+        ("identical labels flip almost none",
+         same is not None and same["sign_disagreement_mass"] < 0.2),
         ("';' is a terminator", classify(" ; ") == "terminator"),
         ("'){' is a brace", classify("){ ") == "brace"),
         ("'[i]' is a bracket", classify("[i]") == "bracket"),
