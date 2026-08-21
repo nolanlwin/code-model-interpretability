@@ -1,0 +1,351 @@
+"""Self-check for the causal pipeline that needs no GPU and no model.
+
+Runs the REAL driver (causal_run.run_experiment) against a fake runner whose
+behaviour is known exactly, so a wiring mistake -- patching the wrong
+positions, reading the wrong layer, scoring the wrong token -- shows up as a
+failed assertion rather than as a plausible-looking number on a GPU.
+
+    python scripts/causal.py verify
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
+
+import numpy as np
+
+_SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(_SCRIPT_DIR))
+
+HIDDEN, VOCAB = 8, 64
+T_TOK, D_TOK = 11, 22
+
+
+class FakeRunner:
+    """A model whose logit difference is an EXACTLY known function of the
+    residual stream, so every assertion below is a computed number rather
+    than a shape check.
+
+        resid[p, 0] = p                       (varies by position)
+        logits[p, v] = mean(resid[:, 0]) * (v % 7)
+        metric       = mean0 * ((t_id % 7) - (d_id % 7))
+
+    An intervention that changes channel 0 at the edited positions therefore
+    changes the metric by a predictable amount. An earlier version of this
+    fake made every logit zero, so clean and intervened were both 0.0 and the
+    no-op assertion passed vacuously -- the whole point of these numbers is
+    that a wiring bug cannot hide behind them."""
+
+    n_layers = 4
+
+    def __init__(self):
+        self.calls = 0
+        self.seen_edits: list = []
+
+    def tokenize(self, code, max_length=2048):
+        # one token per character: offsets are trivially exact, so position
+        # arithmetic in the driver is tested rather than the tokenizer's.
+        ids = [ord(c) % VOCAB for c in code]
+        offsets = [(i, i + 1) for i in range(len(code))]
+        return ids, offsets, None
+
+    def run(self, ids, edits=None, want_resid_layers=None):
+        self.calls += 1
+        seq = len(ids)
+        resid = np.zeros((seq, HIDDEN), dtype=np.float32)
+        resid[:, 0] = np.arange(seq, dtype=np.float32)   # position-dependent
+        for (layer, positions, values) in (edits or []):
+            self.seen_edits.append((layer, tuple(positions)))
+            if values is not None:
+                resid[list(positions), :] = np.asarray(values)
+        mean0 = float(resid[:, 0].mean())
+        logits = np.zeros((seq, VOCAB), dtype=np.float32)
+        for v in range(VOCAB):
+            logits[:, v] = mean0 * (v % 7)
+        cap = {ly: resid.copy() for ly in (want_resid_layers or [])}
+        return logits, cap
+
+
+def run_verify() -> int:
+    from causal import build_cases, effect_size, matched_norm_random, pick_control_positions
+    from causal_run import run_experiment
+
+    ok = True
+
+    def check(name, cond, extra=""):
+        nonlocal ok
+        ok &= bool(cond)
+        print(f"{'OK  ' if cond else 'FAIL'} {name}{'' if cond else '  ' + extra}")
+
+    # ---- pure helpers -----------------------------------------------------
+    check("effect_size: full destruction is 1.0", effect_size(2.0, 0.0) == 1.0)
+    check("effect_size: no change is 0.0", effect_size(2.0, 2.0) == 0.0)
+    check("effect_size: with floor uses recovery denominator",
+          abs(effect_size(3.0, 2.0, floor=1.0) - 0.5) < 1e-9)
+    check("effect_size: degenerate denominator -> nan",
+          np.isnan(effect_size(0.0, 0.0)))
+    d = np.array([3.0, 4.0])
+    mn = matched_norm_random(d, np.random.default_rng(0))
+    check("matched_norm_random preserves L2 norm",
+          abs(np.linalg.norm(mn) - 5.0) < 1e-9, f"got {np.linalg.norm(mn)}")
+    import random as _r
+    pos = pick_control_positions(3, 10, {0, 1, 2}, _r.Random(0))
+    check("control positions avoid the variable's own tokens",
+          len(pos) == 3 and not ({0, 1, 2} & set(pos)), f"got {pos}")
+    check("control positions refuse when the pool is too small",
+          pick_control_positions(9, 10, set(range(9)), _r.Random(0)) == [])
+
+    # ---- case construction ------------------------------------------------
+    occ = [
+        {"problem_id": "p1", "variable": "acc", "role": "accumulator",
+         "source_span": [0, 3], "occurrence_id": "p1:f0:b0:o0"},
+        {"problem_id": "p1", "variable": "idx", "role": "index_key",
+         "source_span": [5, 8], "occurrence_id": "p1:f0:b1:o0"},
+        {"problem_id": "p1", "variable": "acc", "role": "accumulator",
+         "source_span": [10, 13], "occurrence_id": "p1:f0:b0:o1"},
+    ]
+    cases = build_cases(occ, {"p1": "acc  idx  acc  "})
+    check("one case built for the two-occurrence target", len(cases) == 1, f"got {len(cases)}")
+    if cases:
+        c = cases[0]
+        check("readout is the LAST occurrence", c["readout_char"] == 10, f"got {c['readout_char']}")
+        check("intervention spans exclude the readout", c["target_spans"] == [[0, 3]],
+              f"got {c['target_spans']}")
+        check("distractor holds a different role", c["distractor_role"] != c["target_role"])
+    check("a single-occurrence target yields no case",
+          build_cases(occ[:2], {"p1": "acc  idx  "}) == [])
+    same_role = [dict(r, role="accumulator") for r in occ]
+    check("same-role-only program yields no case",
+          build_cases(same_role, {"p1": "acc  idx  acc  "}) == [])
+    # The distractor must hold a different role, so the target-role filter
+    # selects the target without removing distractor candidates.
+    check("target_role selects the intervened role",
+          len(build_cases(occ, {"p1": "acc  idx  acc  "}, target_role="accumulator")) == 1)
+    check("target_role with no matching target yields no case",
+          build_cases(occ, {"p1": "acc  idx  acc  "}, target_role="iterator") == [])
+
+    # `s` is an accumulator in f and an index in g. Program-wide extraction
+    # sees both uses at once and calls it index_key only, so BOTH a
+    # program-wide role filter and a program-wide early return would lose
+    # the accumulator entirely. Each scope must be judged on its own.
+    from role_occurrences import occurrence_rows as _orows
+    py = ("def f(xs):\n    s = 0\n    for x in xs:\n        s += x\n    return s\n"
+          "def g(xs):\n    s = 2\n    return xs[s]\n")
+    acc = _orows(py, "Python", "accumulator", "p5")
+    idx = _orows(py, "Python", "index_key", "p5")
+    check("scope-local role survives a program-wide collision (accumulator in f)",
+          {r["function_name"] for r in acc} == {"f"} and len(acc) == 3,
+          f"got {[(r['variable'], r['function_name']) for r in acc]}")
+    check("the same spelling keeps its other role in the other scope (index in g)",
+          {r["function_name"] for r in idx} == {"g"},
+          f"got {[(r['variable'], r['function_name']) for r in idx]}")
+
+    # ---- scope: identical spellings in different functions must NOT merge --
+    # code layout: "s i i i  " -> s@0 (accumulator, fn f), i@2 and i@4
+    # (index, fn f), i@6 (index, fn g). The distractor must precede the
+    # readout, so s sits first.
+    CODE2 = "s i i i  "
+    two_fn = [
+        {"problem_id":"p2","variable":"s","role":"accumulator","source_span":[0,1],
+         "function":"f","scope_known":True,"occurrence_id":"c"},
+        {"problem_id":"p2","variable":"i","role":"index_key","source_span":[2,3],
+         "function":"f","scope_known":True,"occurrence_id":"a"},
+        {"problem_id":"p2","variable":"i","role":"index_key","source_span":[4,5],
+         "function":"f","scope_known":True,"occurrence_id":"b"},
+        # same spelling, DIFFERENT function -- must not join the binding above
+        {"problem_id":"p2","variable":"i","role":"index_key","source_span":[6,7],
+         "function":"g","scope_known":True,"occurrence_id":"d"},
+    ]
+    sc = build_cases(two_fn, {"p2": CODE2})
+    check("bindings do not merge across functions",
+          len(sc) == 1 and sc[0]["function"] == "f",
+          f"got {[(c['function'], c['target']) for c in sc]}")
+    if sc:
+        check("readout is f's LAST i, not g's",
+              sc[0]["readout_char"] == 4, f"got {sc[0]['readout_char']}")
+        check("intervention stays inside the target's own function",
+              sc[0]["target_spans"] == [[2, 3]], f"got {sc[0]['target_spans']}")
+    lone = [two_fn[0], two_fn[3]]
+    check("a lone binding in another function yields no case",
+          build_cases(lone, {"p2": CODE2}) == [])
+    # Two DIFFERENT functions that happen to share a name (overloads, methods
+    # in different classes, nested functions) must stay distinct. Keying on
+    # the bare name would merge them and reintroduce the original bug.
+    same_name = [
+        {"problem_id":"p4","variable":"s","role":"accumulator","source_span":[0,1],
+         "function":"f@0-6","function_name":"f","scope_known":True,"occurrence_id":"a"},
+        {"problem_id":"p4","variable":"i","role":"index_key","source_span":[2,3],
+         "function":"f@0-6","function_name":"f","scope_known":True,"occurrence_id":"b"},
+        # same NAME, different span -> a different binding
+        {"problem_id":"p4","variable":"i","role":"index_key","source_span":[6,7],
+         "function":"f@6-9","function_name":"f","scope_known":True,"occurrence_id":"c"},
+    ]
+    check("same-named functions do not merge by name",
+          build_cases(same_name, {"p4": "s i   i  "}) == [],
+          f"got {build_cases(same_name, {'p4': 's i   i  '})}")
+
+    # Two block-local bindings of one spelling inside a single C++ function
+    # are two variables. Merging them would let the readout come from the
+    # second while the intervention edits the first.
+    from role_occurrences import ambiguous_bindings, function_spans, occurrence_rows as _o2
+    cpp = ("int f(int n){int t = 0; for(int i = 0; i < n; i++){t += i;}"
+           " for(int i = 0; i < n; i++){t += i;} return t;}")
+    amb = ambiguous_bindings(cpp, "C++", function_spans(cpp, "C++"))
+    check("a spelling declared twice in one C++ function is flagged ambiguous",
+          any("i" in v for v in amb.values()), f"got {amb}")
+    rows_i = [r for r in _o2(cpp, "C++", "index_key", "pc") if r["variable"] == "i"]
+    check("occurrences of that ambiguous binding are dropped, not merged",
+          rows_i == [], f"kept {len(rows_i)}")
+    # A single declaration in the same shape must survive.
+    cpp_ok = "int f(int n){int t = 0; for(int i = 0; i < n; i++){t += i;} return t;}"
+    amb_ok = ambiguous_bindings(cpp_ok, "C++", function_spans(cpp_ok, "C++"))
+    check("a singly-declared binding is not flagged",
+          not any("i" in v for v in amb_ok.values()), f"got {amb_ok}")
+    # Loop headers bind without any *_declarator node. Visiting only
+    # declarators missed every enhanced-for / range-for / for-of binding.
+    LOOP_CASES = [
+        ("Java", 'class A{void f(int[] a){for(int x : a){} for(int x : a){}}}', True),
+        ("Java", 'class A{void f(int[] a){for(int x : a){}}}', False),
+        ("C++", 'void f(vector<int>& a){for(int x : a){} for(int x : a){}}', True),
+        ("C++", 'void f(vector<int>& a){for(int x : a){}}', False),
+        ("Javascript", 'function f(a){for(const x of a){} for(const x of a){}}', True),
+        # no let/const: this ASSIGNS an existing binding, so it declares nothing
+        ("Javascript", 'function f(a){let x; for(x of a){} for(x of a){}}', False),
+    ]
+    for _lang, _code, _want in LOOP_CASES:
+        _amb = ambiguous_bindings(_code, _lang, function_spans(_code, _lang))
+        _got = any("x" in v for v in _amb.values())
+        check(f"loop-header binding, {_lang}, ambiguous={_want}", _got == _want,
+              f"got {_got} for {_code[:44]}")
+
+    check("function-scoped languages are exempt from the block-scope rule",
+          ambiguous_bindings("def f():\n    i = 0\n    i = 1\n", "Python",
+                             function_spans("def f():\n    i = 0\n    i = 1\n", "Python")) == {})
+
+    unknown = [dict(r, scope_known=False) for r in two_fn]
+    check("unknown scope is refused, not treated as one namespace",
+          build_cases(unknown, {"p2": CODE2}) == [])
+
+    # ---- end-to-end through the real driver -------------------------------
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        code = "acc  idx  acc  "
+        (td / "occ.jsonl").write_text("\n".join(json.dumps(r) for r in occ))
+        (td / "canon.jsonl").write_text(json.dumps({"problem_id": "p1", "code": code}))
+        args = SimpleNamespace(
+            occurrences=str(td / "occ.jsonl"), canonical=str(td / "canon.jsonl"),
+            model_id="fake", intervention="ablate", layers="0,1", alpha=1.0,
+            max_cases=10, seed=0, no_controls=False, device="cpu", dtype="fp32",
+            max_length=2048, output=str(td / "out.json"), target_role=None,
+            min_clean=-1e9)   # the fake metric is negative by construction
+        import causal_run
+        causal_run.HFRunner = lambda *a, **k: FakeRunner()
+        rc = run_experiment(args)
+        res = json.loads((td / "out.json").read_text())
+        check("driver returns 0", rc == 0)
+        check("driver scored the case", res["n_cases_scored"] == 1,
+              f"got {res['n_cases_scored']} skipped={res['skipped']}")
+        check("both requested layers reported",
+              sorted(s["layer"] for s in res["summary_by_layer"]) == [0, 1])
+        check("provenance stamped", res["git_commit"] not in ("", None))
+        check("controls recorded", res["controls"] is True)
+        if res["summary_by_layer"]:
+            s0 = res["summary_by_layer"][0]
+            # Worked by hand: prompt is code[:10], so seq=10 and
+            # mean(channel0) = 4.5. Target first token is 'a' (97 % 64 = 33,
+            # 33 % 7 = 5); distractor is 'i' (105 % 64 = 41, 41 % 7 = 6).
+            # clean = 4.5 * (5 - 6) = -4.5.
+            check("clean metric is exactly -4.5",
+                  abs(s0["clean_mean"] + 4.5) < 1e-6, f"got {s0['clean_mean']}")
+            # Mean ablation writes 4.5 into positions 0,1,2, so channel 0
+            # becomes [4.5,4.5,4.5,3..9] with mean 5.55 and the metric -5.55.
+            # 1e-4, not 1e-6: the fake's residual is float32, so the
+            # hand-computed 5.55 lands at 5.5500030517578125. That gap is the
+            # dtype, not the wiring -- tightening it further would only test
+            # numpy's float32.
+            check("mean ablation moves the metric to exactly -5.55",
+                  abs(s0["intervened_mean"] + 5.55) < 1e-4, f"got {s0['intervened_mean']}")
+            check("effect fraction is exactly -0.2333",
+                  abs(s0["effect_mean"] + (1.05 / 4.5)) < 1e-6, f"got {s0['effect_mean']}")
+            check("random-position control was run and differs from clean",
+                  "control_random_position_mean" in s0
+                  and abs(s0["control_random_position_mean"] - s0["clean_mean"]) > 1e-9)
+
+        # A single-role occurrence file can only ever yield zero cases; the
+        # driver must say so rather than silently reporting n=0.
+        single = [dict(r, role="accumulator") for r in occ]
+        (td / "single.jsonl").write_text("\n".join(json.dumps(r) for r in single))
+        args.occurrences = str(td / "single.jsonl")
+        args.output = str(td / "single.json")
+        try:
+            run_experiment(args)
+            check("single-role file is refused", False, "it was accepted")
+        except SystemExit as e:
+            check("single-role file is refused with a reason",
+                  "single role" in str(e))
+        args.occurrences = str(td / "occ.jsonl")
+
+        # Patch control must not exceed the number of source vectors. The
+        # reviewer's case: more target positions than distractor positions,
+        # which previously indexed fewer replacements than destinations and
+        # raised during assignment.
+        wide = [
+            {"problem_id":"p3","variable":"target","role":"accumulator",
+             "source_span":[0,6],"function":"f","scope_known":True,"occurrence_id":"t0"},
+            {"problem_id":"p3","variable":"d","role":"index_key",
+             "source_span":[7,8],"function":"f","scope_known":True,"occurrence_id":"d0"},
+            {"problem_id":"p3","variable":"target","role":"accumulator",
+             "source_span":[9,15],"function":"f","scope_known":True,"occurrence_id":"t1"},
+        ]
+        (td / "wide.jsonl").write_text("\n".join(json.dumps(r) for r in wide))
+        (td / "wide_c.jsonl").write_text(json.dumps(
+            {"problem_id": "p3", "code": "target d target "}))
+        args.occurrences, args.canonical = str(td / "wide.jsonl"), str(td / "wide_c.jsonl")
+        args.intervention, args.output = "patch", str(td / "wide.json")
+        try:
+            run_experiment(args)
+            wres = json.loads((td / "wide.json").read_text())
+            check("patch control survives more target than distractor positions",
+                  wres["n_cases_scored"] == 1, f"scored {wres['n_cases_scored']}")
+        except Exception as e:
+            check("patch control survives more target than distractor positions",
+                  False, f"{type(e).__name__}: {e}")
+        args.occurrences, args.canonical = str(td / "occ.jsonl"), str(td / "canon.jsonl")
+
+        # A prompt with no eligible control positions must RECORD that, not
+        # quietly report controls: true without the baseline.
+        from causal import pick_control_positions as _pcp
+        import random as _rr
+        check("pick_control_positions returns empty when the pool is exhausted",
+              _pcp(5, 5, {0, 1, 2, 3, 4}, _rr.Random(0)) == [])
+
+        # steering must record BOTH controls
+        args.intervention, args.output = "steer", str(td / "steer.json")
+        args.max_cases = 10
+        run_experiment(args)
+        sres = json.loads((td / "steer.json").read_text())
+        got = {k for s_ in sres["summary_by_layer"] for k in s_}
+        check("steering records a random-DIRECTION control",
+              any("control_random_direction_mean" in s_ for s_ in sres["summary_by_layer"])
+              or sres["steering_holdout_cases"] == 0)
+        check("steering records a random-POSITION control",
+              any("control_random_position_mean" in s_ for s_ in sres["summary_by_layer"])
+              or sres["steering_holdout_cases"] == 0,
+              f"keys={sorted(got)}")
+        check("every layer reports how many cases lack the positional control",
+              all("n_without_positional_control" in s_ for s_ in sres["summary_by_layer"]))
+        args.intervention = "patch"
+
+        # patch must edit BOTH directions
+        args.intervention, args.output = "patch", str(td / "patch.json")
+        run_experiment(args)
+        pres = json.loads((td / "patch.json").read_text())
+        check("patch reports the reverse direction",
+              any("reverse_mean" in s for s in pres["summary_by_layer"]))
+
+    print("\nALL PASS" if ok else "\nFAILURES")
+    return 0 if ok else 1

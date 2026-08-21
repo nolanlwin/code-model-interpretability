@@ -35,9 +35,18 @@ sys.path.insert(0, str(_SCRIPT_DIR))
 from variable_occurrences import occurrence_rows_from_code  # noqa: E402
 
 # XLCoST language name -> how to extract. python/java/go go through the
-# dispatcher; javascript/php through their own library modules.
+# dispatcher; javascript/php/c++ through their own library modules.
 _DISPATCHER_LANGS = {"Python": "python", "Java": "java"}
-_MODULE_LANGS = {"Javascript": "javascript", "PHP": "php"}
+# "C" deliberately reuses the C++ extractor: C is very nearly a subset,
+# and tree-sitter-cpp parses the XLCoST C corpus BETTER than
+# tree-sitter-c does (381/421 vs 363/421). A separate C trio would be
+# 700 lines to parse strictly less.
+_MODULE_LANGS = {
+    "Javascript": "javascript",
+    "PHP": "php",
+    "C++": "cpp",
+    "C": "cpp",
+}
 
 
 def extract_rows(language: str, code: str, tokenizer=None, max_length: int = 2048):
@@ -131,6 +140,11 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
+    # Remove any previous completion marker BEFORE truncating the output.
+    # Callers guard re-extraction on this file, so a marker left over from an
+    # earlier complete run would vouch for a partial rewrite if this one is
+    # interrupted.
+    Path(str(out) + ".stats.json").unlink(missing_ok=True)
     n_prog = n_parse_err = n_rows = n_span_dropped = 0
     dedup: set = set()
     with out.open("w", encoding="utf-8") as f:

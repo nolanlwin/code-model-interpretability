@@ -25,6 +25,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+import re
+
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -83,14 +85,23 @@ def load_from_manifest(path: Path) -> list[dict]:
     ]
 
 
-def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list[dict]:
+def load_from_occurrences(occ_path: Path, canon_path: Path, window: int,
+                          label_field: str = "occurrence_type") -> list[dict]:
+    """Occurrence rows joined to their program text, ready for the baselines.
+
+    ``label_field`` selects what is being predicted. The boolean workstream
+    labels each site with ``occurrence_type``; ``role_occurrences.py`` labels
+    it with ``role``, which is what cross-lingual transfer needs -- the
+    question there is whether a probe that separates accumulator from other
+    roles in one language still does so in another.
+    """
     canon_rows = _read_jsonl(canon_path)
     # XLCoST canonical rows join by problem_id; CodeSearchNet by 1-based line index.
     by_problem = {r["problem_id"]: r.get("code", "") for r in canon_rows if "problem_id" in r}
     by_index = [r.get("code", "") for r in canon_rows]
     out = []
     for r in _read_jsonl(occ_path):
-        if not r.get("occurrence_type"):
+        if not r.get(label_field):
             continue
         if r.get("problem_id") is not None:
             code = by_problem.get(r["problem_id"], "")
@@ -113,7 +124,7 @@ def load_from_occurrences(occ_path: Path, canon_path: Path, window: int) -> list
         out.append(
             {
                 "occurrence_id": r.get("occurrence_id"),
-                "y": r["occurrence_type"],
+                "y": r[label_field],
                 "variable": var,
                 "repo": str(group),
                 "function": f'{group}::{r.get("function")}',
@@ -258,13 +269,15 @@ def _fit_text(texts: list[str], y: np.ndarray, tr: np.ndarray, te: np.ndarray,
     try:
         Xtr = vec.fit_transform([texts[i] for i in tr])
     except ValueError:
-        return {"macro_f1": float("nan"), "acc": float("nan"), "note": "empty vocabulary"}
+        return {"macro_f1": float("nan"), "acc": float("nan"),
+                "note": "empty vocabulary", "_pred": None}
     Xte = vec.transform([texts[i] for i in te])
     clf = LogisticRegression(max_iter=2000, C=4.0, random_state=seed).fit(Xtr, y[tr])
     pred = clf.predict(Xte)
     return {
         "macro_f1": macro_f1_stat(y[te], pred, labels),
         "acc": float(accuracy_score(y[te], pred)),
+        "_pred": pred,
     }
 
 
@@ -276,6 +289,7 @@ def _fit_scalar(feats: np.ndarray, y: np.ndarray, tr: np.ndarray, te: np.ndarray
     return {
         "macro_f1": macro_f1_stat(y[te], pred, labels),
         "acc": float(accuracy_score(y[te], pred)),
+        "_pred": pred,
     }
 
 
@@ -318,13 +332,15 @@ def cmd_run(args: argparse.Namespace) -> int:
     for seed in args.seeds:
         tr, val, te = three_way_split(len(recs), groups, y, args.split_policy, seed)
         tr = np.concatenate([tr, val])  # baselines have no layer to select
+        _maj = Counter(y[tr].tolist()).most_common(1)[0][0]
+        _maj_pred = np.full(len(te), _maj)
         row = {
             "seed": seed,
+            "_te": te,
             "majority": {
-                "acc": float(np.mean(y[te] == Counter(y[tr].tolist()).most_common(1)[0][0])),
-                "macro_f1": macro_f1_stat(
-                    y[te], np.full(len(te), Counter(y[tr].tolist()).most_common(1)[0][0]), labels
-                ),
+                "acc": float(np.mean(y[te] == _maj)),
+                "macro_f1": macro_f1_stat(y[te], _maj_pred, labels),
+                "_pred": _maj_pred,
             },
             "name_only": _fit_text(names, y, tr, te, labels, seed),
             "covariates_only": _fit_scalar(covs, y, tr, te, labels, seed),
@@ -354,6 +370,57 @@ def cmd_run(args: argparse.Namespace) -> int:
         "strongest_baseline_macro_f1": max(agg(k, "macro_f1") for k in keys),
         "per_seed": per_seed,
     }
+    # Per-occurrence predictions for the STRONGEST baseline, in the same shape
+    # probe.py emits, so `bootstrap_ci.py delta <probe>.json <baselines>.json`
+    # can compute a paired clustered CI on probe-minus-baseline. Without this
+    # the strongest baseline is a point estimate with no interval, and a
+    # probe-vs-baseline margin cannot be told apart from zero.
+    best_key = max(keys, key=lambda k: (agg(k, "macro_f1"), k))
+    occ_ids = [r.get("occurrence_id") for r in recs]
+    clusters = [str(r["repo"]) for r in recs]  # problem-level, matching probe.py
+
+    # Pairing is BY occurrence_id, so emitting rows without one is worse than
+    # emitting nothing: bootstrap_ci.py keys predictions into a dict, so every
+    # null id would collapse onto a single entry and the resulting "CI" would
+    # be computed over one occurrence while looking perfectly well-formed.
+    # --manifest records (load_from_manifest) carry no ids at all. Refuse, and
+    # say why in the artifact rather than only on stdout.
+    n_missing = sum(o is None for o in occ_ids)
+    n_dupe = len(occ_ids) - len(set(occ_ids))
+    pairable = n_missing == 0 and n_dupe == 0
+    result["test_predictions_baseline"] = best_key if pairable else None
+    if not pairable:
+        why = (f"{n_missing} of {len(occ_ids)} records have no occurrence_id"
+               if n_missing else f"{n_dupe} duplicate occurrence_ids")
+        result["test_predictions"] = []
+        result["test_predictions_skipped"] = (
+            f"not emitted: {why}. Pairing in bootstrap_ci.py delta is by "
+            "occurrence_id; --manifest input does not carry one, so use "
+            "--occurrences/--canonical to get a probe-vs-baseline CI."
+        )
+        print(f"  NOTE: test_predictions not emitted - {why}")
+    else:
+        preds = []
+        for srow in per_seed:
+            te_idx, cell = srow["_te"], srow.get(best_key)
+            if cell is None or cell.get("_pred") is None:
+                continue
+            for j, i in enumerate(te_idx):
+                preds.append({
+                    "occurrence_id": occ_ids[i],
+                    "seed": srow["seed"],
+                    "y_true": str(y[i]),
+                    "y_pred": str(cell["_pred"][j]),
+                    "cluster": clusters[i],
+                })
+        result["test_predictions"] = preds
+    # Drop the private arrays before serialising.
+    for srow in per_seed:
+        srow.pop("_te", None)
+        for k in keys:
+            if isinstance(srow.get(k), dict):
+                srow[k].pop("_pred", None)
+
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=1), encoding="utf-8")
@@ -361,6 +428,163 @@ def cmd_run(args: argparse.Namespace) -> int:
     for k in keys:
         print(f"  {k:<16} macroF1={agg(k, 'macro_f1'):.4f}  acc={agg(k, 'acc'):.4f}")
     print(f"  STRONGEST baseline macroF1 = {result['strongest_baseline_macro_f1']:.4f}")
+    print(f"wrote {out}")
+    return 0
+
+
+def _fit_predict_across(train_texts, y_tr, test_texts, labels, seed):
+    """Fit the char n-gram model on one corpus, predict on another.
+
+    The vectorizer is fitted on the TRAINING language only. That is the point:
+    whatever character structure carries the label in language A has to be
+    present in B for this to score above chance, which is exactly the
+    surface-transfer hypothesis being tested.
+    """
+    vec = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 4), min_df=2,
+                          max_features=60000)
+    try:
+        Xtr = vec.fit_transform(train_texts)
+    except ValueError:
+        return None, {"note": "empty vocabulary"}
+    clf = LogisticRegression(max_iter=2000, C=4.0, class_weight="balanced",
+                             random_state=seed).fit(Xtr, y_tr)
+    pred = clf.predict(vec.transform(test_texts))
+    return pred, {}
+
+
+def cmd_transfer(args: argparse.Namespace) -> int:
+    """Cross-lingual surface baseline: fit on A, evaluate on B.
+
+    This is the control the cross-lingual probe result has never had. If a
+    character n-gram model trained on language A transfers to B as well as the
+    probe does, then transfer is measuring surface regularity that the two
+    languages share, not a language-universal role representation.
+    """
+    tr = load_from_occurrences(Path(args.train_occurrences), Path(args.train_canonical),
+                              args.window, label_field=args.label_field)
+    te = load_from_occurrences(Path(args.test_occurrences), Path(args.test_canonical),
+                              args.window, label_field=args.label_field)
+    if not tr or not te:
+        raise SystemExit(f"empty corpus: train={len(tr)} test={len(te)}")
+
+    matched_note = "unmatched (different problems on each side)"
+    if args.matched:
+        shared = {r["repo"] for r in tr} & {r["repo"] for r in te}
+        if len(shared) < args.min_shared:
+            raise SystemExit(
+                f"only {len(shared)} shared problem ids between these languages "
+                f"(--min-shared {args.min_shared}). Matched transfer is not "
+                "available for this pair; rerun without --matched and label the "
+                "result unmatched."
+            )
+        tr = [r for r in tr if r["repo"] in shared]
+        te = [r for r in te if r["repo"] in shared]
+        matched_note = f"matched on {len(shared)} shared problems"
+
+    def binarise(rows):
+        return np.array([("target" if r["y"] == args.role else "other") for r in rows]) \
+            if args.role else np.array([r["y"] for r in rows])
+
+    y_tr, y_te = binarise(tr), binarise(te)
+    labels = sorted(set(y_tr.tolist()) | set(y_te.tolist()))
+    if len(set(y_tr.tolist())) < 2:
+        raise SystemExit(f"training side has one class only: {set(y_tr.tolist())}")
+
+    def _ws(texts):
+        """Collapse whitespace runs, when --normalize-whitespace is given.
+
+        XLCoST draws Python from the formatted mirror and JavaScript and PHP
+        from the tokenized one, so Python arrives with newlines and indentation
+        while the others arrive flattened onto one line. That makes the
+        typological boundary and the corpus-provenance boundary the same line.
+        This switch equalises the two sides so the difference can be measured
+        rather than argued about; see
+        results/lp4fm/whitespace_normalisation_check.csv.
+        """
+        if not getattr(args, "normalize_whitespace", False):
+            return texts
+        return [None if t is None else re.sub(r"\s+", " ", t).strip() for t in texts]
+
+    feats = {
+        "statement_masked": (_ws([r["statement_masked"] for r in tr]),
+                             _ws([r["statement_masked"] for r in te])),
+        "line_masked": (_ws([r["line_masked"] for r in tr]),
+                        _ws([r["line_masked"] for r in te])),
+        "window_masked": (_ws([r["window_masked"] for r in tr]),
+                          _ws([r["window_masked"] for r in te])),
+        "name_only": ([r["variable"] for r in tr], [r["variable"] for r in te]),
+    }
+
+    rng = np.random.default_rng(args.seed)
+    results, preds_for_ci = {}, None
+    for name, (a, b) in feats.items():
+        if a[0] is None:
+            continue
+        per_seed = []
+        for sd in args.seeds:
+            pred, note = _fit_predict_across(a, y_tr, b, labels, sd)
+            if pred is None:
+                per_seed.append({"seed": sd, **note})
+                continue
+            per_seed.append({
+                "seed": sd,
+                "macro_f1": macro_f1_stat(y_te, pred, labels),
+                "acc": float(accuracy_score(y_te, pred)),
+                "_pred": pred,
+            })
+        good = [x for x in per_seed if "macro_f1" in x]
+        results[name] = {
+            "macro_f1": float(np.mean([x["macro_f1"] for x in good])) if good else float("nan"),
+            "acc": float(np.mean([x["acc"] for x in good])) if good else float("nan"),
+        }
+        if name == "statement_masked" and good:
+            preds_for_ci = [
+                {"occurrence_id": te[i].get("occurrence_id"), "seed": x["seed"],
+                 "y_true": str(y_te[i]), "y_pred": str(x["_pred"][i]),
+                 "cluster": str(te[i]["repo"])}
+                for x in good for i in range(len(te))
+            ]
+
+    # Shuffled-label control: permute the TRAINING labels. Anything the model
+    # still scores after that is chance plus class imbalance, not transfer.
+    shuf_scores = []
+    for sd in args.seeds:
+        y_shuf = rng.permutation(y_tr)
+        pred, note = _fit_predict_across(feats["statement_masked"][0], y_shuf,
+                                         feats["statement_masked"][1], labels, sd)
+        if pred is not None:
+            shuf_scores.append(macro_f1_stat(y_te, pred, labels))
+    majority = Counter(y_tr.tolist()).most_common(1)[0][0]
+    result = {
+        "protocol_version": "1.0",
+        "git_commit": git_commit(),
+        "kind": "crosslang_surface_baseline",
+        "train": args.train_occurrences, "test": args.test_occurrences,
+        "label_field": args.label_field, "role": args.role,
+        "pairing": matched_note,
+        "n_train": len(tr), "n_test": len(te),
+        "labels": labels, "seeds": args.seeds,
+        "class_balance_test": dict(Counter(y_te.tolist())),
+        "majority_macro_f1": macro_f1_stat(y_te, np.full(len(y_te), majority), labels),
+        "shuffled_label_control_macro_f1": (float(np.mean(shuf_scores)) if shuf_scores
+                                            else float("nan")),
+        "aggregate": results,
+        "strongest_baseline_macro_f1": max(
+            (v["macro_f1"] for v in results.values() if np.isfinite(v["macro_f1"])),
+            default=float("nan")),
+        "test_predictions": preds_for_ci or [],
+    }
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, indent=1), encoding="utf-8")
+    print(f"[{args.role or 'multiclass'}] {Path(args.train_occurrences).stem} -> "
+          f"{Path(args.test_occurrences).stem}  ({matched_note})")
+    print(f"  n_train={len(tr)} n_test={len(te)} classes={labels}")
+    for k, v in results.items():
+        print(f"    {k:<18} macroF1={v['macro_f1']:.4f}  acc={v['acc']:.4f}")
+    print(f"    {'majority':<18} macroF1={result['majority_macro_f1']:.4f}")
+    print(f"    {'shuffled labels':<18} macroF1={result['shuffled_label_control_macro_f1']:.4f}")
+    print(f"  STRONGEST transferred baseline = {result['strongest_baseline_macro_f1']:.4f}")
     print(f"wrote {out}")
     return 0
 
@@ -380,7 +604,34 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
     r.add_argument("--min-class-count", type=int, default=20)
     r.add_argument("--output", required=True)
+    t = sub.add_parser("transfer", help="fit the surface baseline on one language, "
+                                        "evaluate on another")
+    t.add_argument("--normalize-whitespace", action="store_true",
+                   help="collapse whitespace runs in the masked features on "
+                        "both sides, to measure whether the formatting "
+                        "difference between XLCoST's two source mirrors "
+                        "explains cross-language transfer differences")
+    t.add_argument("--train-occurrences", required=True)
+    t.add_argument("--train-canonical", required=True)
+    t.add_argument("--test-occurrences", required=True)
+    t.add_argument("--test-canonical", required=True)
+    t.add_argument("--label-field", default="role",
+                   help="'role' for cross-lingual transfer, 'occurrence_type' for "
+                        "the boolean workstream's labels")
+    t.add_argument("--role", default=None,
+                   help="binary target-vs-rest for this role; omit for multiclass")
+    t.add_argument("--matched", action="store_true",
+                   help="restrict both sides to shared problem ids, so the same "
+                        "algorithms appear on each side")
+    t.add_argument("--min-shared", type=int, default=200)
+    t.add_argument("--window", type=int, default=120)
+    t.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
+    t.add_argument("--seed", type=int, default=0)
+    t.add_argument("--output", required=True)
+
     args = ap.parse_args(argv)
+    if args.cmd == "transfer":
+        return cmd_transfer(args)
     if args.occurrences and not args.canonical:
         ap.error("--occurrences requires --canonical")
     return cmd_run(args)

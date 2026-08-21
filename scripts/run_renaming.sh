@@ -42,7 +42,9 @@ for c in C1 C2 C3 C4 C5; do
   DELTA=outputs/probe_results/${slug}_${SPLIT}_${c}_${mslug}_delta_vs_C0.json
 
   echo "=== [$c 1/4] rename"
-  [ -s "$RO" ] || python scripts/rename_corpus.py run --condition "$c" \
+  # Guard on the COMPLETION MARKER, not on file size: [ -s ] is true for a
+  # half-written file, so an interrupted run would be silently reused.
+  [ -s "${RO}.stats.json" ] || python scripts/rename_corpus.py run --condition "$c" \
     --canonical "$CANON" --occurrences "$OCC" --sample-ids "$SAMPLE" \
     --out-canonical "$RC" --out-occurrences "$RO"
 

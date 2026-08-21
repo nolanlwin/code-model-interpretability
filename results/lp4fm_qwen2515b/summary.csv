@@ -1,0 +1,19 @@
+role,condition,source,target,n_train,n_test,pairing,name_only,statement_masked,line_masked,window_masked,masked_best,majority,shuffled_labels,rho,smallest_class,smallest_n,git_commit,probe_transfer,probe_indomain,probe_shuffled_source,probe_rho,probe_model
+accumulator,original,javascript,php,1903,1976,matched on 248 shared problems,0.8971,0.9201,0.9275,0.9505,0.9505,0.3611,0.4696,0.0005,target,859,134c3f134aa2,0.9112,0.9217,0.4906,0.0028,Qwen/Qwen2.5-1.5B
+accumulator,original,javascript,python,3294,3341,matched on 401 shared problems,0.8733,0.8128,0.6479,0.7852,0.8128,0.4153,0.4727,0.0004,target,968,134c3f134aa2,0.8948,0.9441,0.4803,0.0023,Qwen/Qwen2.5-1.5B
+accumulator,original,php,javascript,1976,1903,matched on 248 shared problems,0.8966,0.9152,0.9101,0.9535,0.9535,0.3722,0.49,0.0005,target,775,134c3f134aa2,0.9073,0.9103,0.4828,0.0029,Qwen/Qwen2.5-1.5B
+accumulator,original,php,python,1478,1377,matched on 208 shared problems,0.8239,0.7823,0.5598,0.7794,0.7823,0.2756,0.4391,0.0008,target,524,134c3f134aa2,0.8834,0.9236,0.4881,0.0051,Qwen/Qwen2.5-1.5B
+accumulator,original,python,javascript,3341,3294,matched on 401 shared problems,0.8743,0.7158,0.7155,0.7854,0.7854,0.3697,0.5038,0.0003,target,1362,134c3f134aa2,0.9067,0.9325,0.5021,0.0019,Qwen/Qwen2.5-1.5B
+accumulator,original,python,php,1377,1478,matched on 208 shared problems,0.8452,0.7362,0.6128,0.6585,0.7362,0.2712,0.4655,0.0007,other,550,134c3f134aa2,0.8621,0.917,0.4836,0.0036,Qwen/Qwen2.5-1.5B
+index_key,original,javascript,php,1903,1976,matched on 248 shared problems,0.8339,0.9208,0.94,0.9379,0.94,0.3838,0.4777,0.0005,target,745,134c3f134aa2,0.8828,0.8901,0.5094,0.0026,Qwen/Qwen2.5-1.5B
+index_key,original,javascript,python,3294,3341,matched on 401 shared problems,0.787,0.8036,0.744,0.8592,0.8592,0.3299,0.497,0.0003,other,1645,134c3f134aa2,0.8871,0.9294,0.5011,0.0016,Qwen/Qwen2.5-1.5B
+index_key,original,php,javascript,1976,1903,matched on 248 shared problems,0.8384,0.9037,0.9021,0.964,0.964,0.3757,0.5158,0.0005,target,758,134c3f134aa2,0.8809,0.8863,0.4731,0.0027,Qwen/Qwen2.5-1.5B
+index_key,original,php,python,1478,1377,matched on 208 shared problems,0.7817,0.7667,0.6621,0.8392,0.8392,0.3869,0.5155,0.0008,target,508,134c3f134aa2,0.8562,0.896,0.5159,0.0038,Qwen/Qwen2.5-1.5B
+index_key,original,python,javascript,3341,3294,matched on 401 shared problems,0.8223,0.7742,0.7768,0.8705,0.8705,0.3139,0.4703,0.0003,target,1507,134c3f134aa2,0.9133,0.9331,0.4636,0.0017,Qwen/Qwen2.5-1.5B
+index_key,original,python,php,1377,1478,matched on 208 shared problems,0.8379,0.7495,0.782,0.8575,0.8575,0.419,0.4594,0.0008,target,412,134c3f134aa2,0.83,0.8775,0.4966,0.0037,Qwen/Qwen2.5-1.5B
+iterator,original,javascript,php,1903,1976,matched on 248 shared problems,0.8615,0.9365,0.9374,0.9197,0.9374,0.448,0.4882,0.0008,target,372,134c3f134aa2,0.9503,0.9581,0.4933,0.006,Qwen/Qwen2.5-1.5B
+iterator,original,javascript,python,3294,3341,matched on 401 shared problems,0.733,0.7465,0.6219,0.7741,0.7741,0.4436,0.4717,0.0005,target,677,134c3f134aa2,0.9302,0.9718,0.4852,0.0028,Qwen/Qwen2.5-1.5B
+iterator,original,php,javascript,1976,1903,matched on 248 shared problems,0.8732,0.9263,0.9534,0.9654,0.9654,0.4462,0.4779,0.0008,target,370,134c3f134aa2,0.8625,0.9274,0.4159,0.0067,Qwen/Qwen2.5-1.5B
+iterator,original,php,python,1478,1377,matched on 208 shared problems,0.7882,0.4833,0.4667,0.5756,0.5756,0.4284,0.4619,0.001,target,345,134c3f134aa2,0.8854,0.9535,0.4518,0.0049,Qwen/Qwen2.5-1.5B
+iterator,original,python,javascript,3341,3294,matched on 401 shared problems,0.7692,0.7901,0.6462,0.7879,0.7901,0.4655,0.4845,0.0007,target,425,134c3f134aa2,0.9245,0.9791,0.4473,0.0062,Qwen/Qwen2.5-1.5B
+iterator,original,python,php,1377,1478,matched on 208 shared problems,0.7882,0.741,0.5932,0.7348,0.741,0.4755,0.4377,0.002,target,138,134c3f134aa2,0.8835,0.9326,0.4615,0.0132,Qwen/Qwen2.5-1.5B

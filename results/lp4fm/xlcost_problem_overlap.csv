@@ -1,0 +1,16 @@
+language_a,language_b,shared_problem_ids,n_a,n_b
+cpp,csharp,115,9690,9183
+cpp,java,122,9690,8698
+cpp,javascript,75,9690,8505
+cpp,php,17,9690,3032
+cpp,python,74,9690,8519
+csharp,java,175,9183,8698
+csharp,javascript,75,9183,8505
+csharp,php,14,9183,3032
+csharp,python,62,9183,8519
+java,javascript,85,8698,8505
+java,php,11,8698,3032
+java,python,66,8698,8519
+javascript,php,1529,8505,3032
+javascript,python,2953,8505,8519
+php,python,1145,3032,8519
