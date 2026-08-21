@@ -1,0 +1,68 @@
+% Skeleton so the section compiles and its true length is visible. Swap
+% \documentclass and the geometry for the workshop's own style file before
+% submitting -- page count will move.
+\documentclass[10pt]{article}
+\usepackage[margin=1in,letterpaper]{geometry}
+\usepackage{booktabs,amsmath,amssymb,graphicx,hyperref,natbib}
+\usepackage[T1]{fontenc}
+
+\title{Cross-lingual transfer of variable roles in code language models}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+TODO. The result, in four sentences: a linear probe on the residual stream
+transfers variable-role classification across Python, JavaScript and PHP at
+macro-F1 $0.89$; a character $n$-gram baseline with the variable name masked
+reaches $0.95$ between the two brace languages but falls to $0.79$ whenever
+Python is involved, while the probe moves by $0.006$; an untrained network of
+the same architecture reaches only $0.575$, so the probe reads something the
+models learned; and a model trained without code is equally flat, so code
+pretraining is not the cause.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+TODO --- roughly 500 words. What a variable role is, why cross-lingual
+transfer is the right probe for whether the representation is about the role
+or about the language, and the three-way comparison this paper reports.
+
+\section{Setup}
+\label{sec:setup}
+TODO --- roughly 350 words. XLCoST \citep{zhu2022xlcost}, matched problem ids,
+the capped sample, the frozen hash split, the surface baseline family, and the
+control tasks \citep{hewitt2019control}.
+
+\section{Within-language roles}
+\label{sec:within}
+TODO --- roughly 300 words, compressed hard. This section exists mainly to
+carry the two labels the results section refers back to; if the within-language
+material is cut entirely, remove those two cross-references instead of keeping
+an empty section.
+
+\subsection{Accumulator}
+\label{sec:accum}
+TODO.
+
+\subsection{Index}
+\label{sec:index}
+TODO.
+
+\input{section_results}
+
+\section{Related work}
+\label{sec:related}
+TODO --- roughly 300 words, and it needs real citations. The repository
+contains four cited keys in total, which is not a related-work section.
+
+\section{Conclusion}
+\label{sec:conclusion}
+TODO --- roughly 150 words.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
