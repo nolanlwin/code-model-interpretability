@@ -26,6 +26,8 @@ NONCODE = ROOT / "results" / "lp4fm_qwen2515b" / "summary.csv"
 RANDOM = ROOT / "results" / "lp4fm_qwen2515brandominits0" / "summary.csv"
 OVERLAP = ROOT / "results" / "lp4fm" / "xlcost_problem_overlap.csv"
 WSCHECK = ROOT / "results" / "lp4fm" / "whitespace_normalisation_check.csv"
+MECH = ROOT / "results" / "lp4fm" / "transfer_mechanism.csv"
+MECHABL = ROOT / "results" / "lp4fm" / "transfer_mechanism_ablation.csv"
 
 f = lambda r, k: float(r[k])
 
@@ -177,6 +179,57 @@ def run() -> int:
     else:
         checks.append(("whitespace normalisation check present", False))
 
+    # The mechanism paragraph. Its whole argument rests on which correlation
+    # is large, so all three are recomputed from the committed cells rather
+    # than quoted.
+    if MECH.exists() and MECHABL.exists():
+        mech = list(csv.DictReader(MECH.open()))
+        abl = list(csv.DictReader(MECHABL.open()))
+
+        def corr(xs, ys):
+            n = len(xs)
+            mx, my = st.mean(xs), st.mean(ys)
+            cov = sum((a - mx) * (b - my) for a, b in zip(xs, ys))
+            den = (sum((a - mx) ** 2 for a in xs) * sum((b - my) ** 2 for b in ys)) ** 0.5
+            return cov / den if den else float("nan")
+
+        f1s = [f(r, "masked_best_macro_f1") for r in mech]
+        near_ = [r for r in mech if "python" not in (r["source"], r["target"])]
+        far_ = [r for r in mech if "python" in (r["source"], r["target"])]
+        checks += [
+            ("mechanism covers all six ordered pairs", len(mech) == 6),
+            ("surviving mass does NOT predict transfer (r = +0.09)",
+             f'{corr([f(r,"surviving_mass") for r in mech], f1s):+.2f}' == "+0.09"),
+            ("sign-flip mass predicts transfer almost exactly (r = -0.98)",
+             f'{corr([f(r,"sign_disagreement_mass") for r in mech], f1s):+.2f}' == "-0.98"),
+            ("coefficient agreement predicts transfer (r = +0.90)",
+             f'{corr([f(r,"coef_agreement") for r in mech], f1s):+.2f}' == "+0.90"),
+            # The conclusion must not depend on the weighting choice, so the
+            # source-weighted variant is checked to agree in sign and size.
+            ("source-weighted variant gives the same picture (-0.91 / +0.87)",
+             f'{corr([f(r,"sign_disagreement_mass_source_weighted") for r in mech], f1s):+.2f}' == "-0.91"
+             and f'{corr([f(r,"coef_agreement_source_weighted") for r in mech], f1s):+.2f}' == "+0.87"),
+            ("~70% of mass survives even in the worst pair",
+             all(0.69 <= f(r, "surviving_mass") <= 0.87 for r in mech)),
+            ("close pair flips only 5-7% of mass",
+             all(0.05 <= f(r, "sign_disagreement_mass") <= 0.075 for r in near_)),
+            ("python-crossing flips 18-37%",
+             all(0.17 <= f(r, "sign_disagreement_mass") <= 0.37 for r in far_)),
+            ("the two bands do not overlap",
+             max(f(r, "sign_disagreement_mass") for r in near_)
+             < min(f(r, "sign_disagreement_mass") for r in far_)),
+            # The claim that no syntactic class carries the gap is the one a
+            # reviewer will push on, so bound it from the committed numbers.
+            ("no ablation moves transfer by more than 0.021",
+             max(abs(f(r, "delta")) for r in abl) <= 0.0213),
+            ("masking braces costs php->javascript at most 0.001",
+             all(abs(f(r, "delta")) <= 0.001 for r in abl
+                 if r["ablated"] == "brace" and r["source"] == "php"
+                 and r["target"] == "javascript")),
+        ]
+    else:
+        checks.append(("mechanism results present", False))
+
     # Renaming table: uncapped file, must still reproduce the published values.
     for role, pct, delta in (("index_key", 89, -0.032), ("accumulator", 83, -0.047),
                              ("iterator", 49, -0.195)):
@@ -218,7 +271,7 @@ def run() -> int:
                "0.021", "0.011", "0.575", "0.889", "0.892",
                # a stated bound rather than a measured cell; the whitespace
                # check above verifies every measured delta falls under it
-               "0.001"}
+               "0.001", "0.696", "0.735"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
     if unknown:

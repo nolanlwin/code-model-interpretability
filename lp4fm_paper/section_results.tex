@@ -121,6 +121,59 @@ of the typologically close pair, and the probe beats the baseline in all twelve
 cells involving Python, with no exceptions. Every one of the eighteen gaps
 clears its own $\rho$, the smallest ($0.015$) by a factor of $3.8$.
 
+\paragraph{Why the surface baseline fails to cross, mechanically.} The
+asymmetry above is an observation with a label attached to it. Because the
+baseline fits its vectorizer on the source language and only calls
+\texttt{transform} on the target, an $n$-gram the target never realises
+contributes exactly zero to every target prediction, which makes the
+mechanism measurable rather than merely nameable. Two candidate explanations
+fail, and the one that survives is not the one the label suggests.
+
+The obvious explanation---the discriminative $n$-grams are missing from the
+target---is wrong. Weighting each feature by $|\beta_j|$ times its mean
+tf-idf, roughly $70\%$ of the source classifier's discriminative mass is
+realised in \emph{every} target, including those it transfers to worst
+($0.696$ for php$\rightarrow$python against $0.735$ for
+php$\rightarrow$javascript). Across the six ordered pairs, surviving mass
+does not predict transfer at all ($r = +0.09$).
+
+What predicts it is whether the surviving features mean the same thing. We
+fit a second classifier on the target labels in the \emph{same} feature space
+and compare the two weight vectors, weighting each feature by
+$|\beta_j|$ times its mean tf-idf \emph{in the target}---the quantity that
+actually determines a target prediction, and the same one the survival
+numerator above is built from. The share of that mass whose sign flips
+between the two classifiers tracks transfer almost exactly
+($r = -0.98$), and their weighted correlation tracks it positively
+($r = +0.90$). Between JavaScript and PHP only $5$--$7\%$ of the mass points
+the other way; every pair crossing the Python boundary flips $18$--$37\%$.
+The cues are present on both sides and a large share of them point in
+opposite directions.
+
+Weighting instead by mass in the \emph{source} gives the same picture
+($r = -0.91$ and $r = +0.87$), so the conclusion does not rest on that choice;
+both columns are reported in
+\texttt{results/lp4fm/transfer\_mechanism.csv}.
+
+That realignment is distributed rather than localised, which is the result
+that most constrains the interpretation. Masking a whole syntactic character
+class on \emph{both} sides---terminators, braces, brackets, parentheses, or
+operators---changes transfer by at most $0.021$ in any condition, against a
+gap of $0.39$ to be explained. Masking braces costs php$\rightarrow$javascript
+$0.001$. So the difference is not carried by block delimiters or statement
+terminators, and describing it as a brace-versus-indentation contrast would
+be wrong even though that contrast is real in the languages.
+
+We deliberately stop short of naming individual $n$-grams. The largest
+sign-flips are identifier and literal fragments rather than syntax, which
+invites a story about naming idiom, but the story does not survive checking:
+the variable \texttt{i} carries the iterator label at $0.67$, $0.61$ and
+$0.64$ of its occurrences in PHP, JavaScript and Python respectively, so its
+flipped weight is not a difference in what \texttt{i} does. Individual
+coefficients of a regularised model over heavily correlated character
+$n$-grams are not interpretable one at a time, and we report the aggregate,
+which is.
+
 \paragraph{Flatness is only a finding above an untrained floor.} Two
 observations make that qualification necessary rather than decorative. First,
 a model trained without code---Qwen2.5-1.5B, identical to the code model in
