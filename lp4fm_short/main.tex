@@ -32,23 +32,21 @@ Variable Roles Across Programming-Language Lineages}
 \begin{abstract}
 If language is a design axis rather than a passive carrier, then changing the
 language should change what a model can do. We test this directly in code,
-where the same problem can be written in several languages whose relatedness
-is known independently. Fitting a variable-role classifier on one language and
-evaluating it on another, we find that a model-free character $n$-gram
-baseline is strongly constrained by language relatedness---macro-F1 $0.952$
-between JavaScript and PHP, falling to $0.785$ whenever Python is
-involved---while a linear probe on a code model's residual stream is nearly
-unaffected by the same boundary, moving $0.006$. The probe is not reading the
+where the same problem can be written in several languages whose relatedness is
+fixed by their syntactic descent rather than by our results. Fitting a variable-role classifier on one language and
+evaluating it on another, we find that a model-free character $n$-gram baseline with the variable's own name masked is
+strongly constrained by language relatedness---macro-F1 $0.952$ between
+JavaScript and PHP, falling to $0.785$ whenever Python is involved---while a
+linear probe on a code model's residual stream moves $0.006$ across the same
+boundary. The probe is not reading the
 input: an untrained network of identical architecture reaches $0.575$, and
-both trained models clear it in all $18$ transfer cells. A model trained
-\emph{without} code is equally invariant, so code pretraining is not the
-cause. Examining why the surface fails, we find its discriminative $n$-grams
-are not missing from the target ($70\%$ of weighted mass survives, $r=+0.09$
-with transfer); they point the other way, and the share whose sign flips
-predicts transfer almost exactly ($r=-0.98$). The medium therefore governs
-surface generalisation and leaves the learned role representation largely
-untouched---a dissociation that a purely behavioural evaluation would report
-as a single number.
+both trained models clear it in all $18$ transfer cells. The general-purpose base model that the code model is continued from is almost
+as invariant ($-0.011$), so code-\emph{specialised} pretraining is not the cause. The surface fails not because its discriminative $n$-grams are missing from the
+target ($70\%$ of weighted mass survives, $r=+0.09$ with transfer) but because
+they point the other way: the share whose sign flips predicts transfer at
+$r=-0.98$. The medium governs surface generalisation and leaves the learned role
+representation largely untouched---a dissociation a behavioural evaluation would
+report as one degraded number.
 \end{abstract}
 
 \section{Introduction}
@@ -56,42 +54,38 @@ as a single number.
 The premise of treating language as a design axis is that the medium is not
 neutral: rephrasing a problem changes what a model does with it. Programming
 languages make this testable in a way natural languages rarely do. The same
-algorithm can be written in Python, JavaScript, and PHP with the semantics
-held fixed and the surface form varying along documented lines of descent, and
-the resulting corpora can be aligned problem by problem. If the medium
-constrains what a model represents, code is where that constraint should be
-measurable rather than argued.
+algorithm can be written in Python, JavaScript, and PHP with the semantics held
+fixed, the surface form varying along the C-family/off-side-rule split that
+separates them, and the corpora aligned problem by problem. If the medium
+constrains what a model represents, code is where that constraint is measurable
+rather than arguable.
 
-We ask a narrow version of the question. A \emph{variable role}---accumulator,
-loop iterator, index key---is a property of what a variable does in a program,
-not of what it is called or which language it appears in. Roles are therefore
-a case where the medium ought, in principle, to be irrelevant. Whether it is
-irrelevant \emph{to a model} is an empirical matter, and one that separates
-two things a single accuracy number conflates: how far a surface regularity
-carries across languages, and how far a learned representation does.
+A \emph{variable role}---accumulator, loop iterator, index key---is a property
+of what a variable does, not of what it is called or which language it appears
+in, so roles are a case where the medium ought in principle to be irrelevant.
+Whether it is irrelevant \emph{to a model} is empirical, and it separates two
+things a single accuracy number conflates: how far a surface regularity carries
+across languages, and how far a learned representation does.
 
-Our contribution is a controlled measurement of that separation, and a
-mechanism for the part that fails. Fitting on one language and testing on
-another over all six ordered pairs of Python, JavaScript, and PHP, a
-model-free surface baseline tracks language relatedness closely while a
-linear probe on the residual stream does not. We establish that this is a
-property of the trained network rather than of our inputs by comparing against
-an untrained network of identical architecture, and that it is not a property
-of code pretraining specifically by comparing a code model against a non-code
-model of the same family, scale, and tokenizer. Finally, we show that the
-surface baseline fails for a reason that is not the obvious one: its features
-are present in the target language and carry the opposite sign.
+We contribute a controlled measurement of that separation and a mechanism for
+the part that fails. Over all six ordered pairs of Python, JavaScript, and PHP,
+a model-free surface baseline tracks language relatedness closely while a linear
+probe on the residual stream does not. An untrained network of identical
+architecture establishes that this reflects the trained network rather than our
+inputs, and the general-purpose base model the code model is continued from
+shows it does not require code specialisation. Finally, the surface baseline
+fails for a reason that is not the obvious one: its features are present in the
+target and carry the opposite sign.
 
 \section{Setup}
 
 \paragraph{Corpus and alignment.} XLCoST~\citep{zhu2022xlcost} provides
 parallel solutions to competitive-programming problems in several languages,
-keyed by a problem identifier that is stable across languages. Every
-comparison below is \emph{matched}: a classifier trained on language $A$ is
-evaluated only on problems that also appear in $A$, so a drop in transfer
-cannot be attributed to a change of subject matter. Matching is what makes the
-medium the only thing varying, and it is also what restricts the study to
-three languages. We computed the full pairwise overlap
+keyed by a problem identifier that is stable across languages. Every comparison below is \emph{matched}: a classifier trained on language $A$
+and evaluated on language $B$ sees only the problems that appear in both, so a
+drop in transfer cannot be attributed to a change of subject matter. Matching
+removes subject matter as an explanation, and it is also what restricts the
+study to three languages. We computed the full pairwise overlap
 (Appendix~\ref{app:overlap}): Python/JavaScript/PHP share $2{,}953$, $1{,}529$,
 and $1{,}145$ problems, and \emph{no} other pair in XLCoST reaches $500$---
 including same-family pairs such as C\# and Java, which share $175$. The
@@ -101,39 +95,70 @@ three-language limit is a property of the benchmark, not a choice.
 accumulator, iterator, and index\_key from language-specific parsers, cap each
 role at $3{,}000$ occurrences sampled as whole problems, and use a frozen
 hash-based split that assigns a problem to the same fold in every language.
-Test folds hold $1{,}377$--$3{,}341$ occurrences, so one occurrence changing
-its prediction moves macro-F1 by $\rho \in [0.0003, 0.0020]$; every effect we
-report clears its own $\rho$ by at least an order of magnitude.
+Test folds hold $1{,}377$--$3{,}341$ occurrences with smallest-class counts of
+$138$--$1{,}645$, so one occurrence of the smallest class changing its
+prediction moves the surface baseline's macro-F1 by
+$\rho \in [0.0003, 0.0020]$. The probe is scored on a held-out portion of the
+target fold and its $\rho$ is larger, $[0.0016, 0.0132]$. Every transfer figure
+in Table~\ref{tab:main} clears its own $\rho$ by more than an order of
+magnitude; the per-class ablations of Section~\ref{sec:mechanism} do not, and we
+read them only as an upper bound.
 
 \paragraph{What is compared.} The \emph{surface baseline} is a character
-$n$-gram classifier over the context around an occurrence with the variable's
-own name masked, fitted on the source language and applied to the target; it
-involves no model. The \emph{probe} is a logistic regression on residual-stream
-activations at the occurrence, layer chosen on source-language validation
-data. We report three models: Qwen2.5-Coder-1.5B, Qwen2.5-1.5B (the same
-architecture, scale, and tokenizer trained without the code corpus), and an
-untrained network with Qwen2.5-1.5B's architecture and randomly initialised
-weights.
+$n$-gram classifier over the context around an occurrence, with every instance
+of the variable's own name replaced by a placeholder, fitted on the source
+language and applied to the target; it involves no model. Its score is the
+strongest of three masked-context variants per cell; fixing any single variant
+in advance gives a \emph{larger} boundary drop ($-0.173$ to $-0.276$ against the
+$-0.166$ we report), so the reported figure is the conservative choice. The
+\emph{probe} is a logistic regression on residual-stream activations pooled over
+the occurrence, with the layer chosen on source-language validation data.
+
+The two are not given the same input. The probe pools over the identifier's own
+tokens and therefore reads the name; the baseline is forbidden from reading it.
+We report the identifier alone as a third model-free row of
+Table~\ref{tab:main} so that the asymmetry is visible rather than implied.
+
+We compare three models: Qwen2.5-Coder-1.5B; Qwen2.5-1.5B, the general-purpose
+base model it is continued from, sharing its architecture, scale, and tokenizer
+but not its code-specialisation stage; and an untrained network with that
+architecture and randomly initialised weights.
+
+\paragraph{A provenance confound.} XLCoST distributes Python through a formatted
+mirror and JavaScript and PHP through a detokenized one, so the lineage boundary
+is also a formatting boundary. It does not bite: the character analyser
+collapses whitespace runs before extracting $n$-grams, so line structure never
+becomes a feature, and normalising whitespace on both sides moves transfer by
+$0.0000$ on all three decisive pairs (Appendix~\ref{app:mech}).
 
 \section{The medium is encoded, and organised by lineage}
 \label{sec:lineage}
 
-Before asking whether the medium constrains role representations, it is worth
-establishing that the model represents the medium at all. In prior work on
-this corpus we applied PCA to last-token residual activations across $19{,}471$
-XLCoST programs in seven languages. Language identity is linearly recoverable
-from the embedding layer onward and peaks at layer $4$, where the first
-principal component separates statically and dynamically typed languages
-($r = +0.941$, $37\%$ of variance) and the scree plot shows a sharp elbow after
-PC3. The sub-structure is what matters here: C and C++ occupy nearly the same
-region, Java and C\# form an equally tight pair, and PHP sits apart from a
-looser Python/JavaScript grouping. The arrangement recovers descent, not
-merely a two-way typing split.
+It is worth first establishing that the model represents the medium at all, and
+being careful about what that representation is of. Applying PCA to last-token
+residual activations over seven XLCoST languages, language identity is linearly
+recoverable from the embedding layer onward: PC1 correlates with a
+static/dynamic typing label at $r = +0.883$ at layer $0$, peaks at
+$|r| = 0.941$ at layer $4$ carrying $37\%$ of the variance, stays above $0.86$
+through layer $20$ apart from a dip to $0.83$ at layer $6$, and decays to
+$0.576$ by layer $28$ (Appendix~\ref{app:geometry}).
 
-That result licenses the question this paper asks. The model does not treat
-the language as incidental---it encodes it, early, and in a geometry that
-mirrors how the languages are related. The rest of the paper asks whether that
-encoded medium constrains what the model represents \emph{within} it.
+\paragraph{The typing axis is not privileged.} It is tempting to read that as
+the model having internalised type discipline, and a control rules it out. We
+relabelled the same activations under every alternative $4$-versus-$3$
+partition of the seven languages---$\binom{7}{4} = 35$ groupings, minus the
+real one, so $34$ controls---and probed each. The true static/dynamic split
+reaches best-layer F1 $1.000$; the arbitrary partitions average $0.996$, and
+$5$ of the $34$ match or exceed the real split. Any grouping of these languages
+is near-perfectly decodable, because what the model encodes is language
+\emph{identity}; a partition is then recoverable as a union of identities,
+whether or not it corresponds to a linguistic property.
+
+What survives the control is the arrangement. Individual languages occupy
+distinct, stable regions, and the two pairs that sit closest are the two that
+are historically closest: C beside C++, Java beside C\#. The medium is
+represented sharply, and at least locally it is organised by descent---which is
+what makes the next section's question worth asking.
 
 \section{Role transfer across the lineage boundary}
 \label{sec:transfer}
@@ -143,34 +168,39 @@ language in the matched triangle outside the C family---is involved.
 
 \begin{table}[t]
 \centering
-\caption{Cross-lingual role transfer, macro-F1 averaged over three roles and
-the ordered pairs in each group. \emph{Surface} is a character $n$-gram
-classifier with the variable's name masked; \emph{probe} is a linear probe on
-the residual stream. The surface baseline tracks the lineage boundary; the
-probes do not.}
+\caption{Cross-lingual role transfer, macro-F1 averaged over three roles and the
+ordered pairs in each group. The two model-free rows differ in what they may
+read: the first masks the variable's name, the second uses nothing else. The
+probe pools over the identifier's tokens and so reads the name, which is why the
+identifier-alone row is reported beside it. The model-free rows track the
+lineage boundary; the trained probes do not, and the untrained network is flat
+only in the sense of being uniformly poor.}
 \label{tab:main}
 \begin{tabular}{lccc}
 \toprule
 & JavaScript$\leftrightarrow$PHP & pairs involving Python & change \\
 \midrule
-Surface $n$-gram (no model)      & 0.952 & 0.785 & $-0.166$ \\
-Probe, Qwen2.5-Coder-1.5B        & 0.893 & 0.887 & $-0.006$ \\
-Probe, Qwen2.5-1.5B (no code)    & 0.899 & 0.888 & $-0.011$ \\
-Probe, untrained (same arch.)    & 0.590 & 0.568 & $-0.021$ \\
+Surface $n$-gram, name masked (no model) & 0.952 & 0.785 & $-0.166$ \\
+Identifier alone (no model)              & 0.867 & 0.810 & $-0.056$ \\
+\midrule
+Probe, Qwen2.5-Coder-1.5B                & 0.893 & 0.887 & $-0.006$ \\
+Probe, Qwen2.5-1.5B (base)               & 0.899 & 0.888 & $-0.011$ \\
+Probe, untrained (same arch.)            & 0.590 & 0.568 & $-0.021$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{The surface is constrained by the medium.} Between JavaScript and
 PHP the $n$-gram baseline reaches $0.952$ with no model and without seeing the
-variable's name. Across the Python boundary it loses $0.166$. The extreme cell
-is iterator transferring from PHP to Python, which falls to $0.576$ against
-$0.965$ from PHP to JavaScript---the same trained classifier, the same
-problems, differing only in the language it is asked to read.
+variable's name. Across the Python boundary it loses $0.166$. The extreme cell is iterator from PHP to Python, falling to $0.576$ against
+$0.965$ from PHP to JavaScript---same source language, same feature family,
+refit on each pair's own matched set ($208$ problems against $248$). The probe
+on those cells barely moves ($0.865$ and $0.851$), so the collapse is not an
+artefact of the smaller set.
 
 \paragraph{The representation is not.} The same split costs the code model's
-probe $0.006$. Across all $18$ cells the surface baseline's spread is $0.390$
-and the probe's is $0.107$: the surface measure varies $3.7\times$ as much.
+probe $0.006$. Across all $18$ cells the probe's scores are far less dispersed than the masked
+baseline's (SD $0.028$ against $0.100$).
 The probe does not uniformly beat the baseline---it loses all six cells of the
 closely related pair, where $n$-grams have already saturated---and this is the
 point. The model contributes nothing where surface similarity is high and a
@@ -179,23 +209,28 @@ great deal where it is low.
 \paragraph{Two controls decide what this means.} A flat curve is worthless if
 the probe is reading the input rather than the model, and worthless again if
 it is flat because it is uniformly poor. The untrained network settles both.
-It reaches $0.575$ overall against $0.889$ and $0.892$ for the trained models,
-a gap of $0.314$ present in \emph{all eighteen} cells with a minimum per-cell
-lift of $0.126$; the probes are reading something the networks learned. It is
-also itself flat, dropping $0.021$, which is exactly why flatness alone proves
-nothing: a network that cannot separate the roles in any language is
-trivially indifferent to which language it fails in. What distinguishes the
+It reaches $0.575$ overall against $0.889$ and $0.892$ for the trained
+models---gaps of $0.314$ and $0.316$ on average, positive in \emph{all eighteen}
+cells for both, with a minimum per-cell lift of $0.126$; the probes are reading
+something the networks learned. It is also flat in group mean, dropping $0.021$---though its per-cell scores
+range from $0.417$ to $0.780$, so what is flat is the average and not the
+network. That is exactly why flatness alone proves nothing: a network that separates the
+roles poorly everywhere is close to indifferent to where it fails. The trained
+models also give up far less against their own in-domain ceilings ($0.045$ and
+$0.035$) than the untrained one does ($0.199$). What distinguishes the
 trained models is being flat \emph{and} high. The untrained network is not at
 chance either---it clears its own shuffled-label control by $0.111$, as random
 projections of token identity should---so $0.575$, not $0.5$, is the floor a
 representational claim must clear.
 
-\paragraph{Code pretraining is not the cause.} The non-code model of identical
-architecture, scale, and tokenizer is equally invariant ($0.892$ against
-$0.889$). Whatever makes the role representation insensitive to the medium is
-not the code corpus.
+\paragraph{Code specialisation is not the cause.} The base model of identical
+architecture, scale, and tokenizer is nearly as invariant: it moves $-0.011$
+against the code model's $-0.006$, both an order of magnitude below the surface
+baseline's $-0.166$. Whatever makes the role representation insensitive to the
+medium is not the code-specialisation corpus. No genuinely code-free model
+exists in this family, so the contrast isolates that stage, not code exposure.
 
-\section{Why the surface fails, and why it is not syntax}
+\section{Why the surface fails: form--meaning realignment, not missing forms}
 \label{sec:mechanism}
 
 Calling the drop typological names it without explaining it. Because the
@@ -204,51 +239,60 @@ $n$-gram the target never produces contributes exactly zero, which makes the
 mechanism measurable.
 
 The obvious explanation is wrong. Weighting each feature by $|\beta_j|$ times
-its mean tf-idf, roughly $70\%$ of the source classifier's discriminative mass
-is realised in \emph{every} target, including the worst ($0.696$ for
-php$\rightarrow$python against $0.735$ for php$\rightarrow$javascript), and
-surviving mass does not predict transfer at all ($r = +0.09$ over the six
-pairs). The cues are present.
+its mean tf-idf, roughly $70\%$ of the source classifier's discriminative mass is realised in
+\emph{every} target, including the worst ($0.697$ for php$\rightarrow$python
+against $0.735$ for php$\rightarrow$javascript). Surviving mass shows no
+detectable relationship with transfer ($r = +0.09$, $95\%$ CI
+$[-0.78, +0.84]$ over six pairs); more directly, it stays inside a
+$0.70$--$0.86$ band while F1 spans $0.58$--$0.97$. The cues are present.
 
-What predicts transfer is whether they mean the same thing. Fitting a second
-classifier on the target labels in the same feature space, the share of
-target-realised mass whose sign flips between the two tracks transfer almost
-exactly ($r = -0.98$): $5$--$7\%$ between JavaScript and PHP against
+What predicts transfer is whether they mean the same thing. The failure has the
+shape of a false-friends effect in the classifier's feature space: the
+discriminative forms survive into the target, but their mapping to roles
+reverses, and it is the reversed share rather than the missing share that
+predicts transfer. Fitting a second classifier on the target labels in the same
+feature space, the share of target-realised mass whose sign flips between the
+two tracks transfer strongly ($r = -0.98$, CI $[-1.00, -0.79]$; $-0.91$ under a
+source-weighted variant): $5$--$7\%$ between JavaScript and PHP against
 $18$--$37\%$ across the Python boundary, with no overlap between the groups.
 
-The realignment is also distributed rather than localised, which rules out the
-reading the word ``typological'' invites. Masking an entire syntactic
-character class on both sides---terminators, braces, brackets, parentheses, or
-operators---moves transfer by at most $0.021$ against a $0.39$ gap; masking
-braces costs php$\rightarrow$javascript $0.001$. The difference is not carried
-by block delimiters or statement terminators. We report the aggregate only:
-the largest individual sign-flips are identifier and literal fragments, which
-invites a story about naming idiom, but that story does not survive
-checking---\texttt{i} carries the iterator label at $0.67$, $0.61$, and $0.64$
-of its occurrences in PHP, JavaScript, and Python.
+The realignment is distributed rather than localised, which is not consistent
+with the reading ``typological'' invites. For the iterator role and the two
+PHP-source pairs that bracket the entire $18$-cell spread, masking an
+orthographic character class on both sides---terminators, braces, brackets,
+parentheses, or operators---moves transfer by at most $0.021$ against a $0.39$
+gap (Table~\ref{tab:abl}); none of these deltas is large relative to its own
+resolution, which is the point. Indentation and keywords are not ablated, so
+this bounds punctuation, not syntax in general. We report the aggregate only: single coefficients of a regularised model over
+correlated character $n$-grams are not interpretable one at a time.
 
 \section{Discussion}
 
-Read against the design-axis premise, our results split it in two. The medium
-demonstrably constrains surface generalisation: a strong lexical model loses a
-sixth of its performance at a lineage boundary, and the model encodes that
-same lineage geometrically (Section~\ref{sec:lineage}). But the medium leaves
-the learned role representation nearly untouched, and it does so in a network
-that never saw code. A behavioural evaluation reporting one cross-lingual
+Read against the design-axis premise, our results split it in two. The medium demonstrably constrains surface generalisation: a strong lexical
+model loses a sixth of its performance at a lineage boundary, and the model
+encodes language identity sharply, placing historically adjacent languages
+together (Section~\ref{sec:lineage}). But the medium leaves the learned role representation nearly untouched, and it
+does so in a network without code-specialised pretraining. A behavioural evaluation reporting one cross-lingual
 accuracy would average these into a single degraded number and attribute it to
 the language, when the language is doing all of its work at the surface.
 
 \paragraph{Limitations.} The matched triangle instantiates ``closely related''
-by one pair and the boundary by one language; the axis is a two-point
-contrast, not a gradient, and Appendix~\ref{app:overlap} shows XLCoST admits
-no wider version. Both trained models are $1.5$B parameters from one family,
-so nothing here speaks to scale. The mechanism analysis
-(Section~\ref{sec:mechanism}) is run on the iterator role. The probe is
-correlational: causal interventions on this corpus are reported in
-Appendix~\ref{app:causal} but were not run on the cross-lingual cells. The
-PCA result of Section~\ref{sec:lineage} is quoted from our prior submission
-and, unlike every other figure here, is not regenerated by the released
-pipeline.
+by one pair and the boundary by one language; the axis is a two-point contrast,
+not a gradient, and Appendix~\ref{app:overlap} shows XLCoST admits no wider
+version. Both trained models are $1.5$B parameters from one family, so nothing here
+speaks to scale, and that family has no code-free member.
+
+Role labels come from an AST for Python and regular expressions for JavaScript
+and PHP, and the paths do not carve \emph{iterator} identically: a C-style
+counter that also accumulates is dropped as multi-role in JavaScript and PHP but
+kept as an iterator in Python, so the iterator cells mix the representational
+effect with an extractor-definition difference. Accumulator and index\_key,
+whose extractors agree far better across the boundary, show the same direction
+($0.782$ and $0.839$ php$\rightarrow$python against $0.954$ and $0.964$
+php$\rightarrow$javascript). Section~\ref{sec:mechanism} runs on iterator alone,
+its ablation on two of six pairs, and its correlations on six points. The probe
+is correlational; the causal interventions of Appendix~\ref{app:causal} cover a
+different role and were not run on these cells.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
@@ -263,9 +307,10 @@ pipeline.
 Every figure in the main text is regenerated from the committed result files by
 the released pipeline, and a regression test recomputes each of them---including
 the three correlations of Section~\ref{sec:mechanism}---from those files rather
-than quoting them. The single exception is the PCA result of
-Section~\ref{sec:lineage}, which is carried over from our prior submission and
-is not reproduced by this pipeline; it is used only to motivate the question,
-and no claim in Sections~\ref{sec:transfer}--\ref{sec:mechanism} depends on it.
+than quoting them. Section~\ref{sec:lineage} draws on a separate activation-extraction pipeline;
+its layer table, principal-component correlations, and bucket-control figures
+are committed under \texttt{results/lp4fm/language\_geometry/}, and the values
+quoted are read from those files. No claim in
+Sections~\ref{sec:transfer}--\ref{sec:mechanism} depends on it.
 
 \end{document}

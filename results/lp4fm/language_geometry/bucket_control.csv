@@ -1,0 +1,7 @@
+metric,value
+real_static_dynamic_best_f1,1.0
+combo_control_mean_best_f1,0.9959121767463815
+combo_control_min_best_f1,0.9918132201334142
+combo_control_max_best_f1,1.0
+combo_controls_at_or_above_real,5.0
+num_combo_controls,34.0

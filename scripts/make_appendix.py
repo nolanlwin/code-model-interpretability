@@ -138,6 +138,52 @@ def mechanism_table() -> str:
     return "\n".join(out)
 
 
+def geometry_tables() -> str:
+    """Section 3's evidence. Emitted here so the claim that language identity is
+    encoded, and the control showing the typing axis is not privileged, are both
+    checkable rather than asserted."""
+    G = R / "language_geometry"
+    if not (G / "pca_by_layer.csv").exists():
+        return "% language-geometry results not available"
+    lay = rows(G / "pca_by_layer.csv")
+    ctrl = {r["metric"]: float(r["value"]) for r in rows(G / "bucket_control.csv")}
+    pcs = rows(G / "pc_correlations_layer4.csv")
+    peak = max(lay, key=lambda r: f(r, "abs_r"))
+    out = ["\\begin{table}[h]\\centering",
+           "\\caption{Point-biserial correlation between PC1 of last-token residual "
+           "activations and a static/dynamic typing label, by layer, with PC1's "
+           "explained-variance ratio. The sign of $r$ is arbitrary (PCA fixes the axis "
+           "only up to reflection, and each layer is refit independently); magnitude is "
+           "what carries meaning.}",
+           "\\label{tab:geomlayers}", "\\begin{tabular}{rrr|rrr}", "\\toprule",
+           "layer & $|r|$ & EVR & layer & $|r|$ & EVR \\\\", "\\midrule"]
+    half = (len(lay) + 1) // 2
+    for a, b in zip(lay[:half], lay[half:] + [None] * half):
+        left = f"{int(a['layer'])} & {f(a,'abs_r'):.3f} & {f(a,'evr_pc1'):.3f}"
+        right = ("&&" if b is None else
+                 f"{int(b['layer'])} & {f(b,'abs_r'):.3f} & {f(b,'evr_pc1'):.3f}")
+        out.append(f"{left} & {right} \\\\")
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
+    out += ["\\paragraph{The typing axis is not privileged.} "
+            f"Probing the same activations under every alternative $4$-versus-$3$ "
+            f"partition of the seven languages "
+            f"($\\binom{{7}}{{4}}={int(ctrl['num_combo_controls'])+1}$ groupings minus the "
+            f"real one, so {int(ctrl['num_combo_controls'])} controls) gives best-layer "
+            f"macro-F1 {ctrl['combo_control_mean_best_f1']:.4f} on average "
+            f"(min {ctrl['combo_control_min_best_f1']:.4f}, "
+            f"max {ctrl['combo_control_max_best_f1']:.4f}), against "
+            f"{ctrl['real_static_dynamic_best_f1']:.4f} for the true static/dynamic "
+            f"split; {int(ctrl['combo_controls_at_or_above_real'])} of the "
+            f"{int(ctrl['num_combo_controls'])} controls match or exceed it. Any grouping "
+            "of these languages is near-perfectly decodable, so the decodability of the "
+            "typing split is evidence that language identity is encoded, not that type "
+            "discipline is. At layer "
+            f"{int(peak['layer'])}, where $|r|$ peaks at {f(peak,'abs_r'):.3f}, the "
+            "remaining components carry almost none of the label: "
+            + ", ".join(f"PC{int(r['pc'])} $r={f(r,'r'):+.3f}$" for r in pcs[1:4]) + "."]
+    return "\n".join(out)
+
+
 def causal_table() -> str:
     p = pathlib.Path("results/boolean/causal/summary.csv")
     if not p.exists():
@@ -146,13 +192,46 @@ def causal_table() -> str:
     langs = sorted({r["language"] for r in rs})
     models = sorted({r["model"] for r in rs})
     modes = sorted({r["mode"] for r in rs})
-    return ("\\paragraph{Scope.} Causal interventions were run for the boolean role "
-            f"over {len(langs)} languages ({', '.join(LANG.get(l,l) for l in langs)}), "
-            f"{len(models)} models, and {len(modes)} intervention modes "
-            f"({', '.join(modes)}), giving {len(rs):,} layer-wise measurements. "
-            "They are reported here rather than in the main text because they were "
-            "run within languages, not on the cross-lingual cells this paper is "
-            "about, and so cannot support the paper's central claim.")
+    head = ("\\paragraph{Scope.} Causal interventions were run for the \\emph{boolean} "
+            f"role over {len(langs)} languages "
+            f"({', '.join(LANG.get(l,l) for l in langs)}), {len(models)} models, and "
+            f"{len(modes)} intervention modes ({', '.join(modes)}), giving "
+            f"{len(rs):,} layer-wise measurements. They are reported here rather than in "
+            "the main text because they were run \\emph{within} languages and on a role "
+            "outside the three this paper transfers, so they cannot support its central "
+            "claim. Specificity is $|\\text{clean}-\\text{intervened}|$ divided by the "
+            "same quantity for a random-position control: how much of the effect is "
+            "specific to the variable's own token positions rather than to editing "
+            "anything at all. Two columns are given because the layer with the largest "
+            "effect is generally not the layer with the best specificity, and quoting "
+            "either alone misleads.")
+    # Best specificity per (language, mode, model), and the peak-effect layer.
+    best = {}
+    for r in rs:
+        k = (r["language"], r["mode"], r["model"])
+        clean, interv = float(r["clean"]), float(r["intervened"])
+        ctrl = float(r["ctrl_random_position"])
+        eff = abs(clean - interv)
+        den = abs(clean - ctrl)
+        spec = eff / den if den else 0.0
+        cur = best.setdefault(k, {"eff": -1, "spec": -1, "spec_layer": None})
+        if eff > cur["eff"]:
+            cur["eff"], cur["eff_spec"] = eff, spec
+        if spec > cur["spec"]:
+            cur["spec"], cur["spec_layer"] = spec, int(r["layer"])
+    out = [head, "", "\\begin{table}[h]\\centering\\small",
+           "\\caption{Causal interventions on boolean-flag occurrences. "
+           "\\emph{Peak-effect spec.} is specificity at the largest-effect layer; "
+           "\\emph{best spec.} is the maximum over layers, with that layer named.}",
+           "\\label{tab:causal}", "\\begin{tabular}{llrrr}", "\\toprule",
+           "language & mode & model & peak-effect spec. & best spec. (layer) \\\\",
+           "\\midrule"]
+    for (lang, mode, model), v in sorted(best.items()):
+        out.append(f"{LANG.get(lang,lang)} & {mode} & {model} & "
+                   f"{v.get('eff_spec',0):.1f}$\\times$ & "
+                   f"{v['spec']:.1f}$\\times$ (L{v['spec_layer']}) \\\\")
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
+    return "\n".join(out)
 
 
 OUT.write_text("\n\n".join([
@@ -163,6 +242,8 @@ OUT.write_text("\n\n".join([
     full_transfer_table(), model_table(),
     "\\section{Transfer mechanism}\n\\label{app:mech}",
     mechanism_table(),
+    "\\section{Language geometry}\n\\label{app:geometry}",
+    geometry_tables(),
     "\\section{Causal interventions}\n\\label{app:causal}",
     causal_table(),
 ]) + "\n")

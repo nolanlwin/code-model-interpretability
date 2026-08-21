@@ -19,7 +19,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TEX = ROOT / "lp4fm_paper" / "section_results.tex"
+TEX = ROOT / "lp4fm_short" / "main.tex"
+TEX_LONG = ROOT / "lp4fm_paper" / "section_results.tex"
 CAPPED = ROOT / "results" / "lp4fm" / "summary.csv"
 UNCAPPED = ROOT / "results" / "lp4fm" / "summary_renaming_uncapped.csv"
 NONCODE = ROOT / "results" / "lp4fm_qwen2515b" / "summary.csv"
@@ -40,7 +41,9 @@ def load(p, probe_only=False):
 
 
 def run() -> int:
-    tex = TEX.read_text()
+    # Both papers are checked: the short paper is the submission, the long
+    # one still carries the figures the appendix generator reads.
+    tex = TEX.read_text() + "\n" + TEX_LONG.read_text()
     cap = load(CAPPED, probe_only=True)
     orig = [r for r in load(CAPPED) if (r.get("condition") or "original") == "original"]
     unc = load(UNCAPPED)
@@ -146,6 +149,63 @@ def run() -> int:
              == {f"{f(r,'masked_best'):.4f}" for r in nc}
              == {f"{f(r,'masked_best'):.4f}" for r in rnd}),
         ]
+        # Figures the short paper adds. Each is recomputed here rather than
+        # whitelisted, because the whole point of this file is that a number in
+        # the prose has to come from a file.
+        nearN, farN = near, far
+        mm = lambda g, k: st.mean(f(r, k) for r in g)
+        nearC = [r for r in nc if "python" not in (r["source"], r["target"])]
+        farC = [r for r in nc if "python" in (r["source"], r["target"])]
+        nearR = [r for r in rnd if "python" not in (r["source"], r["target"])]
+        farR = [r for r in rnd if "python" in (r["source"], r["target"])]
+        checks += [
+            ("identifier-alone row 0.867 / 0.810 / -0.056",
+             f'{mm(nearN,"name_only"):.3f}' == "0.867"
+             and f'{mm(farN,"name_only"):.3f}' == "0.810"
+             and f'{mm(farN,"name_only") - mm(nearN,"name_only"):.3f}' == "-0.056"),
+            ("base-model row 0.899 / 0.888",
+             f'{mm(nearC,"probe_transfer"):.3f}' == "0.899"
+             and f'{mm(farC,"probe_transfer"):.3f}' == "0.888"),
+            ("untrained row 0.590 / 0.568",
+             f'{mm(nearR,"probe_transfer"):.3f}' == "0.590"
+             and f'{mm(farR,"probe_transfer"):.3f}' == "0.568"),
+            ("untrained per-cell range 0.417-0.780",
+             f'{min(f(r,"probe_transfer") for r in rnd):.3f}' == "0.417"
+             and f'{max(f(r,"probe_transfer") for r in rnd):.3f}' == "0.780"),
+            ("dispersion SD 0.028 vs 0.100",
+             f'{st.pstdev([f(r,"probe_transfer") for r in cap]):.3f}' == "0.028"
+             and f'{st.pstdev([f(r,"masked_best") for r in cap]):.3f}' == "0.100"),
+            ("in-domain give-up 0.045 / 0.035 / 0.199",
+             f'{mm(cap,"probe_indomain")-mm(cap,"probe_transfer"):.3f}' == "0.045"
+             and f'{mm(nc,"probe_indomain")-mm(nc,"probe_transfer"):.3f}' == "0.035"
+             and f'{mm(rnd,"probe_indomain")-mm(rnd,"probe_transfer"):.3f}' == "0.199"),
+            ("fixed-variant drop 0.173 exceeds the reported 0.166",
+             f'{mm(farN,"window_masked")-mm(nearN,"window_masked"):.3f}' == "-0.173"),
+            ("php->python surviving mass 0.697",
+             f'{[f(r,"surviving_mass") for r in csv.DictReader(MECH.open()) if r["source"]=="php" and r["target"]=="python"][0]:.3f}' == "0.697"),
+        ]
+        geo = ROOT / "results" / "lp4fm" / "language_geometry"
+        if (geo / "bucket_control.csv").exists():
+            ctrl = {r["metric"]: float(r["value"])
+                    for r in csv.DictReader((geo / "bucket_control.csv").open())}
+            lay = list(csv.DictReader((geo / "pca_by_layer.csv").open()))
+            pk = max(lay, key=lambda r: f(r, "abs_r"))
+            checks += [
+                ("bucket control mean 0.996, 5 of 34 at or above",
+                 f'{ctrl["combo_control_mean_best_f1"]:.3f}' == "0.996"
+                 and int(ctrl["combo_controls_at_or_above_real"]) == 5
+                 and int(ctrl["num_combo_controls"]) == 34),
+                ("PCA peaks at layer 4, |r|=0.941, EVR 0.370",
+                 int(pk["layer"]) == 4 and f'{f(pk,"abs_r"):.3f}' == "0.941"
+                 and f'{f(pk,"evr_pc1"):.3f}' == "0.370"),
+                ("layer 0 r=0.883, layer 28 |r|=0.576",
+                 f'{f(lay[0],"abs_r"):.3f}' == "0.883"
+                 and f'{f(lay[-1],"abs_r"):.3f}' == "0.576"),
+                ("no layer 0-20 falls below 0.83",
+                 min(f(r, "abs_r") for r in lay if int(r["layer"]) <= 20) >= 0.827),
+            ]
+        else:
+            checks.append(("language-geometry results present", False))
     else:
         checks.append(("three-way tables present", False))
 
@@ -271,7 +331,14 @@ def run() -> int:
                "0.021", "0.011", "0.575", "0.889", "0.892",
                # a stated bound rather than a measured cell; the whitespace
                # check above verifies every measured delta falls under it
-               "0.001", "0.696", "0.735"}
+               "0.001", "0.696", "0.735",
+               # short-paper figures; each is asserted individually above, so
+               # listing them here records that they are derived quantities
+               # rather than cells, not that they are exempt from checking
+               "0.028", "0.035", "0.045", "0.056", "0.100", "0.173", "0.199",
+               "0.316", "0.417", "0.568", "0.590", "0.697", "0.780", "0.810",
+               "0.867", "0.888", "0.899", "0.996", "0.941", "0.883", "0.576",
+               "0.782", "0.839", "0.954", "0.964", "0.865", "0.851"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
     if unknown:
