@@ -22,6 +22,8 @@ ROOT = Path(__file__).resolve().parent.parent
 TEX = ROOT / "lp4fm_paper" / "section_results.tex"
 CAPPED = ROOT / "results" / "lp4fm" / "summary.csv"
 UNCAPPED = ROOT / "results" / "lp4fm" / "summary_renaming_uncapped.csv"
+NONCODE = ROOT / "results" / "lp4fm_qwen2515b" / "summary.csv"
+RANDOM = ROOT / "results" / "lp4fm_qwen2515brandominits0" / "summary.csv"
 OVERLAP = ROOT / "results" / "lp4fm" / "xlcost_problem_overlap.csv"
 WSCHECK = ROOT / "results" / "lp4fm" / "whitespace_normalisation_check.csv"
 
@@ -105,6 +107,46 @@ def run() -> int:
          and ov.get(("php", "python")) == 1145),
     ]
 
+    # The three-way comparison: trained code, trained non-code, untrained.
+    # These come from separate directories, so a run that quietly reused one
+    # model's numbers for another would show up here.
+    if NONCODE.exists() and RANDOM.exists():
+        nc = load(NONCODE, probe_only=True)
+        rnd = load(RANDOM, probe_only=True)
+        pm = lambda rs: st.mean(f(r, "probe_transfer") for r in rs)
+        key = lambda rs: {(r["role"], r["source"], r["target"]): f(r, "probe_transfer")
+                          for r in rs}
+        kr = key(rnd)
+        lifts = {n: [key(rs)[k] - kr[k] for k in kr]
+                 for n, rs in (("code", cap), ("noncode", nc))}
+        checks += [
+            ("three models present, each 18 cells",
+             len(cap) == 18 and len(nc) == 18 and len(rnd) == 18),
+            ("each table names a distinct model",
+             len({cap[0]["probe_model"], nc[0]["probe_model"], rnd[0]["probe_model"]}) == 3),
+            ("the untrained table is the random-init one",
+             "random-init" in (rnd[0]["probe_model"] or "")),
+            ("untrained floor 0.575", f"{pm(rnd):.3f}" == "0.575"),
+            ("trained code 0.889 / non-code 0.892",
+             f"{pm(cap):.3f}" == "0.889" and f"{pm(nc):.3f}" == "0.892"),
+            ("lift over untrained 0.314 / 0.316",
+             f"{st.mean(lifts['code']):.3f}" == "0.314"
+             and f"{st.mean(lifts['noncode']):.3f}" == "0.316"),
+            ("both trained models beat untrained in all 18 cells",
+             all(x > 0 for x in lifts["code"]) and all(x > 0 for x in lifts["noncode"])),
+            ("smallest per-cell lift 0.126", f"{min(lifts['code']):.3f}" == "0.126"),
+            ("untrained clears its own shuffled control by 0.111",
+             f"{pm(rnd) - st.mean(f(r,'probe_shuffled_source') for r in rnd):.3f}" == "0.111"),
+            ("untrained drop across the boundary 0.021",
+             f"{st.mean(f(r,'probe_transfer') for r in rnd if 'python' in (r['source'],r['target'])) - st.mean(f(r,'probe_transfer') for r in rnd if 'python' not in (r['source'],r['target'])):.3f}" == "-0.021"),
+            ("the baseline is identical across all three runs",
+             {f"{f(r,'masked_best'):.4f}" for r in cap}
+             == {f"{f(r,'masked_best'):.4f}" for r in nc}
+             == {f"{f(r,'masked_best'):.4f}" for r in rnd}),
+        ]
+    else:
+        checks.append(("three-way tables present", False))
+
     # The section claims normalising whitespace moves transfer by less than
     # 0.001. That is a measurement, so it has to come from a committed file.
     if WSCHECK.exists():
@@ -172,9 +214,10 @@ def run() -> int:
                 known.add(f"{float(r[k]):.3f}")
     derived = {"0.952", "0.893", "0.785", "0.887", "0.390", "0.107", "0.166",
                "0.006", "0.165", "0.013", "0.038", "0.015", "0.032", "0.047",
-               "0.195", "0.272", "0.079", "0.039",
-               # a stated bound, not a measured cell: the whitespace check
-               # above verifies every measured delta falls under it
+               "0.195", "0.272", "0.079", "0.039", "0.314", "0.126", "0.111",
+               "0.021", "0.011", "0.575", "0.889", "0.892",
+               # a stated bound rather than a measured cell; the whitespace
+               # check above verifies every measured delta falls under it
                "0.001"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
