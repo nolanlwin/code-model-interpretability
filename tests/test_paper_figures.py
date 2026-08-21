@@ -113,8 +113,24 @@ def run() -> int:
             ("whitespace check covers the decisive pairs",
              {(r["source"], r["target"]) for r in ws}
              >= {("php", "python"), ("php", "javascript")}),
+            # Derived from the two score columns, never read from `delta`:
+            # a stale or hand-edited delta would otherwise certify itself.
             ("normalising whitespace moves transfer by < 0.001",
-             all(abs(float(r["delta"])) < 0.001 for r in ws)),
+             all(abs(float(r["masked_best_normalised"])
+                     - float(r["masked_best_raw"])) < 0.001 for r in ws)),
+            ("the delta column agrees with the scores beside it",
+             all(abs(float(r["delta"]) - (float(r["masked_best_normalised"])
+                                          - float(r["masked_best_raw"]))) < 1e-9
+                 for r in ws)),
+            # The bound is applied to the capped published table, so it has to
+            # have been measured there. Uncapped iterator php->python is 0.609
+            # and php->javascript 0.979; the capped ones are 0.576 and 0.965.
+            ("measured on the capped sample the paper publishes",
+             all(any(abs(float(r["masked_best_raw"]) - f(c, "masked_best")) < 5e-4
+                     for c in orig
+                     if c["role"] == r["role"] and c["source"] == r["source"]
+                     and c["target"] == r["target"])
+                 for r in ws)),
         ]
     else:
         checks.append(("whitespace normalisation check present", False))

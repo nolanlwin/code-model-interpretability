@@ -46,11 +46,18 @@ def run() -> int:
         check(f"{analyzer}: no feature contains a double space",
               not any("  " in f for f in feats))
 
-    # A word analyzer WOULD be sensitive to it in general; this is here so the
-    # test reads as a property of the choice, not of the data.
-    check("the blindness is a property of the analyzer, not the sample",
-          TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 4))
-          .fit(["a\n\nb"]).get_feature_names_out().size > 0)
+    # Negative control. The two samples DO differ -- otherwise the checks above
+    # would pass on any input and prove nothing. A raw character n-gram
+    # extractor, without scikit-learn's preprocessing, separates them. So the
+    # blindness is a property of that preprocessing and would disappear under a
+    # custom analyzer, which is exactly the change this test exists to catch.
+    raw_ngrams = lambda t: [t[i:i + 3] for i in range(len(t) - 2)]
+    v = TfidfVectorizer(analyzer=raw_ngrams)
+    X = v.fit_transform([MULTILINE, FLAT])
+    check("negative control: a raw char n-gram extractor DOES separate them",
+          not np.allclose(X[0].toarray(), X[1].toarray()))
+    check("negative control: it forms features containing a newline",
+          any("\n" in f for f in v.get_feature_names_out()))
 
     print("\nALL PASS" if not failures else f"\n{failures} FAILURE(S)")
     return 1 if failures else 0
