@@ -123,12 +123,17 @@ paired with an untrained network at its own pooling.}
 Surface $n$-gram, name masked (no model) & 0.929 & 0.804 & $-0.126$ \\
 \midrule
 Probe, span-pooled (reads the name)      & 0.852 & 0.840 & $-0.012$ \\
-\quad untrained, span-pooled             & 0.590 & 0.568 & $-0.022$ \\
+\quad untrained, span-pooled$^{\dagger}$  & 0.590 & 0.568 & $-0.022$ \\
 \midrule
 Probe, context-pooled (no name)          & 0.630 & 0.569 & $-0.061$ \\
-\quad untrained, context-pooled          & 0.524 & 0.482 & $-0.042$ \\
+\quad untrained, context-pooled$^{\dagger}$ & 0.524 & 0.482 & $-0.042$ \\
 \bottomrule
 \end{tabular}
+
+\vspace{2pt}
+{\footnotesize $^{\dagger}$ Reported from the run log. Unlike every other figure
+here these two rows are not yet reproduced by a committed artifact; see
+Appendix~\ref{app:repro}.}
 \end{table}
 
 The $n$-gram baseline reaches $0.929$ between JavaScript and PHP without a model
@@ -215,7 +220,13 @@ a probing result: it says what is decodable, not what the model uses.
 \section{Reproducibility}
 \label{app:repro}
 Every figure is regenerated from committed result files, and a regression test
-recomputes each of them from those files rather than quoting them. Activation
+recomputes each of them from those files rather than quoting them, with one
+exception. The two untrained rows of Table~\ref{tab:main}, and the margins
+derived from them, are transcribed from the run log: the per-cell artifacts for
+the randomly initialised conditions were not retained, so
+\texttt{results/lp4fm/masked\_probe/conditions.csv} carries the other three
+conditions only. Those figures are provisional until the condition is re-run and
+its artifacts committed. Activation
 extraction is the only step needing an accelerator. The probe is logistic
 regression on activations mean-pooled over either the occurrence's span or the
 $16$ tokens either side of it excluding the span; the surface baseline is a
