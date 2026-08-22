@@ -36,10 +36,10 @@ problem, transfer moves $-0.012$ macro-F1 at a boundary where a model-free
 character $n$-gram classifier loses $0.126$. Read at face value that says role
 representations are language-independent. It is largely an artifact. The probe
 pools activations over the occurrence's own tokens, so it reads the variable's name. The baseline is forbidden to. Pooling only surrounding tokens, with the
-forward pass unchanged, costs the probe $65\%$ of its margin over an untrained
-network of the same architecture and pooling ($+0.269 \rightarrow +0.093$) and
-multiplies its boundary effect fivefold ($-0.012 \rightarrow -0.061$), leaving
-it no flatter than the untrained network itself ($-0.042$). The invariance was
+forward pass unchanged, costs the probe $61\%$ of its margin over an untrained network of the same
+architecture and pooling ($+0.269 \rightarrow +0.104$) and multiplies its
+boundary effect fivefold ($-0.012 \rightarrow -0.061$), leaving it no flatter
+than the untrained network itself ($-0.064$). The invariance was
 mostly the identifier. We report this as a caution for cross-lingual probing of
 code models, together with the model-free comparator such studies have lacked.
 \end{abstract}
@@ -126,14 +126,15 @@ Probe, span-pooled (reads the name)      & 0.852 & 0.840 & $-0.012$ \\
 \quad untrained, span-pooled$^{\dagger}$  & 0.590 & 0.568 & $-0.022$ \\
 \midrule
 Probe, context-pooled (no name)          & 0.630 & 0.569 & $-0.061$ \\
-\quad untrained, context-pooled$^{\dagger}$ & 0.524 & 0.482 & $-0.042$ \\
+\quad untrained, context-pooled$^{\dagger}$ & 0.527 & 0.464 & $-0.064$ \\
 \bottomrule
 \end{tabular}
 
 \vspace{2pt}
-{\footnotesize $^{\dagger}$ Reported from the run log. Unlike every other figure
-here these two rows are not yet reproduced by a committed artifact; see
-Appendix~\ref{app:repro}.}
+{\footnotesize $^{\dagger}$ The context-pooled floor was re-run after its
+original artifacts were lost and awaits commitment; the span-pooled floor is
+committed but measured on the earlier capped sample rather than the
+intersection. See Appendix~\ref{app:repro}.}
 \end{table}
 
 The $n$-gram baseline reaches $0.929$ between JavaScript and PHP without a model
@@ -154,19 +155,18 @@ language-independent role representation.
 
 \paragraph{It does not survive removing the identifier.} The probe pools over
 the occurrence's own tokens, so the variable's name is inside what it reads,
-while the baseline it is being compared against has that name masked. Pooling
-only the surrounding tokens, with the forward pass unchanged, the probe falls
-from $0.844$ to $0.589$ overall. Against its \emph{matched} untrained floor of
-$0.496$ that is a margin of $+0.093$, against $+0.269$ before: $65\%$ of what
-the probe knew came from the identifier.
+while the baseline it is being compared against has that name masked. Pooling only the surrounding tokens, with the forward pass unchanged, the probe
+falls from $0.844$ to $0.589$ overall. Against its \emph{matched} untrained
+floor of $0.485$ that is a margin of $+0.104$, against $+0.269$ before: $61\%$
+of what the probe knew came from the identifier.
 
 \paragraph{So did the invariance.} The boundary effect grows from $-0.012$ to
-$-0.061$, and the untrained network at the same pooling moves $-0.042$. With
-the identifier removed the trained probe is no flatter than an untrained one.
+$-0.061$, and the untrained network at the same pooling moves $-0.064$. With the
+identifier removed the trained probe is no flatter than an untrained one.
 The apparent language-independence was not a property of the role representation. It was a property of variable
 names, which parallel implementations of the same problem tend to share.
 
-\paragraph{What remains.} A margin of $+0.093$ over a matched floor is small but
+\paragraph{What remains.} A margin of $+0.104$ over a matched floor is small but
 consistent in both groups, so the model does encode something about roles beyond
 the identifier. We do not claim it is language-independent: at that pooling its
 boundary effect is indistinguishable from an untrained network's.
@@ -221,12 +221,12 @@ a probing result: it says what is decodable, not what the model uses.
 \label{app:repro}
 Every figure is regenerated from committed result files, and a regression test
 recomputes each of them from those files rather than quoting them, with one
-exception. The two untrained rows of Table~\ref{tab:main}, and the margins
-derived from them, are transcribed from the run log: the per-cell artifacts for
-the randomly initialised conditions were not retained, so
-\texttt{results/lp4fm/masked\_probe/conditions.csv} carries the other three
-conditions only. Those figures are provisional until the condition is re-run and
-its artifacts committed. Activation
+exception. The context-pooled untrained row of Table~\ref{tab:main} comes from a completed
+re-run whose per-cell artifacts are pending commitment to
+\texttt{results/lp4fm/masked\_probe/}; the span-pooled untrained row is
+committed, but was measured on the earlier capped sample rather than the
+three-way intersection the other rows use, so the $+0.269$ margin pairs
+conditions from two samples and should be read as approximate. Activation
 extraction is the only step needing an accelerator. The probe is logistic
 regression on activations mean-pooled over either the occurrence's span or the
 $16$ tokens either side of it excluding the span; the surface baseline is a
