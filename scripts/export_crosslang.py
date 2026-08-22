@@ -188,6 +188,13 @@ def main(argv=None) -> int:
             "probe_shuffled_source": round(d["shuffled_source_macro_f1_mean"], 4),
             "probe_rho": (None if d.get("resolution_rho") is None
                           else round(d["resolution_rho"], 4)),
+            # crosslang.py computes a problem-clustered interval for every cell
+            # and has since it was written; nothing read it, so the published
+            # table reported point estimates with no uncertainty beside them.
+            "probe_ci_low": (None if not d.get("transfer_ci_seed0_only")
+                             else round(d["transfer_ci_seed0_only"]["ci_low"], 4)),
+            "probe_ci_high": (None if not d.get("transfer_ci_seed0_only")
+                              else round(d["transfer_ci_seed0_only"]["ci_high"], 4)),
             "probe_model": d.get("model_id"),
         }
 
@@ -223,7 +230,8 @@ def main(argv=None) -> int:
             "smallest_class": small, "smallest_n": small_n,
             "git_commit": (d.get("git_commit") or "")[:12],
             **{k: None for k in ("probe_transfer", "probe_indomain",
-                                 "probe_shuffled_source", "probe_rho", "probe_model")},
+                                 "probe_shuffled_source", "probe_rho",
+                                 "probe_ci_low", "probe_ci_high", "probe_model")},
             **(cells.get((role, a, b), {}) if cond == "original" else {}),
         })
     if not rows:

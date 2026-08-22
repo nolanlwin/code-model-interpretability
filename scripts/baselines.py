@@ -516,7 +516,7 @@ def cmd_transfer(args: argparse.Namespace) -> int:
     }
 
     rng = np.random.default_rng(args.seed)
-    results, preds_for_ci = {}, None
+    results, preds_for_ci, preds_feature = {}, None, None
     for name, (a, b) in feats.items():
         if a[0] is None:
             continue
@@ -537,13 +537,19 @@ def cmd_transfer(args: argparse.Namespace) -> int:
             "macro_f1": float(np.mean([x["macro_f1"] for x in good])) if good else float("nan"),
             "acc": float(np.mean([x["acc"] for x in good])) if good else float("nan"),
         }
-        if name == "statement_masked" and good:
-            preds_for_ci = [
-                {"occurrence_id": te[i].get("occurrence_id"), "seed": x["seed"],
-                 "y_true": str(y_te[i]), "y_pred": str(x["_pred"][i]),
-                 "cluster": str(te[i]["repo"])}
-                for x in good for i in range(len(te))
-            ]
+        # Predictions are emitted for exactly ONE feature family, and which one
+        # matters: a confidence interval or a paired test has to describe a
+        # single named estimator. This was hardcoded to statement_masked, so
+        # every interval computed from these artifacts silently described that
+        # family whatever the headline number was measured on.
+        if name == (args.primary_feature or "statement_masked") and good:
+                preds_for_ci = [
+                    {"occurrence_id": te[i].get("occurrence_id"), "seed": x["seed"],
+                     "y_true": str(y_te[i]), "y_pred": str(x["_pred"][i]),
+                     "cluster": str(te[i]["repo"])}
+                    for x in good for i in range(len(te))
+                ]
+                preds_feature = name
 
     # Shuffled-label control: permute the TRAINING labels. Anything the model
     # still scores after that is chance plus class imbalance, not transfer.
@@ -573,6 +579,7 @@ def cmd_transfer(args: argparse.Namespace) -> int:
             (v["macro_f1"] for v in results.values() if np.isfinite(v["macro_f1"])),
             default=float("nan")),
         "test_predictions": preds_for_ci or [],
+        "test_predictions_feature": preds_feature,
     }
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -606,6 +613,12 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--output", required=True)
     t = sub.add_parser("transfer", help="fit the surface baseline on one language, "
                                         "evaluate on another")
+    t.add_argument("--primary-feature",
+                   choices=["statement_masked", "line_masked", "window_masked",
+                            "name_only"],
+                   help="emit test_predictions for THIS feature family instead "
+                        "of the per-cell best; use for confidence intervals and "
+                        "paired tests, which need one estimator throughout")
     t.add_argument("--normalize-whitespace", action="store_true",
                    help="collapse whitespace runs in the masked features on "
                         "both sides, to measure whether the formatting "

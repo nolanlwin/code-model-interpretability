@@ -127,6 +127,11 @@ def cmd_run(args: argparse.Namespace) -> int:
     # result's model_id, and the exporter's refusal to mix models.
     recorded_model_id = (random_init_id(args.model_id, args.random_seed)
                          if args.random_init else args.model_id)
+    # Pooling changes what the store contains, so it belongs in the identity.
+    # Otherwise a context-pooled store and a span-pooled one are indistinguishable
+    # downstream and the exporter would happily mix them in one table.
+    if args.pool != "span":
+        recorded_model_id = f"{recorded_model_id}#pool-{args.pool}{args.context_tokens}"
     n_layers = model.config.num_hidden_layers
     hidden = model.config.hidden_size
 
@@ -242,6 +247,22 @@ def cmd_run(args: argparse.Namespace) -> int:
                 n_skipped += 1
                 idx.write(json.dumps(row_meta) + "\n")
                 continue
+            if args.pool == "context":
+                # Pool the tokens AROUND the occurrence and exclude its own,
+                # so the probe cannot read the identifier while the forward
+                # pass stays byte-identical to the span-pooled run. That makes
+                # "does the probe encode the role or the name" a question about
+                # what is read, not about what the model saw: masking the name
+                # in the source would change the input distribution as well.
+                lo = max(0, min(positions) - args.context_tokens)
+                hi = min(cache_len, max(positions) + args.context_tokens + 1)
+                own = set(positions)
+                positions = [p for p in range(lo, hi) if p not in own]
+                if not positions:
+                    row_meta["skip"] = "no_context_tokens"
+                    n_skipped += 1
+                    idx.write(json.dumps(row_meta) + "\n")
+                    continue
             pooled = cache_stack[:, positions, :].mean(axis=1)  # [L+1, H]
             shard[i] = pooled.astype(np.float16)
             row_meta["token_len"] = cache_len
@@ -282,6 +303,12 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--out-dir", required=True)
     r.add_argument("--device", default="auto", choices=["auto", "cuda", "mps", "cpu"])
     r.add_argument("--dtype", default="auto", choices=["auto", "fp16", "bf16", "fp32"])
+    r.add_argument("--pool", choices=["span", "context"], default="span",
+                   help="span: mean over the occurrence's own tokens (default). "
+                        "context: mean over surrounding tokens EXCLUDING the "
+                        "occurrence, so the probe cannot read the identifier")
+    r.add_argument("--context-tokens", type=int, default=16,
+                   help="tokens either side of the occurrence when --pool context")
     r.add_argument("--random-init", action="store_true",
                    help="use the architecture and tokenizer of --model-id but "
                         "UNTRAINED weights; the control for whether a probe "

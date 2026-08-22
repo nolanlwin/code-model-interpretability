@@ -85,8 +85,16 @@ def main() -> int:
         check("shared direction: run succeeds", rc == 0)
         check("shared direction: transfer clears its shuffled control",
               transfer - shuffled > 0.25, f"transfer={transfer:.3f} shuffled={shuffled:.3f}")
-        check("shared direction: a CI is reported",
-              "transfer_ci" in d and d["transfer_ci"].get("ci_low") is not None)
+        # The key is named for what it measures. It brackets SEED 0's score,
+        # not transfer_macro_f1_mean, which averages over seeds that each pick
+        # their own layer; the two diverge and the mean often lands outside it.
+        # scripts/probe_intervals.py computes the interval for the reported
+        # estimate from test_predictions, which carries every seed.
+        check("shared direction: the seed-0 interval is reported and named as such",
+              "transfer_ci_seed0_only" in d
+              and d["transfer_ci_seed0_only"].get("ci_low") is not None)
+        check("shared direction: every seed's predictions are kept",
+              len({r["seed"] for r in (d.get("test_predictions") or [])}) > 1)
         check("shared direction: rho is reported", d.get("resolution_rho") is not None)
 
         rc, d2, _ = run(a, c, tmp / "ac.json")

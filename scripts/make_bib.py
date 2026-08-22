@@ -11,6 +11,11 @@ DOIS = {
  "belinkov2022probing": "10.1162/coli_a_00422",
  "littell2017uriel":    "10.18653/v1/e17-2002",
  "lin2019choosing":     "10.18653/v1/p19-1301",
+ # Cross-lingual probing of code models, and the two results this paper's
+ # framing has to reconcile with rather than claim as new.
+ "utpala2024language":  "10.18653/v1/2024.naacl-long.38",
+ "hernandezlopez2026syntactic": "10.1016/j.jss.2025.112604",
+ "kargaran2025programming": "10.18653/v1/2025.findings-acl.1379",
 }
 ARXIV = {
  "zhu2022xlcost":  "2206.08474",
