@@ -28,6 +28,7 @@ RANDOM = ROOT / "results" / "lp4fm_qwen2515brandominits0" / "summary.csv"
 OVERLAP = ROOT / "results" / "lp4fm" / "xlcost_problem_overlap.csv"
 WSCHECK = ROOT / "results" / "lp4fm" / "whitespace_normalisation_check.csv"
 MECH = ROOT / "results" / "lp4fm" / "transfer_mechanism.csv"
+MASKED = ROOT / "results" / "lp4fm" / "masked_probe" / "conditions.csv"
 MECHABL = ROOT / "results" / "lp4fm" / "transfer_mechanism_ablation.csv"
 
 f = lambda r, k: float(r[k])
@@ -290,6 +291,42 @@ def run() -> int:
     else:
         checks.append(("mechanism results present", False))
 
+    # The masked-probe paper's Table 1: every row recomputed from the
+    # per-cell artifacts' summary. These are the paper's headline numbers.
+    if MASKED.exists():
+        mk = list(csv.DictReader(MASKED.open()))
+        def cond(c):
+            g = [r for r in mk if r["condition"] == c]
+            near = [f(r, "transfer") for r in g if "python" not in (r["source"], r["target"])]
+            far = [f(r, "transfer") for r in g if "python" in (r["source"], r["target"])]
+            return st.mean(near), st.mean(far), len(g)
+        sn, sf, ns = cond("surface_window_masked")
+        pn, pf, np_ = cond("qwen25coder15b")
+        cn, cf, nc_ = cond("qwen25coder15bpoolcontext16")
+        un, uf, nu = cond("qwen25coder15brandominits0poolcontext16")
+        span_lift = (pn * 2 + pf * 4) / 6 - 0.575          # span floor: capped sample
+        ctx_lift = (cn * 2 + cf * 4) / 6 - (un * 2 + uf * 4) / 6
+        checks += [
+            ("masked-probe: all four conditions at 18 cells",
+             ns == np_ == nc_ == nu == 18),
+            ("surface row 0.929 / 0.804",
+             f"{sn:.3f}" == "0.929" and f"{sf:.3f}" == "0.804"),
+            ("span-pooled row 0.852 / 0.840",
+             f"{pn:.3f}" == "0.852" and f"{pf:.3f}" == "0.840"),
+            ("context-pooled row 0.630 / 0.569",
+             f"{cn:.3f}" == "0.630" and f"{cf:.3f}" == "0.569"),
+            ("untrained context row 0.527 / 0.464",
+             f"{un:.3f}" == "0.527" and f"{uf:.3f}" == "0.464"),
+            ("untrained boundary effect -0.064",
+             f"{uf - un:+.3f}" == "-0.064"),
+            ("context margin over matched floor +0.105",
+             f"{ctx_lift:+.3f}" == "+0.105"),
+            ("identifier share 61%",
+             round(100 * (1 - ctx_lift / span_lift)) == 61),
+        ]
+    else:
+        checks.append(("masked-probe conditions present", False))
+
     # Renaming table: uncapped file, must still reproduce the published values.
     for role, pct, delta in (("index_key", 89, -0.032), ("accumulator", 83, -0.047),
                              ("iterator", 49, -0.195)):
@@ -338,7 +375,14 @@ def run() -> int:
                "0.028", "0.035", "0.045", "0.056", "0.100", "0.173", "0.199",
                "0.316", "0.417", "0.568", "0.590", "0.697", "0.780", "0.810",
                "0.867", "0.888", "0.899", "0.996", "0.941", "0.883", "0.576",
-               "0.782", "0.839", "0.954", "0.964", "0.865", "0.851"}
+               "0.782", "0.839", "0.954", "0.964", "0.865", "0.851",
+               # masked-probe paper figures, asserted individually above
+               "0.929", "0.804", "0.840", "0.630", "0.569", "0.527", "0.464",
+               "0.064", "0.105", "0.269", "0.485", "0.844", "0.589", "0.061",
+               "0.126", "0.012",
+               # CI bounds and per-role effects, present in transfer_intervals.csv
+               # and conditions.csv; the checks above recompute the aggregates
+               "0.022", "0.059", "0.092", "0.093", "0.160", "0.225", "0.852"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
     if unknown:

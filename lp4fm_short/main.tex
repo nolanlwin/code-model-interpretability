@@ -37,7 +37,7 @@ character $n$-gram classifier loses $0.126$. Read at face value that says role
 representations are language-independent. It is largely an artifact. The probe
 pools activations over the occurrence's own tokens, so it reads the variable's name. The baseline is forbidden to. Pooling only surrounding tokens, with the
 forward pass unchanged, costs the probe $61\%$ of its margin over an untrained network of the same
-architecture and pooling ($+0.269 \rightarrow +0.104$) and multiplies its
+architecture and pooling ($+0.269 \rightarrow +0.105$) and multiplies its
 boundary effect fivefold ($-0.012 \rightarrow -0.061$), leaving it no flatter
 than the untrained network itself ($-0.064$). The invariance was
 mostly the identifier. We report this as a caution for cross-lingual probing of
@@ -157,7 +157,7 @@ language-independent role representation.
 the occurrence's own tokens, so the variable's name is inside what it reads,
 while the baseline it is being compared against has that name masked. Pooling only the surrounding tokens, with the forward pass unchanged, the probe
 falls from $0.844$ to $0.589$ overall. Against its \emph{matched} untrained
-floor of $0.485$ that is a margin of $+0.104$, against $+0.269$ before: $61\%$
+floor of $0.485$ that is a margin of $+0.105$, against $+0.269$ before: $61\%$
 of what the probe knew came from the identifier.
 
 \paragraph{So did the invariance.} The boundary effect grows from $-0.012$ to
@@ -166,7 +166,7 @@ identifier removed the trained probe is no flatter than an untrained one.
 The apparent language-independence was not a property of the role representation. It was a property of variable
 names, which parallel implementations of the same problem tend to share.
 
-\paragraph{What remains.} A margin of $+0.104$ over a matched floor is small but
+\paragraph{What remains.} A margin of $+0.105$ over a matched floor is small but
 consistent in both groups, so the model does encode something about roles beyond
 the identifier. We do not claim it is language-independent: at that pooling its
 boundary effect is indistinguishable from an untrained network's.
