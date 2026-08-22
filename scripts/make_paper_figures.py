@@ -192,7 +192,70 @@ def fig_mechanism():
     return "mechanism_scatter.pdf"
 
 
+def fig_masked():
+    """The paper's Table 1 as a slope chart: four conditions, two groups."""
+    import csv
+    mk = list(csv.DictReader((R / "masked_probe" / "conditions.csv").open()))
+    def cond(c):
+        g = [r for r in mk if r["condition"] == c]
+        near = [float(r["transfer"]) for r in g
+                if "python" not in (r["source"], r["target"])]
+        far = [float(r["transfer"]) for r in g
+               if "python" in (r["source"], r["target"])]
+        return st.mean(near), st.mean(far)
+    series = [
+        ("Surface $n$-gram, name masked",   cond("surface_window_masked"), ORANGE, "o", (0, ())),
+        ("Probe, span-pooled (reads name)", cond("qwen25coder15b"), BLUE, "s", (0, (5, 1.6))),
+        ("Probe, context-pooled (no name)", cond("qwen25coder15bpoolcontext16"), AQUA, "^", (0, (1.6, 1.6))),
+        ("Untrained, context-pooled",       cond("qwen25coder15brandominits0poolcontext16"),
+                                            VIOLET, "D", (0, (4, 1.4, 1, 1.4))),
+    ]
+    FIG_H = 1.95
+    fig, ax = plt.subplots(figsize=(4.7, FIG_H))
+    x = [0, 1]
+    Y_LO, Y_HI = 0.42, 0.97
+
+    def nudge(values, y_span, height_in, pts_needed=7.5):
+        min_gap = y_span * (pts_needed / (height_in * 72.0))
+        order = sorted(range(len(values)), key=lambda i: values[i])
+        offs = [0.0] * len(values)
+        for lo, hi in zip(order, order[1:]):
+            gap = values[hi] + offs[hi] - (values[lo] + offs[lo])
+            if gap < min_gap:
+                offs[hi] += min_gap - gap
+        return offs
+
+    lefts = [sv[1][0] for sv in series]
+    rights = [sv[1][1] for sv in series]
+    loff = nudge(lefts, Y_HI - Y_LO, FIG_H)
+    roff = nudge(rights, Y_HI - Y_LO, FIG_H)
+    for i, (label, (a, b), colour, marker, dash) in enumerate(series):
+        ax.plot(x, [a, b], color=colour, lw=1.4, ls=dash, marker=marker,
+                ms=4.5, mfc=colour, mec="white", mew=0.9, zorder=3, label=label,
+                clip_on=False)
+        ax.annotate(f"{a:.3f}", (0, a + loff[i]), textcoords="offset points",
+                    xytext=(-7, 0), ha="right", va="center", fontsize=7, color=INK)
+        ax.annotate(f"{b:.3f}", (1, b + roff[i]), textcoords="offset points",
+                    xytext=(7, 0), ha="left", va="center", fontsize=7, color=INK)
+    ax.set_xlim(-0.42, 1.42)
+    ax.set_ylim(Y_LO, Y_HI)
+    ax.set_xticks(x)
+    ax.set_xticklabels(["between JavaScript and PHP", "to or from Python"])
+    ax.set_ylabel("cross-lingual macro-F1")
+    ax.yaxis.grid(True, color=GRID, lw=0.5, ls="-")
+    ax.set_axisbelow(True)
+    for sp in ("top", "right", "bottom"):
+        ax.spines[sp].set_visible(False)
+    ax.tick_params(axis="x", length=0, pad=3)
+    ax.legend(frameon=False, fontsize=6.2, loc="lower left",
+              bbox_to_anchor=(-0.09, -0.32), ncol=2, handlelength=2.0,
+              columnspacing=0.8, labelspacing=0.3, borderpad=0)
+    fig.savefig(OUT / "masked_slope.pdf")
+    plt.close(fig)
+    return "masked_slope.pdf"
+
+
 if __name__ == "__main__":
-    for name in (fig_transfer(), fig_mechanism()):
+    for name in (fig_transfer(), fig_mechanism(), fig_masked()):
         p = OUT / name
         print(f"  wrote {p} ({p.stat().st_size:,} bytes)")

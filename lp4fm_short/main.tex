@@ -146,6 +146,16 @@ give $-0.059$. Iterator is also the role whose extractors agree least across the
 boundary and whose intervals are twice as wide, so we treat the aggregate as an
 upper bound on how much of this is about language rather than labelling.
 
+\begin{figure}[t]
+\centering
+\includegraphics{figures/masked_slope.pdf}
+\caption{Table~\ref{tab:main} as a picture. The surface baseline tracks the
+boundary; the span-pooled probe does not, but it reads the variable's name.
+Excluding the name drops the probe to just above its untrained floor, and both
+slope downward together.}
+\label{fig:masked}
+\end{figure}
+
 \section{The probe looks invariant, and mostly should not}
 
 Read against that, the span-pooled probe is remarkable: it moves $-0.012$, an
@@ -156,7 +166,7 @@ language-independent role representation.
 \paragraph{It does not survive removing the identifier.} The probe pools over
 the occurrence's own tokens, so the variable's name is inside what it reads,
 while the baseline it is being compared against has that name masked. Pooling only the surrounding tokens, with the forward pass unchanged, the probe
-falls from $0.844$ to $0.589$ overall. Against its \emph{matched} untrained
+falls from $0.844$ to $0.589$ overall (Figure~\ref{fig:masked}). Against its \emph{matched} untrained
 floor of $0.485$ that is a margin of $+0.105$, against $+0.269$ before: $61\%$
 of what the probe knew came from the identifier.
 
@@ -168,8 +178,11 @@ names, which parallel implementations of the same problem tend to share.
 
 \paragraph{What remains.} A margin of $+0.105$ over a matched floor is small but
 consistent in both groups, so the model does encode something about roles beyond
-the identifier. We do not claim it is language-independent: at that pooling its
-boundary effect is indistinguishable from an untrained network's.
+the identifier. We do not claim it is language-independent: at that pooling its boundary effect
+is indistinguishable from an untrained network's. The advantage is also paired,
+not only average: over the same occurrences the surface baseline beats the
+context-pooled probe in $14$ of $18$ cells with a problem-clustered interval
+excluding zero (Appendix~\ref{app:repro}).
 
 \section{Discussion}
 

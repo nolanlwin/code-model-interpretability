@@ -1,0 +1,245 @@
+\documentclass{article}
+\usepackage[dblblindworkshop]{neurips_2026}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\title{A Probing Confound That Survives the Untrained-Network Control}
+
+\workshoptitle{Interpretability for Scientific Discovery (Interp4Discovery)}
+
+\author{%
+  Anonymous Author(s) \\
+  Affiliation \\
+  Address \\
+  \texttt{email} \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+The standard defence of a probing result is a floor: if an untrained network
+supports the same probe far less well, the probe is reading something the model
+learned. We report a case where that defence passes and the conclusion is still
+mostly wrong. A linear probe on a code model's residual stream appears to
+recover variable roles language-independently, moving $-0.012$ macro-F1 across
+a boundary where a model-free surface classifier loses $0.126$, and it clears
+an untrained network by $+0.269$. But the probe pools over the occurrence's own
+tokens, so its input contains the variable's name, and names are among the most
+language-invariant features of parallel corpora. Excluding the name from the
+pooling, with the forward pass unchanged, removes $61\%$ of the probe's margin
+over a matched untrained floor and multiplies its boundary effect fivefold,
+leaving it no flatter than the untrained network itself. The untrained control
+cannot catch this confound, because the untrained network reads the same name
+and inherits the same invariance. What caught it was a model-free comparator
+that could not see the name. We suggest such comparators belong beside
+untrained floors in the standard battery, and report a negative result for
+role probing: with the identifier excluded, we find no evidence of
+language-independent role representation at this scale.
+\end{abstract}
+
+\section{Introduction}
+
+Probing classifiers come with a known epistemic gap: a probe reports what is
+decodable, not what the model uses, and a sufficiently expressive probe can
+decode from noise~\citep{belinkov2022probing,hewitt2019control}. The field's
+working answer is a battery of controls, and the strongest of them is the
+untrained network: run the same probe on the same architecture with random
+weights, and whatever survives is at least \emph{learned}, even if not
+used~\citep{zhang2018language,voita2020mdl}.
+
+This paper is about a failure mode that battery does not cover. The controls
+above all vary the \emph{model} while holding the probe's input fixed. If the
+input itself carries the label, every member of the battery inherits the
+signal: the trained network decodes it, and the untrained network decodes it
+too, so the floor rises with the effect and the comparison stays flattering.
+Nothing in the standard battery varies what the probe is allowed to read.
+
+We hit this in a concrete setting: cross-lingual transfer of variable-role
+probes in code models. The confounded conclusion was attractive, plausible, and
+supported by an untrained floor. It fell to a control from outside the standard
+battery, and the case is clean enough to serve as a template for where else the
+same gap may hide.
+
+\section{The setting, and the seductive result}
+
+A \emph{variable role}~\citep{sajaniemi2002roles}, such as accumulator or index
+key, describes what a variable does rather than what it is called, so it is a
+natural candidate for language-independent representation.
+XLCoST~\citep{zhu2022xlcost} provides the same problems solved in Python,
+JavaScript and PHP; we restrict to the $869$ problems all three share, so every
+comparison sees identical problem ids, and fit a role classifier on one
+language while testing on another, over all six ordered pairs.
+
+Two systems take that test. A \emph{model-free} character $n$-gram classifier
+over the occurrence's context, with every instance of the variable's name
+masked, and a fixed feature family chosen in advance. And a linear probe on the
+residual stream of Qwen2.5-Coder-1.5B~\citep{hui2024qwencoder}, mean-pooled
+over the occurrence's tokens, layer selected on source-language validation
+data. Intervals resample whole problems, never occurrences.
+
+The surface classifier is strongly language-bound: $0.929$ between JavaScript
+and PHP, $0.804$ to or from Python, a boundary effect of $-0.126$
+($95\%$ CI $[-0.160, -0.092]$). The probe barely moves: $-0.012$. And the
+standard defence holds: an untrained network of the same architecture and
+pooling reaches only $0.575$ overall against the probe's $0.844$, a margin of
+$+0.269$. Every control in the usual battery says the probe is reading a
+learned, language-independent role representation.
+
+\section{The control the battery was missing}
+
+\begin{table}[t]
+\centering
+\caption{Cross-lingual role transfer, macro-F1 over three roles.
+\emph{Close} is JavaScript$\leftrightarrow$PHP; \emph{Python} is the four
+transfers involving Python. Each probe is paired with an untrained network at
+its own pooling, because different poolings read different token sets and have
+different achievable floors.}
+\label{tab:main}
+\begin{tabular}{lccc}
+\toprule
+ & close & Python & effect \\
+\midrule
+Surface $n$-gram, name masked (no model) & 0.929 & 0.804 & $-0.126$ \\
+\midrule
+Probe, span-pooled (reads the name)      & 0.852 & 0.840 & $-0.012$ \\
+\quad untrained, span-pooled$^{\dagger}$  & 0.590 & 0.568 & $-0.022$ \\
+\midrule
+Probe, context-pooled (no name)          & 0.630 & 0.569 & $-0.061$ \\
+\quad untrained, context-pooled          & 0.527 & 0.464 & $-0.064$ \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+{\footnotesize $^{\dagger}$ Committed, but measured on an earlier, larger
+sample rather than the three-way intersection the other rows use.}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics{figures/masked_slope.pdf}
+\caption{Table~\ref{tab:main} as a picture. The surface classifier tracks the
+language boundary. The span-pooled probe does not, but its input contains the
+variable's name. Excluding the name drops the probe to just above its untrained
+floor, and both slope downward together.}
+\label{fig:masked}
+\end{figure}
+
+The asymmetry the setup hides is simple: the surface classifier is forbidden to
+read the variable's name, and the probe is not. Parallel implementations of one
+problem tend to name their variables alike, so the name is exactly the kind of
+feature that transfers across languages for reasons that have nothing to do
+with the model.
+
+The intervention is to change what the probe reads, not what the model sees.
+We pool the $16$ tokens either side of the occurrence and exclude its own, so
+the forward pass is byte-identical and only the read-out moves. Masking the
+name in the source would instead change the input distribution, entangling two
+effects.
+
+Three things happen at once (Table~\ref{tab:main}, Figure~\ref{fig:masked}).
+The probe falls from $0.844$ to $0.589$. Its margin over a \emph{matched}
+untrained floor collapses from $+0.269$ to $+0.105$: $61\%$ of what the probe
+knew was the name. And its boundary effect grows from $-0.012$ to $-0.061$,
+against $-0.064$ for the untrained network at the same pooling. With the name
+excluded, the trained probe is no flatter across languages than an untrained
+one. The paired version holds per item: over the same occurrences, the surface
+classifier beats the context-pooled probe in $14$ of $18$ cells with a
+problem-clustered interval excluding zero.
+
+\paragraph{Why the untrained control missed it.} The untrained network is a
+control for \emph{learning}, not for \emph{leakage}. It reads the same input as
+the trained probe, name included, and random projections of a shared name
+support the same classifier on both sides of a language boundary. So the floor
+inherits the confound: span-pooled, the untrained network's boundary effect is
+$-0.022$, nearly as flat as the trained probe's $-0.012$. A control that shares
+the probe's input cannot detect a property of the input.
+
+\paragraph{What caught it.} The model-free classifier, precisely because it was
+built with the name masked, was the one condition in the design whose input did
+not contain the label's correlate. Its strong language-dependence is what made
+the probe's flatness look remarkable, and the contradiction between the two is
+what prompted the pooling intervention. A comparator that cannot see the
+suspect feature is a different kind of control from a floor, and this case
+needed both.
+
+\section{The negative result}
+
+With the identifier excluded, what remains is a margin of $+0.105$ over the
+matched floor, consistent in both language groups, so the model does encode
+something about roles beyond the name. But we find no evidence that it is
+language-independent: its boundary effect is indistinguishable from an
+untrained network's. At this scale and in this setting, the
+language-independent role representation the span-pooled probe appeared to
+demonstrate does not exist as measured.
+
+We think the negative result is worth having on record because the positive
+version is easy to produce and easy to believe. It requires only the standard
+methodology, it passes the standard controls, and prior work in this area
+reports cross-language probe transfer with untrained floors and without a
+model-free
+comparator~\citep{hernandezlopez2026syntactic,utpala2024language,kargaran2025programming}.
+Our results do not show that those findings are wrong, but they do show that
+the design cannot rule out this confound, and that in at least one natural
+setting the confound accounts for most of the effect.
+
+\section{Practical recommendations}
+
+\textbf{Vary the read-out, not only the model.} An untrained floor holds the
+probe's input fixed and varies the weights. Add at least one condition that
+varies what the probe may read: pool excluding the token span whose label is
+being predicted, or compare against a model-free classifier denied the suspect
+feature. The two catch different confounds.
+
+\textbf{Match the floor to the read-out.} A context-pooled probe read against a
+span-pooled floor mixes two chance levels. Whatever restriction the probe gets,
+its floor gets too.
+
+\textbf{Treat input-label correlates as first-class suspects.} In parallel
+corpora, identifiers; in translation corpora, named entities and numbers; in
+paired documents, any token the pairing preserves. If the span being pooled
+contains a feature that survives the manipulation under study, the probe's
+apparent invariance to that manipulation is uninformative until the feature is
+excluded.
+
+\paragraph{Limitations.} One model at $1.5$B, three languages, three roles, and
+a boundary instantiated by a single language. Context pooling excludes the name
+but not everything correlated with it, so $+0.105$ is an upper bound on
+name-free role information. The surface effect is concentrated in one role
+(iterator, $-0.225$ alone against $-0.059$ for the other two), whose labels
+come from a different extractor path across languages. And this remains a
+probing study: it bounds what is decodable, not what the model uses.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\input{appendix_generated}
+
+\section{Reproducibility}
+\label{app:repro}
+Every figure is regenerated from committed per-cell artifacts, and a regression
+test recomputes each from those files. All four conditions of
+Table~\ref{tab:main} are backed by per-cell artifacts, with the one caveat the
+table's footnote states. The probe is logistic regression on activations
+mean-pooled over either the occurrence's span or the $16$ tokens either side of
+it excluding the span; the surface classifier is a \texttt{char\_wb} tf-idf
+vectoriser with $n \in [2,4]$ and a pre-registered feature family, fitted on
+the source language only. Pooling and initialisation are recorded in each
+store's identity, so conditions cannot be silently mixed downstream.
+
+\clearpage
+\input{checklist.tex}
+
+\end{document}
