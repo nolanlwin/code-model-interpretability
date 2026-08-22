@@ -145,12 +145,12 @@ intersection. See Appendix~\ref{app:repro}.}
 The $n$-gram baseline reaches $0.929$ between JavaScript and PHP without a model
 and without seeing the variable's name, and loses $0.126$ on transfers to or
 from Python: $95\%$ CI $[-0.160, -0.092]$, resampling the $427$ test problems.
-The effect is not uniform across roles. Iterator alone gives $-0.225$, driven by
-cells that fall to $0.548$--$0.577$ on transfers into Python, while accumulator
-and index\_key together give $-0.059$; iterator is also the role whose
-extractors agree least across the boundary (its labels come from an AST for
-Python and regular expressions for the other two) and whose intervals are twice
-as wide, with a minority class of ten instances in some cells. We therefore
+The effect is not uniform across roles. Iterator alone gives $-0.225$, driven by cells that fall to $0.548$--$0.577$ on
+transfers into Python, while accumulator and index\_key together give $-0.059$.
+Iterator is also the role whose extractors agree least across the boundary (its
+labels come from an AST for Python and regular expressions for the other two)
+and whose intervals are twice as wide, with a minority class of ten instances
+in some cells. We therefore
 treat the aggregate as an upper bound on how much of the surface effect is
 about language rather than labelling, and note that the probe-side conclusions
 do not depend on it: the identifier collapse holds for every role.
@@ -183,9 +183,9 @@ of what the probe knew came from the identifier.
 $-0.061$, and the untrained network at the same pooling moves $-0.064$. With the
 identifier removed the trained probe is no flatter than an untrained one.
 
-The same shift shows up within languages. In-domain, the span-pooled probe
-scores $0.898$; excluding the name costs it $0.127$ ($0.771$), against an
-untrained in-domain of $0.623$ at the same pooling. So the name is not only the
+The same shift shows up within languages. In-domain, the span-pooled probe scores $0.898$, and excluding the name costs it
+$0.127$ ($0.771$), against an untrained in-domain of $0.623$ at the same
+pooling. So the name is not only the
 transferable part of the signal, it is a substantial part of the signal
 everywhere, and the cross-lingual result is the within-language dependence made
 visible by a boundary the name happens to cross freely.
@@ -207,9 +207,9 @@ untrained-network floors~\citep{hernandezlopez2026syntactic}, and uneven
 alignment between these very languages on parallel
 programs~\citep{kargaran2025programming}. None of it fits a model-free
 classifier on the same items, which is the condition that exposed the
-asymmetry here. On the probing side we inherit the control-task and
-probe-validity tradition~\citep{hewitt2019control,voita2020mdl,belinkov2022probing};
-our contribution to it is the observation that these controls hold the probe's
+asymmetry here. On the probing side we inherit the control-task and probe-validity
+tradition~\citep{hewitt2019control,voita2020mdl,belinkov2022probing}. Our
+contribution to it is the observation that these controls hold the probe's
 \emph{input} fixed, and so cannot detect a label correlate carried by the input
 itself.
 
@@ -241,8 +241,8 @@ probe that barely moves across the Python boundary. The two measure different
 things, whole-snippet retrieval against role decodability, but the tension
 dissolves entirely under our control: once the identifier is excluded, our
 probe shows a boundary effect after all, in the direction their alignment
-scores predict. What looked like a disagreement between measurements was the
-confound; removing it brings the two studies into agreement, which is itself
+scores predict. What looked like a disagreement between measurements was the confound, and
+removing it brings the two studies into agreement, which is itself
 modest evidence that both are measuring something real about the Python
 boundary rather than artifacts of their respective designs.
 
@@ -274,7 +274,7 @@ $1.5$B, so nothing here speaks to whether the name-free margin grows with
 scale. The identifier-lift figures are aggregated over three roles and we do
 not report them per role. Iterator's labels come from a different extractor
 path than Python's, its minority class falls to ten instances in some cells,
-and it carries most of the surface effect; the accumulator and index\_key
+and it carries most of the surface effect. The accumulator and index\_key
 figures are the more trustworthy ones. Context pooling excludes the identifier
 but not everything correlated with it (nearby uses of the same variable, or
 names of neighbouring variables that co-vary with it), so $+0.105$ is an upper

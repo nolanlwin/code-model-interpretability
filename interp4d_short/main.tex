@@ -77,8 +77,8 @@ hide.
 A \emph{variable role}~\citep{sajaniemi2002roles}, such as accumulator or index
 key, describes what a variable does rather than what it is called, so it is a
 natural candidate for language-independent representation.
-XLCoST~\citep{zhu2022xlcost} provides the same problems solved in Python,
-JavaScript and PHP; we restrict to the $869$ problems all three share, so every
+XLCoST~\citep{zhu2022xlcost} provides the same problems solved in Python, JavaScript and PHP. We restrict to
+the $869$ problems all three share, so every
 comparison sees identical problem ids, and fit a role classifier on one
 language while testing on another, over all six ordered pairs.
 
@@ -159,9 +159,9 @@ classifier beats the context-pooled probe in $14$ of $18$ cells with a
 problem-clustered interval excluding zero.
 
 \paragraph{The confound is not about transfer.} The same decomposition holds
-within languages. In-domain, the span-pooled probe scores $0.898$; excluding
-the name costs $0.127$ ($0.771$), over an untrained in-domain floor of $0.623$
-at the same pooling. The name is a large share of the signal everywhere, and
+within languages. In-domain, the span-pooled probe scores $0.898$, and excluding the name costs
+$0.127$ ($0.771$), over an untrained in-domain floor of $0.623$ at the same
+pooling. The name is a large share of the signal everywhere, and
 the cross-lingual flatness is just the setting in which that share becomes
 diagnosable, because the name is the one feature the language boundary does not
 disturb. Any within-language probing result obtained by pooling over a labelled
@@ -205,9 +205,8 @@ language-independent role representation the span-pooled probe appeared to
 demonstrate does not exist as measured.
 
 The collapse is not an artifact of one role. The identifier exclusion costs
-every role its margin, including accumulator and index\_key, whose labels come
-from extractors that agree well across languages; the role-level caveats run
-the other way, against the \emph{surface} effect, which is concentrated in
+every role its margin, including accumulator and index\_key, whose labels come from extractors that agree well across languages. The
+role-level caveats run the other way, against the \emph{surface} effect, which is concentrated in
 iterator ($-0.225$ alone against $-0.059$ for the other two) where labelling
 across languages is least consistent.
 
@@ -234,9 +233,9 @@ a mention while probing for entity type, when the mention string itself
 corpora concentrate exactly these invariants.
 \item \textbf{Syntactic probes pooling over the word being classified.} A POS
 or dependency-role probe that reads the target word's own embedding reads its
-identity, and word identity predicts POS to a first approximation; the
-selectivity literature~\citep{hewitt2019control} covers the capacity half of
-this but not the input half.
+identity, and word identity predicts POS to a first approximation. The selectivity
+literature~\citep{hewitt2019control} covers the capacity half of this but not
+the input half.
 \item \textbf{Time-series and multimodal probes.} Pooling a window around an
 event while probing for the event's category, when the raw signal in the
 window carries a template of the category (a spike shape, a colour histogram).
