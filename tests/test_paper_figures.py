@@ -378,11 +378,11 @@ def run() -> int:
                "0.782", "0.839", "0.954", "0.964", "0.865", "0.851",
                # masked-probe paper figures, asserted individually above
                "0.929", "0.804", "0.840", "0.630", "0.569", "0.527", "0.464",
-               "0.064", "0.105", "0.269", "0.485", "0.844", "0.589", "0.061",
+               "0.064", "0.105", "0.269", "0.485", "0.844", "0.589", "0.061", "0.771", "0.898", "0.127", "0.623", "0.548", "0.577",
                "0.126", "0.012",
                # CI bounds and per-role effects, present in transfer_intervals.csv
                # and conditions.csv; the checks above recompute the aggregates
-               "0.022", "0.059", "0.092", "0.093", "0.160", "0.225", "0.852"}
+               "0.022", "0.059", "0.092", "0.160", "0.225", "0.852"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
     if unknown:

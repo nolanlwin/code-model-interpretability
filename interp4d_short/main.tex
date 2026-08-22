@@ -158,6 +158,15 @@ one. The paired version holds per item: over the same occurrences, the surface
 classifier beats the context-pooled probe in $14$ of $18$ cells with a
 problem-clustered interval excluding zero.
 
+\paragraph{The confound is not about transfer.} The same decomposition holds
+within languages. In-domain, the span-pooled probe scores $0.898$; excluding
+the name costs $0.127$ ($0.771$), over an untrained in-domain floor of $0.623$
+at the same pooling. The name is a large share of the signal everywhere, and
+the cross-lingual flatness is just the setting in which that share becomes
+diagnosable, because the name is the one feature the language boundary does not
+disturb. Any within-language probing result obtained by pooling over a labelled
+span inherits the same question.
+
 \paragraph{Why the untrained control missed it.} The untrained network is a
 control for \emph{learning}, not for \emph{leakage}. It reads the same input as
 the trained probe, name included, and random projections of a shared name
@@ -174,6 +183,17 @@ what prompted the pooling intervention. A comparator that cannot see the
 suspect feature is a different kind of control from a floor, and this case
 needed both.
 
+\paragraph{A second confound, caught by the same habit.} The design survived a
+different leak the same way. XLCoST ships Python through a formatted mirror and
+the other two languages through a detokenized one, so the Python boundary is
+also a corpus-formatting boundary, and a classifier keying on layout would
+reproduce our surface effect with no linguistic content. It does not: the
+character analyser discards whitespace before forming $n$-grams, and equalising
+whitespace on both sides moves transfer by under $0.001$ on every decisive
+pair. We mention it because the check is the same shape as the main result:
+enumerate what the instrument can see, and test the suspect channel directly
+rather than arguing it away.
+
 \section{The negative result}
 
 With the identifier excluded, what remains is a margin of $+0.105$ over the
@@ -184,6 +204,13 @@ untrained network's. At this scale and in this setting, the
 language-independent role representation the span-pooled probe appeared to
 demonstrate does not exist as measured.
 
+The collapse is not an artifact of one role. The identifier exclusion costs
+every role its margin, including accumulator and index\_key, whose labels come
+from extractors that agree well across languages; the role-level caveats run
+the other way, against the \emph{surface} effect, which is concentrated in
+iterator ($-0.225$ alone against $-0.059$ for the other two) where labelling
+across languages is least consistent.
+
 We think the negative result is worth having on record because the positive
 version is easy to produce and easy to believe. It requires only the standard methodology and it passes the standard controls.
 Prior work in this area reports cross-language probe transfer with untrained
@@ -192,6 +219,43 @@ comparator~\citep{hernandezlopez2026syntactic,utpala2024language,kargaran2025pro
 Our results do not show that those findings are wrong, but they do show that
 the design cannot rule out this confound, and that in at least one natural
 setting the confound accounts for most of the effect.
+
+\section{Where else the same gap may hide}
+
+The structure that produced this confound is general: a probe pools over a span
+whose contents correlate with the label, and every control in the battery reads
+the same span. Concrete instances we would check first, in each case by asking
+what the pooled span contains that already predicts the label:
+
+\begin{itemize}\itemsep2pt
+\item \textbf{Cross-lingual probing of multilingual text models.} Pooling over
+a mention while probing for entity type, when the mention string itself
+(names, numbers, loanwords) survives translation. Parallel and translated
+corpora concentrate exactly these invariants.
+\item \textbf{Syntactic probes pooling over the word being classified.} A POS
+or dependency-role probe that reads the target word's own embedding reads its
+identity, and word identity predicts POS to a first approximation; the
+selectivity literature~\citep{hewitt2019control} covers the capacity half of
+this but not the input half.
+\item \textbf{Time-series and multimodal probes.} Pooling a window around an
+event while probing for the event's category, when the raw signal in the
+window carries a template of the category (a spike shape, a colour histogram).
+\item \textbf{Robustness studies.} Any claim that a representation is
+invariant to a transformation, tested with a probe whose input contains a
+feature the transformation preserves. The transformation's fixed points are
+the suspect set.
+\end{itemize}
+
+In every case the remedy is the one that worked here: a read-out denied the
+suspect feature, paired with a floor at the \emph{same} read-out.
+
+\paragraph{What would change our conclusion.} A context-pooled probe at larger
+scale whose margin over its floor grows rather than shrinks would show
+name-free role abstraction emerging with capacity. Input-level name masking
+that restores the flat curve would relocate the confound from the
+representation to the read-out. And a parallel corpus without shared naming
+conventions showing a flat span-pooled probe would refute our explanation
+outright. Each is a single experiment on the released pipeline.
 
 \section{Practical recommendations}
 
