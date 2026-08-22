@@ -138,6 +138,13 @@ def cmd_run(args: argparse.Namespace) -> int:
                          "shuffled_source_macro_f1": f1_shuf,
                          "_pred": pred_te, "_idx": b_te})
 
+    # This interval describes SEED 0, while transfer_macro_f1_mean below is the
+    # mean over all seeds, and each seed selects its own layer. The two are
+    # different quantities, and in a fair number of cells the reported mean
+    # falls outside its own printed interval. Kept for continuity of the
+    # artifact schema, but relabelled so nothing reads it as an interval for
+    # the reported estimate; scripts/probe_intervals.py recomputes the correct
+    # one from test_predictions, which carries every seed.
     idx0 = per_seed[0]["_idx"]
     ci = cluster_bootstrap_ci(y_te[idx0], per_seed[0]["_pred"], g_te[idx0], labels,
                               n_boot=args.n_boot, seed=0)
@@ -160,7 +167,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                                                         for s in per_seed])),
         "majority_macro_f1": float(macro_f1_stat(y_te[idx0],
                                                  np.full(len(idx0), maj), labels)),
-        "transfer_ci": {k: ci[k] for k in ("ci_low", "ci_high", "method", "n_clusters")},
+        "transfer_ci_seed0_only": {k: ci[k] for k in ("ci_low", "ci_high", "method", "n_clusters")},
         "resolution_rho": rho,
         "smallest_test_class": {"label": small, "n": small_n},
         "test_predictions": [
@@ -175,7 +182,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"[{args.role}] {Path(args.train_store).name} -> {Path(args.test_store).name}")
     print(f"  {len(shared)} shared problems | layers {result['selected_layers']}")
     print(f"  in-domain      {result['indomain_macro_f1_mean']:.4f}")
-    print(f"  TRANSFER       {result['transfer_macro_f1_mean']:.4f}  "
+    print(f"  TRANSFER       {result['transfer_macro_f1_mean']:.4f}  seed0 "
           f"CI [{ci['ci_low']:.4f}, {ci['ci_high']:.4f}]")
     print(f"  shuffled src   {result['shuffled_source_macro_f1_mean']:.4f}")
     print(f"  majority       {result['majority_macro_f1']:.4f}")

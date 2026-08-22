@@ -191,10 +191,10 @@ def main(argv=None) -> int:
             # crosslang.py computes a problem-clustered interval for every cell
             # and has since it was written; nothing read it, so the published
             # table reported point estimates with no uncertainty beside them.
-            "probe_ci_low": (None if not d.get("transfer_ci")
-                             else round(d["transfer_ci"]["ci_low"], 4)),
-            "probe_ci_high": (None if not d.get("transfer_ci")
-                              else round(d["transfer_ci"]["ci_high"], 4)),
+            "probe_ci_low": (None if not d.get("transfer_ci_seed0_only")
+                             else round(d["transfer_ci_seed0_only"]["ci_low"], 4)),
+            "probe_ci_high": (None if not d.get("transfer_ci_seed0_only")
+                              else round(d["transfer_ci_seed0_only"]["ci_high"], 4)),
             "probe_model": d.get("model_id"),
         }
 
