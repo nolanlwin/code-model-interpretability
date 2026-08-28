@@ -375,7 +375,16 @@ def cmd_run(args: argparse.Namespace) -> int:
     # can compute a paired clustered CI on probe-minus-baseline. Without this
     # the strongest baseline is a point estimate with no interval, and a
     # probe-vs-baseline margin cannot be told apart from zero.
-    best_key = max(keys, key=lambda k: (agg(k, "macro_f1"), k))
+    # --primary-feature pins WHICH family's predictions are emitted. The paired
+    # claim in the paper is probe-versus-masked-line, so the interval must
+    # describe that family, not whichever happened to score highest on this
+    # sample. Without the flag the strongest family is kept (legacy behaviour).
+    if getattr(args, "primary_feature", None):
+        if args.primary_feature not in keys:
+            raise SystemExit(f"--primary-feature {args.primary_feature!r} not among {sorted(keys)}")
+        best_key = args.primary_feature
+    else:
+        best_key = max(keys, key=lambda k: (agg(k, "macro_f1"), k))
     occ_ids = [r.get("occurrence_id") for r in recs]
     clusters = [str(r["repo"]) for r in recs]  # problem-level, matching probe.py
 
@@ -604,6 +613,12 @@ def main(argv: list[str] | None = None) -> int:
     src.add_argument("--manifest")
     src.add_argument("--occurrences")
     r.add_argument("--canonical", help="canonical JSONL (required with --occurrences)")
+    r.add_argument("--primary-feature",
+                   choices=["statement_masked", "line_masked", "window_masked",
+                            "name_only"],
+                   help="emit test_predictions for THIS feature family instead "
+                        "of the per-sample best; paired intervals must describe "
+                        "one named estimator")
     r.add_argument("--sample-ids",
                    help="probe.py <output>.sample_ids.json - restrict to the probe's exact occurrence set")
     r.add_argument("--window", type=int, default=120)

@@ -1,0 +1,72 @@
+{
+  "ok": true,
+  "strict": false,
+  "root": "/Users/naingoolwin/Desktop/mech-interp-coding-llms",
+  "change": "polish-workshop-papers",
+  "phases": {
+    "intent": "skip",
+    "mapping": "pass",
+    "proofs": "pass",
+    "property-tests": "skip",
+    "scenario-tests": "skip",
+    "scenarios": "skip",
+    "structure": "pass"
+  },
+  "issues": [
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "professional-venue-specific-prose",
+      "message": "requirement 'Professional venue-specific prose' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "manuscript-identity-preservation",
+      "message": "requirement 'Manuscript identity preservation' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "source-backed-factual-claims",
+      "message": "requirement 'Source-backed factual claims' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "citation-integrity",
+      "message": "requirement 'Citation integrity' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "honest-uncertainty",
+      "message": "requirement 'Honest uncertainty' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "lp4fm-page-limit",
+      "message": "requirement 'LP4FM page limit' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "interp4d-page-limit",
+      "message": "requirement 'Interp as a Science page limit' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "self-contained-main-text",
+      "message": "requirement 'Self-contained main text' has no scenarios in spec"
+    }
+  ],
+  "verifiedFiles": [],
+  "verificationSummary": {
+    "totalRequirements": 8,
+    "provedRequirements": 0,
+    "propertyTestedRequirements": 0,
+    "specTrackedRequirements": 8
+  }
+}
