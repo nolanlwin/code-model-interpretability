@@ -5,10 +5,14 @@ DOIS = {
  "hewitt2019control":   "10.18653/v1/d19-1275",
  "sajaniemi2002roles":  "10.1109/hcc.2002.1046340",
  "karmakar2021what":    "10.1109/ase51524.2021.9678927",
+ "karmakar2024inspect": "10.1109/tse.2023.3341624",
  "troshin2022probing":  "10.18653/v1/2022.blackboxnlp-1.31",
  "libovicky2020language":"10.18653/v1/2020.findings-emnlp.150",
  "voita2020mdl":        "10.18653/v1/2020.emnlp-main.14",
  "belinkov2022probing": "10.1162/coli_a_00422",
+ "ravichander2021probing": "10.18653/v1/2021.eacl-main.295",
+ "elazar2021amnesic":    "10.1162/tacl_a_00359",
+ "meng2022locating":     "10.52202/068431-1262",
  "littell2017uriel":    "10.18653/v1/e17-2002",
  "lin2019choosing":     "10.18653/v1/p19-1301",
  # Cross-lingual probing of code models, and the two results this paper's
@@ -21,6 +25,7 @@ ARXIV = {
  "zhu2022xlcost":  "2206.08474",
  "hui2024qwencoder":"2409.12186",
  "qwen2024qwen25": "2412.15115",
+ "lozhkov2024starcoder2": "2402.19173",
 }
 
 def curl(url):
@@ -63,6 +68,6 @@ for key, aid in ARXIV.items():
                f"  journal = {{arXiv preprint arXiv:{aid}}},\n  year    = {{{year}}},\n"
                f"  eprint  = {{{aid}}},\n  archivePrefix = {{arXiv}}\n}}")
 
-print("% Every entry below was emitted from a live Crossref or arXiv record.\n"
-      "% Regenerate with scripts/make_bib.py; do not hand-edit fields.\n")
+print("@comment{Every entry below was emitted from a live Crossref or arXiv record.}\n"
+      "@comment{Regenerate with scripts/make_bib.py and do not hand-edit fields.}\n")
 print("\n\n".join(out))

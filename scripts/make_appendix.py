@@ -1,9 +1,9 @@
 """Generate the LP4FM appendix tables from the committed CSVs.
 
-The appendices exist to carry the evidence the four-page main text cannot.
+The appendix carries evidence that the LP4FM main text cannot accommodate.
 Writing them by hand would reintroduce exactly the drift the figure test was
 built to prevent, so every table here is emitted from the same files the test
-checks, and lp4fm_short/appendix_generated.tex is never edited directly.
+checks.
 """
 from __future__ import annotations
 
@@ -58,8 +58,8 @@ def full_transfer_table() -> str:
            "\\emph{Surface} is the strongest masked-context $n$-gram feature; "
            "\\emph{name} uses the variable's name alone; \\emph{probe} is the "
            "residual-stream probe. Majority and shuffled-label controls sit near "
-           "chance throughout, and $\\rho$ is the macro-F1 movement from one test "
-           "occurrence changing its prediction.}",
+           "chance throughout. $\\rho$ is a descriptive one-instance score step, "
+           "not a confidence interval or hypothesis test.}",
            "\\label{tab:full}",
            "\\begin{tabular}{llrrrrrrr}", "\\toprule",
            "role & pair & $n$ & surface & name & probe & major. & shuf. & $\\rho$ \\\\",
@@ -109,17 +109,180 @@ def model_table() -> str:
     return "\n".join(out)
 
 
+def masked_probe_tables() -> str:
+    """Emit only the per-cell evidence used by the two short papers."""
+    conditions = rows(R / "masked_probe" / "conditions.csv")
+    paired = rows(R / "masked_probe" / "paired_deltas.csv")
+    contrasts = rows(R / "masked_probe" / "boundary_contrasts.csv")
+    by_key = {
+        (r["condition"], r["role"], r["source"], r["target"]): r
+        for r in conditions
+    }
+    roles = ("accumulator", "index_key", "iterator")
+    pairs = (
+        ("javascript", "php"), ("php", "javascript"),
+        ("javascript", "python"), ("php", "python"),
+        ("python", "javascript"), ("python", "php"),
+    )
+
+    out = [
+        "\\begin{table}[h]\\centering\\small",
+        "\\caption{Per-cell macro-F1 for the four intersection-sample conditions. "
+        "\\emph{Lift} subtracts the context-matched randomly initialized result "
+        "from the context-pooled trained result.}",
+        "\\label{tab:masked-full}",
+        "\\begin{tabular}{llrrrrr}", "\\toprule",
+        "role & pair & surface & span & context & random & lift \\\\", "\\midrule",
+    ]
+    for role in roles:
+        for source, target in pairs:
+            role_tex = role.replace("_", "\\_")
+
+            def score(condition):
+                return f(by_key[(condition, role, source, target)], "transfer")
+
+            surface = score("surface_window_masked")
+            span = score("qwen25coder15b")
+            context = score("qwen25coder15bpoolcontext16")
+            random = score("qwen25coder15brandominits0poolcontext16")
+            out.append(
+                f"{role_tex} & {LANG[source]}$\\rightarrow${LANG[target]} & "
+                f"{surface:.3f} & {span:.3f} & {context:.3f} & {random:.3f} & "
+                f"{context-random:+.3f} \\\\"
+            )
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", "",
+            "\\begin{table}[h]\\centering\\small",
+            "\\caption{Problem-clustered paired differences between the "
+            "context-pooled probe and the surface comparator. Negative values "
+            "favor the surface comparator.}",
+            "\\label{tab:paired-deltas}",
+            "\\begin{tabular}{llrrr}", "\\toprule",
+            "role & pair & $\\Delta$ & CI low & CI high \\\\", "\\midrule"]
+    for r in paired:
+        role_tex = r["role"].replace("_", "\\_")
+        out.append(
+            f"{role_tex} & "
+            f"{LANG[r['source']]}$\\rightarrow${LANG[r['target']]} & "
+            f"{f(r, 'delta'):+.3f} & {f(r, 'ci_low'):+.3f} & "
+            f"{f(r, 'ci_high'):+.3f} \\\\"
+        )
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
+
+    out += [
+        "\\begin{table}[h]\\centering\\small",
+        "\\caption{Problem-clustered uncertainty for the aggregate boundary "
+        "contrasts. The effect is Python-transfer minus "
+        "JavaScript$\\leftrightarrow$PHP macro-F1. The difference-in-differences "
+        "subtracts the untrained boundary from the trained boundary. Intervals "
+        "resample problem identifiers and are conditional on the committed model "
+        "runs, including one random weight initialization.}",
+        "\\label{tab:boundary-contrasts}",
+        "\\begin{tabular}{lrr}", "\\toprule",
+        "estimand & estimate & 95\\% CI \\\\", "\\midrule",
+    ]
+    contrast_labels = {
+        "span_trained_boundary": "span-pooled trained boundary",
+        "context_trained_boundary": "occurrence-excluded trained boundary",
+        "context_untrained_boundary": "occurrence-excluded untrained boundary",
+        "context_boundary_difference_in_differences": "trained $-$ untrained boundary",
+        "context_trained_minus_untrained_close": "training lift, close pair",
+        "context_trained_minus_untrained_python": "training lift, Python pairs",
+        "boundary_shift_after_excluding_occurrence": "boundary shift after exclusion",
+    }
+    for row in contrasts:
+        out.append(
+            f"{contrast_labels[row['estimand']]} & "
+            f"{f(row, 'estimate'):+.3f} & "
+            f"[{f(row, 'ci_low'):+.3f}, {f(row, 'ci_high'):+.3f}] \\\\"
+        )
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
+
+    out += [
+        "\\begin{table}[h]\\centering\\small",
+        "\\caption{Rolewise occurrence-excluded effects and floor-adjusted "
+        "transfer. Effects are Python minus close-pair macro-F1; lift subtracts "
+        "the matched untrained score. The final column is close-pair lift minus "
+        "Python-transfer lift. These descriptive role summaries do not carry "
+        "separate intervals.}",
+        "\\label{tab:rolewise-floor-adjusted}",
+        "\\begin{tabular}{lrrrrr}", "\\toprule",
+        "role & trained effect & random effect & lift close & lift Python & "
+        "$\\Delta$ lift \\\\", "\\midrule",
+    ]
+    for role in roles:
+        def group_mean(condition, python_pairs):
+            selected = [
+                f(by_key[(condition, role, source, target)], "transfer")
+                for source, target in pairs
+                if ("python" in (source, target)) == python_pairs
+            ]
+            return st.mean(selected)
+
+        trained_close = group_mean("qwen25coder15bpoolcontext16", False)
+        trained_python = group_mean("qwen25coder15bpoolcontext16", True)
+        random_close = group_mean(
+            "qwen25coder15brandominits0poolcontext16", False
+        )
+        random_python = group_mean(
+            "qwen25coder15brandominits0poolcontext16", True
+        )
+        lift_close = trained_close - random_close
+        lift_python = trained_python - random_python
+        role_tex = role.replace("_", "\\_")
+        out.append(
+            f"{role_tex} & "
+            f"{trained_python - trained_close:+.3f} & "
+            f"{random_python - random_close:+.3f} & "
+            f"{lift_close:+.3f} & {lift_python:+.3f} & "
+            f"{lift_close - lift_python:+.3f} \\\\"
+        )
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
+
+    labels = {
+        "surface_window_masked": "surface window",
+        "qwen25coder15b": "span-pooled trained",
+        "qwen25coder15bpoolcontext16": "context-pooled trained",
+        "qwen25coder15brandominits0poolcontext16": "context-pooled untrained",
+    }
+    out += [
+        "\\begin{table}[h]\\centering\\small",
+        "\\caption{Aggregate diagnostics retained in the intersection-sample "
+        "masked-probe export. Surface counts are test occurrences; probe counts "
+        "are shared source--target problems. Surface rows have no in-domain or "
+        "seed fields. The untrained condition has two probe seeds versus five for "
+        "the trained conditions.}",
+        "\\label{tab:masked-diagnostics}",
+        "\\begin{tabular}{lrrrrr}", "\\toprule",
+        "condition & transfer & in-domain & shuffled source & seeds & "
+        "cell population \\\\", "\\midrule",
+    ]
+    for condition in labels:
+        group = [r for r in conditions if r["condition"] == condition]
+
+        def optional_mean(key):
+            values = [f(r, key) for r in group if r[key]]
+            return "---" if not values else f"{st.mean(values):.3f}"
+
+        seed_values = sorted({int(r["n_seeds"]) for r in group if r["n_seeds"]})
+        seeds = "---" if not seed_values else "/".join(map(str, seed_values))
+        shared = [int(r["n_shared_problems"]) for r in group if r["n_shared_problems"]]
+        if not shared:
+            shared_cell = "---"
+        elif condition == "surface_window_masked":
+            shared_cell = f"{min(shared):,}--{max(shared):,} occ."
+        else:
+            shared_cell = f"{min(shared)}--{max(shared)} problems"
+        out.append(
+            f"{labels[condition]} & {optional_mean('transfer')} & "
+            f"{optional_mean('indomain')} & {optional_mean('shuffled_source')} & "
+            f"{seeds} & {shared_cell} \\\\"
+        )
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
+    return "\n".join(out)
+
+
 def mechanism_table() -> str:
     m = rows(R / "transfer_mechanism.csv")
-    fig = ["\\begin{figure}[h]\\centering",
-           "\\includegraphics{figures/mechanism_scatter.pdf}",
-           "\\caption{Two candidate explanations for the transfer gap, over the six "
-           "ordered pairs. Left: how much of the source classifier's discriminative "
-           "mass the target realises, which is essentially unrelated to transfer. "
-           "Right: the share of that mass whose sign reverses between a "
-           "source-fitted and a target-fitted classifier, which tracks it closely. "
-           "The cues are present in both groups; what changes is where they point.}",
-           "\\label{fig:mech}", "\\end{figure}", ""]
     a = rows(R / "transfer_mechanism_ablation.csv")
     out = ["\\begin{table}[h]\\centering\\small",
            "\\caption{Transfer mechanism for the iterator role. \\emph{Surviving} is "
@@ -136,7 +299,6 @@ def mechanism_table() -> str:
             f"{f(r,'masked_best_macro_f1'):.3f} & {f(r,'surviving_mass'):.3f} & "
             f"{f(r,'sign_disagreement_mass'):.3f} & {f(r,'coef_agreement'):+.3f} & "
             f"{f(r,'sign_disagreement_mass_source_weighted'):.3f} \\\\")
-    out = fig + out
     out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", "",
             "\\begin{table}[h]\\centering",
             "\\caption{Masking an entire syntactic character class on both sides of "
@@ -149,6 +311,114 @@ def mechanism_table() -> str:
         out.append(f"{LANG[r['source']]}$\\rightarrow${LANG[r['target']]} & "
                    f"{r['ablated']} & {f(r,'macro_f1'):.4f} & {f(r,'delta'):+.4f} \\\\")
     out += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
+    return "\n".join(out)
+
+
+def transfer_interval_table() -> str:
+    rs = rows(R / "transfer_intervals.csv")
+    out = [
+        "\\begin{table}[p]\\centering\\small",
+        "\\caption{Problem-clustered intervals for every surface transfer cell. "
+        "The final row is the Python-pair minus close-pair boundary effect.}",
+        "\\label{tab:transfer-intervals}",
+        "\\begin{tabular}{llrrrr}", "\\toprule",
+        "role & pair & macro-F1 & 95\\% CI & problems \\\\", "\\midrule",
+    ]
+    for r in rs:
+        if r["role"] == "ALL":
+            pair = "Python pairs $-$ close pair"
+        else:
+            pair = f"{LANG[r['source']]}$\\rightarrow${LANG[r['target']]}"
+        role = r["role"].replace("_", "\\_")
+        out.append(
+            f"{role} & {pair} & {f(r, 'macro_f1'):.3f} & "
+            f"[{f(r, 'ci_low'):.3f}, {f(r, 'ci_high'):.3f}] & "
+            f"{int(r['n_problems'])} \\\\"
+        )
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
+    return "\n".join(out)
+
+
+def renaming_table() -> str:
+    rs = [
+        r for r in rows(R / "summary_renaming_uncapped.csv")
+        if r["condition"] != "original"
+    ]
+    out = [
+        "\\begin{table}[p]\\centering\\small",
+        "\\caption{Uncapped renaming audit for Python-source transfer. "
+        "C1, C2, and C4 are the committed identifier-renaming conditions. "
+        "These samples differ slightly from the frozen main analysis and are "
+        "reported as a robustness audit rather than pooled with it.}",
+        "\\label{tab:renaming-uncapped}",
+        "\\begin{tabular}{lllrrrr}", "\\toprule",
+        "role & condition & target & $n_{test}$ & name & surface & majority \\\\",
+        "\\midrule",
+    ]
+    for r in rs:
+        role_tex = r["role"].replace("_", "\\_")
+        out.append(
+            f"{role_tex} & {r['condition']} & "
+            f"{LANG[r['target']]} & {int(r['n_test']):,} & "
+            f"{f(r, 'name_only'):.3f} & {f(r, 'masked_best'):.3f} & "
+            f"{f(r, 'majority'):.3f} \\\\"
+        )
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
+    return "\n".join(out)
+
+
+def whitespace_table() -> str:
+    rs = rows(R / "whitespace_normalisation_check.csv")
+    out = [
+        "\\begin{table}[h]\\centering\\small",
+        "\\caption{Whitespace-normalisation audit for the three decisive iterator "
+        "surface transfers. Scores are unchanged at the displayed precision.}",
+        "\\label{tab:whitespace-audit}",
+        "\\begin{tabular}{lrrr}", "\\toprule",
+        "pair & raw & normalised & $\\Delta$ \\\\", "\\midrule",
+    ]
+    for r in rs:
+        out.append(
+            f"{LANG[r['source']]}$\\rightarrow${LANG[r['target']]} & "
+            f"{f(r, 'masked_best_raw'):.4f} & "
+            f"{f(r, 'masked_best_normalised'):.4f} & "
+            f"{f(r, 'delta'):+.4f} \\\\"
+        )
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
+    return "\n".join(out)
+
+
+def heatmap_figures() -> str:
+    roles = [
+        ("accumulator", "accumulator"),
+        ("index_key", "index/key"),
+        ("iterator", "iterator"),
+    ]
+    out = [
+        "\\paragraph{Reading the heatmaps.} Rows are source languages and columns "
+        "are target languages. These plots retain the complete available transfer "
+        "matrices, including cells excluded from matched-pair inference because "
+        "problem overlap is too small."
+    ]
+    for stem, role in roles:
+        out += [
+            "\\begin{figure}[p]\\centering",
+            f"\\includegraphics[width=0.88\\linewidth]{{../results/lp4fm/heatmap_{stem}.png}}",
+            f"\\caption{{Available {role} transfer matrix for "
+            "Qwen2.5-Coder-1.5B. Cells without adequate matched problem overlap "
+            "are descriptive only and are not used for the main boundary estimate.}",
+            f"\\label{{fig:lp4fm-{stem}}}",
+            "\\end{figure}",
+        ]
+    out += [
+        "\\begin{figure}[p]\\centering",
+        "\\includegraphics[width=0.9\\linewidth]{figures/transfer_slope.pdf}",
+        "\\caption{Span-pooled transfer contrast for the two trained models and "
+        "the architecture-matched random-initialization floor. This capped-sample "
+        "diagnostic is distinct from the intersection-sample context-pooled analysis.}",
+        "\\label{fig:lp4fm-transfer-slope}",
+        "\\end{figure}",
+    ]
     return "\n".join(out)
 
 
@@ -248,17 +518,25 @@ def causal_table() -> str:
     return "\n".join(out)
 
 
-OUT.write_text("\n\n".join([
+content = "\n\n".join([
     "% GENERATED by scripts/make_appendix.py -- do not edit by hand.",
+    "\\section{Complete transfer results}\n\\label{app:complete-transfer}",
+    full_transfer_table(),
+    transfer_interval_table(),
+    model_table(),
     "\\section{Pairwise problem overlap in XLCoST}\n\\label{app:overlap}",
     overlap_table(),
-    "\\section{Full transfer table}\n\\label{app:full}",
-    full_transfer_table(), model_table(),
-    "\\section{Transfer mechanism}\n\\label{app:mech}",
+    "\\section{Full masked-probe results}\n\\label{app:full}",
+    masked_probe_tables(),
+    "\\section{Renaming and formatting audits}\n\\label{app:audits}",
+    renaming_table(),
+    whitespace_table(),
+    "\\section{Transfer-mechanism diagnostics}\n\\label{app:mechanism}",
     mechanism_table(),
-    "\\section{Language geometry}\n\\label{app:geometry}",
+    "\\section{Language-geometry controls}\n\\label{app:geometry}",
     geometry_tables(),
-    "\\section{Causal interventions}\n\\label{app:causal}",
-    causal_table(),
-]) + "\n")
+    "\\section{Complete transfer heatmaps}\n\\label{app:heatmaps}",
+    heatmap_figures(),
+]) + "\n"
+OUT.write_text(content)
 print(f"  wrote {OUT}")

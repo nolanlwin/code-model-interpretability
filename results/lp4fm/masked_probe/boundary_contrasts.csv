@@ -1,0 +1,8 @@
+estimand,estimate,ci_low,ci_high,n_problem_ids,n_boot,interval,scope
+span_trained_boundary,-0.0124,-0.034,0.0202,282,5000,problem-clustered percentile,conditional on one random weight initialization
+context_trained_boundary,-0.0603,-0.0883,-0.0302,282,5000,problem-clustered percentile,conditional on one random weight initialization
+context_untrained_boundary,-0.0636,-0.0889,-0.039,282,5000,problem-clustered percentile,conditional on one random weight initialization
+context_boundary_difference_in_differences,0.0033,-0.0267,0.0362,282,5000,problem-clustered percentile,conditional on one random weight initialization
+context_trained_minus_untrained_close,0.1024,0.065,0.1323,282,5000,problem-clustered percentile,conditional on one random weight initialization
+context_trained_minus_untrained_python,0.1057,0.0806,0.1267,282,5000,problem-clustered percentile,conditional on one random weight initialization
+boundary_shift_after_excluding_occurrence,-0.048,-0.0878,-0.0156,282,5000,problem-clustered percentile,conditional on one random weight initialization

@@ -21,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TEX = ROOT / "lp4fm_short" / "main.tex"
 TEX_LONG = ROOT / "lp4fm_paper" / "section_results.tex"
+APPENDIX = ROOT / "lp4fm_short" / "appendix_generated.tex"
 CAPPED = ROOT / "results" / "lp4fm" / "summary.csv"
 UNCAPPED = ROOT / "results" / "lp4fm" / "summary_renaming_uncapped.csv"
 NONCODE = ROOT / "results" / "lp4fm_qwen2515b" / "summary.csv"
@@ -30,6 +31,8 @@ WSCHECK = ROOT / "results" / "lp4fm" / "whitespace_normalisation_check.csv"
 MECH = ROOT / "results" / "lp4fm" / "transfer_mechanism.csv"
 MASKED = ROOT / "results" / "lp4fm" / "masked_probe" / "conditions.csv"
 MECHABL = ROOT / "results" / "lp4fm" / "transfer_mechanism_ablation.csv"
+TRANSFER_INTERVALS = ROOT / "results" / "lp4fm" / "transfer_intervals.csv"
+BOUNDARY_CONTRASTS = ROOT / "results" / "lp4fm" / "masked_probe" / "boundary_contrasts.csv"
 
 f = lambda r, k: float(r[k])
 
@@ -45,6 +48,7 @@ def run() -> int:
     # Both papers are checked: the short paper is the submission, the long
     # one still carries the figures the appendix generator reads.
     tex = TEX.read_text() + "\n" + TEX_LONG.read_text()
+    appendix = APPENDIX.read_text()
     cap = load(CAPPED, probe_only=True)
     orig = [r for r in load(CAPPED) if (r.get("condition") or "original") == "original"]
     unc = load(UNCAPPED)
@@ -67,6 +71,30 @@ def run() -> int:
     rho_factor = min(effects) / max(rhos)
 
     checks = [
+        (
+            "LP4FM appendix covers every committed result family",
+            all(label in appendix for label in (
+                "tab:full", "tab:transfer-intervals", "tab:models",
+                "tab:overlap", "tab:masked-full", "tab:paired-deltas",
+                "tab:boundary-contrasts", "tab:rolewise-floor-adjusted",
+                "tab:masked-diagnostics",
+                "tab:renaming-uncapped", "tab:whitespace-audit",
+                "tab:mech", "tab:abl", "tab:geomlayers",
+            )),
+        ),
+        (
+            "LP4FM appendix includes nonredundant heatmaps and model slope",
+            sum(
+                appendix.count(f"heatmap_{role}.png")
+                for role in ("accumulator", "index_key", "iterator")
+            ) == 3
+            and "figures/transfer_slope.pdf" in appendix,
+        ),
+        (
+            "surface boundary sign is labeled Python minus close pair",
+            "Python pairs $-$ close pair" in appendix
+            and "close pair $-$ Python pairs" not in appendix,
+        ),
         ("max masked-context 0.965", f"{max(allm):.3f}" == "0.965"),
         ("rho factor is 57 (vs shuffled, as the exporter defines it)",
          f"{rho_factor:.0f}" == "57"),
@@ -306,6 +334,18 @@ def run() -> int:
         un, uf, nu = cond("qwen25coder15brandominits0poolcontext16")
         span_lift = (pn * 2 + pf * 4) / 6 - 0.575          # span floor: capped sample
         ctx_lift = (cn * 2 + cf * 4) / 6 - (un * 2 + uf * 4) / 6
+        surface_rows = [r for r in mk if r["condition"] == "surface_window_masked"]
+
+        def role_effect(roles):
+            selected = [r for r in surface_rows if r["role"] in roles]
+            near = [f(r, "transfer") for r in selected
+                    if "python" not in (r["source"], r["target"])]
+            far = [f(r, "transfer") for r in selected
+                   if "python" in (r["source"], r["target"])]
+            return st.mean(far) - st.mean(near)
+
+        iterator_effect = role_effect({"iterator"})
+        other_role_effect = role_effect({"accumulator", "index_key"})
         checks += [
             ("masked-probe: all four conditions at 18 cells",
              ns == np_ == nc_ == nu == 18),
@@ -321,11 +361,35 @@ def run() -> int:
              f"{uf - un:+.3f}" == "-0.064"),
             ("context margin over matched floor +0.105",
              f"{ctx_lift:+.3f}" == "+0.105"),
+            ("surface role effects -0.249 / -0.064",
+             f"{iterator_effect:+.3f}" == "-0.249"
+             and f"{other_role_effect:+.3f}" == "-0.064"),
             ("identifier share 61%",
              round(100 * (1 - ctx_lift / span_lift)) == 61),
         ]
     else:
         checks.append(("masked-probe conditions present", False))
+
+    if BOUNDARY_CONTRASTS.exists():
+        boundary = {r["estimand"]: r for r in load(BOUNDARY_CONTRASTS)}
+        did = boundary["context_boundary_difference_in_differences"]
+        shift = boundary["boundary_shift_after_excluding_occurrence"]
+        checks += [
+            (
+                "readout-induced boundary shift -0.048 [-0.088, -0.016]",
+                f"{f(shift, 'estimate'):+.3f}" == "-0.048"
+                and f"{f(shift, 'ci_low'):+.3f}" == "-0.088"
+                and f"{f(shift, 'ci_high'):+.3f}" == "-0.016",
+            ),
+            (
+                "trained-minus-untrained boundary +0.003 [-0.027, +0.036]",
+                f"{f(did, 'estimate'):+.3f}" == "+0.003"
+                and f"{f(did, 'ci_low'):+.3f}" == "-0.027"
+                and f"{f(did, 'ci_high'):+.3f}" == "+0.036",
+            ),
+        ]
+    else:
+        checks.append(("boundary contrasts present", False))
 
     # Renaming table: uncapped file, must still reproduce the published values.
     for role, pct, delta in (("index_key", 89, -0.032), ("accumulator", 83, -0.047),
@@ -362,6 +426,14 @@ def run() -> int:
                   "shuffled_labels", "probe_indomain", "probe_shuffled_source"):
             if r.get(k):
                 known.add(f"{float(r[k]):.3f}")
+    for r in load(TRANSFER_INTERVALS):
+        for k in ("macro_f1", "ci_low", "ci_high"):
+            if r.get(k):
+                known.add(f"{abs(float(r[k])):.3f}")
+    for r in load(BOUNDARY_CONTRASTS):
+        for k in ("estimate", "ci_low", "ci_high"):
+            if r.get(k):
+                known.add(f"{abs(float(r[k])):.3f}")
     derived = {"0.952", "0.893", "0.785", "0.887", "0.390", "0.107", "0.166",
                "0.006", "0.165", "0.013", "0.038", "0.015", "0.032", "0.047",
                "0.195", "0.272", "0.079", "0.039", "0.314", "0.126", "0.111",
@@ -380,9 +452,8 @@ def run() -> int:
                "0.929", "0.804", "0.840", "0.630", "0.569", "0.527", "0.464",
                "0.064", "0.105", "0.269", "0.485", "0.844", "0.589", "0.061", "0.771", "0.898", "0.127", "0.623", "0.548", "0.577",
                "0.126", "0.012",
-               # CI bounds and per-role effects, present in transfer_intervals.csv
-               # and conditions.csv; the checks above recompute the aggregates
-               "0.022", "0.059", "0.092", "0.160", "0.225", "0.852"}
+               # CI bounds and per-role effects; checks above recompute them
+               "0.022", "0.092", "0.147", "0.249", "0.852"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
     if unknown:

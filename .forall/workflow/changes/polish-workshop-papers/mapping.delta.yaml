@@ -1,0 +1,82 @@
+version: 1
+requirements:
+  - id: professional-venue-specific-prose
+    capability: polished-workshop-manuscripts
+    requirement: "Professional venue-specific prose"
+    verified: false
+    code:
+      file: lp4fm_short/main.tex
+      symbols: [document]
+    contract: |
+      Scholarly review of clarity, precision, qualification, and venue alignment.
+    claimcheck: false
+  - id: manuscript-identity-preservation
+    capability: polished-workshop-manuscripts
+    requirement: "Manuscript identity preservation"
+    verified: false
+    code:
+      file: interp4d_short/main.tex
+      symbols: [document]
+    contract: |
+      Confirm anonymity and absence of invented affiliations or credentials.
+    claimcheck: false
+  - id: source-backed-factual-claims
+    capability: verified-academic-claims
+    requirement: "Source-backed factual claims"
+    verified: false
+    code:
+      file: lp4fm_short/main.tex
+      symbols: [document]
+    contract: |
+      Compare factual and empirical claims with primary sources and committed results.
+    claimcheck: true
+  - id: citation-integrity
+    capability: verified-academic-claims
+    requirement: "Citation integrity"
+    verified: false
+    code:
+      file: interp4d_short/main.tex
+      symbols: [document]
+    contract: |
+      Resolve citation keys and verify material source characterizations.
+    claimcheck: true
+  - id: honest-uncertainty
+    capability: verified-academic-claims
+    requirement: "Honest uncertainty"
+    verified: false
+    code:
+      file: lp4fm_short/main.tex
+      symbols: [document]
+    contract: |
+      Scope causal, mechanistic, novelty, and generalization claims to the evidence.
+    claimcheck: true
+  - id: lp4fm-page-limit
+    capability: workshop-page-limit-compliance
+    requirement: "LP4FM page limit"
+    verified: false
+    code:
+      file: lp4fm_short/main.tex
+      symbols: [document]
+    contract: |
+      Compile and inspect the PDF main-text boundary at page four.
+    claimcheck: false
+  - id: interp4d-page-limit
+    capability: workshop-page-limit-compliance
+    requirement: "Interp as a Science page limit"
+    verified: false
+    code:
+      file: interp4d_short/main.tex
+      symbols: [document]
+    contract: |
+      Compile and inspect the PDF main-text boundary at page five.
+    claimcheck: false
+  - id: self-contained-main-text
+    capability: workshop-page-limit-compliance
+    requirement: "Self-contained main text"
+    verified: false
+    code:
+      file: interp4d_short/main.tex
+      symbols: [document]
+    contract: |
+      Confirm central methods, results, limitations, and conclusion appear in main text.
+    claimcheck: false

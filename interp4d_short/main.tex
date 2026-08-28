@@ -13,275 +13,389 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 
-\title{A Probing Confound That Survives the Untrained-Network Control}
+\title{A Control Matrix for Scientific Variable-Role Probing}
 
-\workshoptitle{Interpretability for Scientific Discovery (Interp4Discovery)}
+\workshoptitle{Interpretability as a Science}
 
-\author{%
-  Anonymous Author(s) \\
-  Affiliation \\
-  Address \\
-  \texttt{email} \\
-}
+\author{Anonymous Author(s)}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-The standard defence of a probing result is a floor: if an untrained network
-supports the same probe far less well, the probe is reading something the model
-learned. We report a case where that defence passes and the conclusion is still
-mostly wrong. A linear probe on a code model's residual stream appears to
-recover variable roles language-independently, moving $-0.012$ macro-F1 across
-a boundary where a model-free surface classifier loses $0.126$, and it clears
-an untrained network by $+0.269$. But the probe pools over the occurrence's own
-tokens, so its input contains the variable's name, and names are among the most
-language-invariant features of parallel corpora. Excluding the name from the
-pooling, with the forward pass unchanged, removes $61\%$ of the probe's margin
-over a matched untrained floor and multiplies its boundary effect fivefold,
-leaving it no flatter than the untrained network itself. The untrained control
-cannot catch this confound, because the untrained network reads the same name
-and inherits the same invariance. What caught it was a model-free comparator
-that could not see the name. We suggest such comparators belong beside
-untrained floors in the standard battery, and report a negative result for
-role probing: with the identifier excluded, we find no evidence of
-language-independent role representation at this scale.
+Interpretability requires experiments that distinguish a model mechanism from
+properties of the measurement. We examine this problem in linear probes for
+five variable roles in code models. The study includes three models and draws
+from all seven programming languages in XLCoST, although coverage is not a
+complete model-by-language grid. High probe accuracy supports different
+conclusions under matched controls. Misleading names reduce index probe F1 by
+$0.272$ yet increase accumulator F1 by $0.079$; iterator probes can be refit
+after the same intervention in two models. On Python, boolean occurrence type
+is decodable at $0.981$--$0.988$ macro-F1, but a masked source-line classifier
+reaches $0.983$ without a language model. The retained summaries do not support
+uncertainty on that difference, so they do not establish a probe advantage
+beyond local syntax. Class or structure labels remain decodable after
+perturbation-specific refitting and pass a within-program label-permutation
+control in three models, yet a gate-specified activation patch at the
+query-name site fails in Qwen2.5-1.5B. These outcomes motivate a control matrix:
+decodability, cue sensitivity, surface sufficiency, and site-specific causal
+relevance are distinct claims. Recording the unit, estimand, and unresolved
+alternatives makes the evidence more falsifiable and replicable.
 \end{abstract}
 
 \section{Introduction}
 
-Probing classifiers come with a known epistemic gap: a probe reports what is
-decodable, not what the model uses, and a sufficiently expressive probe can
-decode from noise~\citep{belinkov2022probing,hewitt2019control}. The field's
-working answer is a battery of controls, and the strongest of them is the
-untrained network: run the same probe on the same architecture with random
-weights, and whatever survives is at least \emph{learned}, even if not
-used~\citep{zhang2018language,voita2020mdl}.
+Linear probes are often used to ask what information a representation contains.
+A successful probe establishes decodability under a particular readout. It
+does not by itself establish that the model computed an abstract feature, that
+the feature is unavailable in surface form, or that the model uses it
+behaviorally~\citep{belinkov2022probing,voita2020mdl}. Control tasks constrain
+probe capacity~\citep{hewitt2019control}, and targeted studies show that probe
+accuracy need not entail task relevance~\citep{ravichander2021probing,
+elazar2021amnesic}. Capacity is only one source of
+ambiguity. Input leakage, label construction, sample resolution, and an
+unmatched intervention can each preserve high accuracy while changing the
+scientific claim.
 
-This paper is about a failure mode that battery does not cover. The controls
-above all vary the \emph{model} while holding the probe's input fixed. If the
-input itself carries the label, every member of the battery inherits the
-signal: the trained network decodes it, and the untrained network decodes it
-too, so the floor rises with the effect and the comparison stays flattering.
-Nothing in the standard battery varies what the probe is allowed to read.
+This distinction is central to interpretability as a science. A measurement is
+useful when its target is explicit, its alternative explanations are tested,
+and contrary outcomes can change the conclusion. We use variable-role probing
+as a comparative case study. Variable roles describe how an identifier
+functions in a program, such as accumulating values or indexing a
+container~\citep{sajaniemi2002roles}. They are attractive probe targets because
+the same nominal role can be expressed by names, syntax, and distributed
+context. That multiplicity also makes probe accuracy underidentified.
+Prior code-probing studies, including the 15-task INSPECT framework, map
+decodable syntactic and semantic information across layers and
+models~\citep{karmakar2021what,troshin2022probing,karmakar2024inspect}. We do
+not propose another taxonomy. We contribute a role-by-control evidence map that
+records which interpretation survives, which comparison is incommensurate, and
+what outcome would falsify each surviving claim.
 
-We hit this in a concrete setting: cross-lingual transfer of variable-role
-probes in code models. The confounded conclusion was attractive, plausible, and supported by an
-untrained floor. It fell to a control from outside the standard battery. The
-case is clean enough to serve as a template for where else the same gap may
-hide.
+Our evidence covers five roles, three models, and the seven-language XLCoST
+corpus~\citep{zhu2022xlcost}. The experiment is intentionally reported as an
+uneven evidence matrix rather than a full factorial study. Qwen2.5-1.5B,
+Qwen2.5-Coder-1.5B, and StarCoder2-7B appear in the controlled boolean and
+class-reference experiments~\citep{qwen2024qwen25,hui2024qwencoder,
+lozhkov2024starcoder2}. Earlier accumulator and index runs use one model and a
+weaker split protocol. Iterator runs cover two models and all seven languages.
+This is a methodological case study of evidential boundaries, not a validation
+of the matrix as a universal framework. Its heterogeneity separates replicated
+findings from leads that still require confirmation.
 
-\section{The setting, and the seductive result}
+The central result is not that one representation type wins. It is that the
+same headline observation, high linear-probe F1, decomposes into at least four
+outcomes. Index probes depend strongly on names. Accumulator and iterator
+probes can be refit after misleading renames. A model-free classifier nearly
+matches boolean probe scores, with no retained paired uncertainty for the
+difference. Class-reference probes survive tested renames and a randomized-
+label control but fail a gate-specified causal intervention at one site. A
+single accuracy number cannot identify among these explanations.
 
-A \emph{variable role}~\citep{sajaniemi2002roles}, such as accumulator or index
-key, describes what a variable does rather than what it is called, so it is a
-natural candidate for language-independent representation.
-XLCoST~\citep{zhu2022xlcost} provides the same problems solved in Python, JavaScript and PHP. We restrict to
-the $869$ problems all three share, so every
-comparison sees identical problem ids, and fit a role classifier on one
-language while testing on another, over all six ordered pairs.
+\section{Study design and evidence matrix}
 
-Two systems take that test. A \emph{model-free} character $n$-gram classifier
-over the occurrence's context, with every instance of the variable's name
-masked, and a fixed feature family chosen in advance. And a linear probe on the
-residual stream of Qwen2.5-Coder-1.5B~\citep{hui2024qwencoder}, mean-pooled
-over the occurrence's tokens, layer selected on source-language validation
-data. Intervals resample whole problems, never occurrences.
-
-The surface classifier is strongly language-bound: $0.929$ between JavaScript
-and PHP, $0.804$ to or from Python, a boundary effect of $-0.126$
-($95\%$ CI $[-0.160, -0.092]$). The probe barely moves: $-0.012$. And the
-standard defence holds: an untrained network of the same architecture and
-pooling reaches only $0.575$ overall against the probe's $0.844$, a margin of
-$+0.269$. Every control in the usual battery says the probe is reading a
-learned, language-independent role representation.
-
-\section{The control the battery was missing}
+\paragraph{Roles, models, and languages.}
+We treat five roles as related case studies, not measurement-equivalent
+instances of one construct. Accumulators update within loops; indices or keys
+appear as loop counters or subscripts; iterators are loop-bound names and their
+uses; boolean labels distinguish assignment, conditional, loop, and return
+uses; class/structure labels mark declared type names and references. Binary
+token probes label all other tokens negative. Heuristic AST and regular-
+expression extractors vary by language and lack a common multilingual gold
+set. Protocols also differ: accumulator, index, and iterator use legacy
+token-stratified splits and test-maximized layers; boolean mean-pools
+occurrences, groups splits by problem, and predicts usage type; class/structure
+uses token labels, problem groups, and five seeds. The modern pipelines select
+layers on validation data. XLCoST contains C, C++, C\#, Java, JavaScript, PHP,
+and Python. Table~\ref{tab:scope} states actual coverage; scores across rows do
+not estimate one common task.
 
 \begin{table}[t]
 \centering
-\caption{Cross-lingual role transfer, macro-F1 over three roles.
-\emph{Close} is JavaScript$\leftrightarrow$PHP; \emph{Python} is the four
-transfers involving Python. Each probe is paired with an untrained network at
-its own pooling, because different poolings read different token sets and have
-different achievable floors.}
-\label{tab:main}
-\begin{tabular}{lccc}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{Actual evidence coverage. No row should be read as a complete
+three-model by seven-language experiment.}
+\label{tab:scope}
+\begin{tabular}{p{0.13\linewidth}p{0.21\linewidth}p{0.18\linewidth}p{0.31\linewidth}}
 \toprule
- & close & Python & effect \\
+Role & Models & Language coverage & Strongest available controls \\
 \midrule
-Surface $n$-gram, name masked (no model) & 0.929 & 0.804 & $-0.126$ \\
-\midrule
-Probe, span-pooled (reads the name)      & 0.852 & 0.840 & $-0.012$ \\
-\quad untrained, span-pooled$^{\dagger}$  & 0.590 & 0.568 & $-0.022$ \\
-\midrule
-Probe, context-pooled (no name)          & 0.630 & 0.569 & $-0.061$ \\
-\quad untrained, context-pooled          & 0.527 & 0.464 & $-0.064$ \\
+Accumulator & Qwen2.5-1.5B & Python plus Java, C++, C, C\# &
+Six name interventions, cross-language transfer \\
+Index or key & Qwen2.5-1.5B & Python, Java, JavaScript, C++, C, C\# &
+Misleading and collapsed names, cross-language transfer \\
+Iterator & Coder-1.5B, StarCoder2-7B &
+Python, Java, JavaScript, PHP, C++, C, C\# &
+Six name interventions, cross-language transfer \\
+Boolean & All three & Python, Java, JavaScript, PHP &
+Five refit renames, surface baselines, name-label control task \\
+Class or struct & All three & Python, C++, JavaScript, C &
+Six refit renames, within-program label permutation, causal patching \\
 \bottomrule
 \end{tabular}
-
-\vspace{2pt}
-{\footnotesize $^{\dagger}$ Committed, but measured on an earlier, larger
-sample rather than the three-way intersection the other rows use.}
 \end{table}
 
-\begin{figure}[t]
+\paragraph{Four control questions.}
+Renaming asks whether lexical identity carries the prediction. We compare
+original names with numeric, single-character, collapsed, random-noun, and
+misleading names drawn from another role. Each condition refits its probe and
+selects its layer, so preserved F1 means that a similarly predictive readout
+can be recovered after renaming; it does not show that one fixed feature
+direction is invariant. A model-free character classifier with the target name
+masked asks whether local source text already determines the label.
+Randomized-label controls ask whether the probe family can fit a specified null
+task. Their nulls differ: boolean assigns a random label per variable name,
+while class/structure permutes labels within programs. Activation patching asks
+whether replacing a residual state at a gate-specified site moves a behavioral
+logit readout~\citep{meng2022locating}.
+
+These controls are not interchangeable. Renaming can show name robustness while
+leaving syntax untouched; with refitting, it measures recoverability rather
+than invariance. A positive selectivity score can reject its specified null
+task while leaving a surface shortcut intact. A model-free comparator
+can establish surface sufficiency but cannot show how the model uses the
+feature. A causal intervention can ground a use claim only at its specified
+layer, span, direction, and readout.
+
+\paragraph{Evidence grades.}
+Boolean and class-reference experiments use problem-grouped splits,
+validation-selected layers, five seeds, and paired or clustered uncertainty.
+Iterator artifacts use two models but retain the legacy token-level split and
+test-maximized layer, without matched surface or capacity controls.
+Accumulator and index likewise use token-level splits, test-maximized layers,
+and whole-word renaming. We retain their large,
+opposite effects as a falsifiable hypothesis, not as a confirmed estimate of a
+population difference. A DeepSeek index run is excluded because a tokenizer
+offset error invalidates its activation alignment.
+
+\section{The same probe score supports different claims}
+
+\begin{table}[t]
 \centering
-\includegraphics{figures/masked_slope.pdf}
-\caption{Table~\ref{tab:main} as a picture. The surface classifier tracks the
-language boundary. The span-pooled probe does not, but its input contains the
-variable's name. Excluding the name drops the probe to just above its untrained
-floor, and both slope downward together.}
-\label{fig:masked}
-\end{figure}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{Probe results after the strongest available control. Values are
+macro-F1. Deltas compare the misleading-name condition with original names.}
+\label{tab:evidence}
+\begin{tabular}{p{0.13\linewidth}p{0.15\linewidth}p{0.17\linewidth}p{0.38\linewidth}}
+\toprule
+Role & Baseline probe & Key control result & Strongest supported inference \\
+\midrule
+Index & 0.959 & $\Delta=-0.272$ &
+Refit performance depends on names in the legacy Qwen run \\
+Accumulator & 0.893 & $\Delta=+0.079$ &
+Refit performance survives that rename in the legacy run \\
+Iterator & 0.988, 0.990 & $\Delta=+0.012,+0.009$ &
+Refit performance survives misleading names in two models \\
+Boolean & 0.981--0.988 & surface 0.983 &
+No resolved evidence beyond masked local source in Python \\
+Class or struct & 0.979--0.982 & $|\Delta|\leq0.004$ &
+Refit robustness plus within-program permutation selectivity \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-The asymmetry the setup hides is simple: the surface classifier is forbidden to
-read the variable's name, and the probe is not. Parallel implementations of one
-problem tend to name their variables alike, so the name is exactly the kind of
-feature that transfers across languages for reasons that have nothing to do
-with the model.
+\subsection{Lexical intervention separates roles}
 
-The intervention is to change what the probe reads, not what the model sees.
-We pool the $16$ tokens either side of the occurrence and exclude its own, so
-the forward pass is byte-identical and only the read-out moves. Masking the
-name in the source would instead change the input distribution, entangling two
-effects.
+Perturbation-specific refitting produces opposite effects for index and
+accumulator probes.
+The Qwen2.5-1.5B index probe falls from $0.959$ to $0.687$, a change of
+$-0.272$. The accumulator probe rises from $0.893$ to $0.972$, a change of
+$+0.079$. The intervention therefore does more than lower overall data quality:
+it changes how recoverable the two labels are under the legacy readout. This is
+the study's clearest dissociation, but occurrence-level splitting,
+test-maximized layers, and refitting prevent a fixed-direction invariance
+interpretation. Its numerical magnitude is exploratory.
 
-Three things happen at once (Table~\ref{tab:main}, Figure~\ref{fig:masked}).
-The probe falls from $0.844$ to $0.589$. Its margin over a \emph{matched}
-untrained floor collapses from $+0.269$ to $+0.105$: $61\%$ of what the probe
-knew was the name. And its boundary effect grows from $-0.012$ to $-0.061$,
-against $-0.064$ for the untrained network at the same pooling. With the name
-excluded, the trained probe is no flatter across languages than an untrained
-one. The paired version holds per item: over the same occurrences, the surface
-classifier beats the context-pooled probe in $14$ of $18$ cells with a
-problem-clustered interval excluding zero.
+Iterator provides a separate refit-robust result at near-ceiling baseline
+accuracy. Qwen2.5-Coder-1.5B and StarCoder2-7B reach baseline F1 of
+$0.988$ and $0.990$. Misleading iterator names change those scores by
+$+0.012$ and $+0.009$. Python-trained probes transfer across the other six
+XLCoST languages with F1 ranges of $0.936$--$0.983$ and $0.906$--$0.964$.
+These results support recoverability after the tested naming intervention.
+They do not establish feature invariance or abstraction because the probe and
+best layer are refit and the iterator runs lack a matched model-free surface
+comparator.
 
-\paragraph{The confound is not about transfer.} The same decomposition holds
-within languages. In-domain, the span-pooled probe scores $0.898$, and excluding the name costs
-$0.127$ ($0.771$), over an untrained in-domain floor of $0.623$ at the same
-pooling. The name is a large share of the signal everywhere, and
-the cross-lingual flatness is just the setting in which that share becomes
-diagnosable, because the name is the one feature the language boundary does not
-disturb. Any within-language probing result obtained by pooling over a labelled
-span inherits the same question.
+\subsection{A model-free baseline resolves the boolean result}
 
-\paragraph{Why the untrained control missed it.} The untrained network is a
-control for \emph{learning}, not for \emph{leakage}. It reads the same input as
-the trained probe, name included, and random projections of a shared name
-support the same classifier on both sides of a language boundary. So the floor
-inherits the confound: span-pooled, the untrained network's boundary effect is
-$-0.022$, nearly as flat as the trained probe's $-0.012$. A control that shares
-the probe's input cannot detect a property of the input.
+Boolean occurrence type illustrates why a high, replicated probe score can
+remain scientifically weak. On a frozen Python sample, the three models reach
+$0.982$, $0.981$, and $0.988$ macro-F1. Selectivity ranges from $+0.272$ to
+$+0.288$, which rejects the specific hypothesis that an equally expressive
+probe predicts labels randomly assigned per variable name as well as the real
+usage labels. Yet a character classifier on
+the enclosing source line, with the variable name masked, reaches $0.983$.
+The probe-minus-surface differences are $-0.001$, $-0.002$, and $+0.005$.
 
-\paragraph{What caught it.} The model-free classifier, precisely because it was
-built with the name masked, was the one condition in the design whose input did
-not contain the label's correlate. Its strong language-dependence is what made
-the probe's flatness look remarkable, and the contradiction between the two is
-what prompted the pooling intervention. A comparator that cannot see the
-suspect feature is a different kind of control from a floor, and this case
-needed both.
+The committed probe and surface exports retain aggregate scores but not aligned
+predictions from both predictors. Consequently, these small differences have
+no paired interval and cannot support equivalence or superiority. Five
+renaming conditions also change refit performance by at most $0.013$. The
+supported claim is narrow: boolean occurrence type is linearly decodable after
+the tested renames, while masked local syntax is a sufficient alternative
+explanation for the high Python score. The cross-language runs extend
+decodability to Java, JavaScript, and PHP. Only Python has renaming runs, so
+they do not extend the refit-robustness claim.
 
-\paragraph{A second confound, caught by the same habit.} The design survived a
-different leak the same way. XLCoST ships Python through a formatted mirror and
-the other two languages through a detokenized one, so the Python boundary is
-also a corpus-formatting boundary, and a classifier keying on layout would
-reproduce our surface effect with no linguistic content. It does not: the
-character analyser discards whitespace before forming $n$-grams, and equalising
-whitespace on both sides moves transfer by under $0.001$ on every decisive
-pair. We mention it because the check is the same shape as the main result:
-enumerate what the instrument can see, and test the suspect channel directly
-rather than arguing it away.
+\subsection{A causal null limits the class-reference claim}
 
-\section{The negative result}
+Class-reference probes pass two controls that boolean does not. Across all
+three models, baseline F1 is $0.979$--$0.982$ and within-program permutation
+selectivity is
+$+0.503$--$+0.553$. Misleading class-style names change F1 by
+$-0.004$, $-0.004$, and $+0.004$. Python-trained probes also transfer to C++,
+JavaScript, and C at $0.885$--$0.980$. This supports a
+permutation-selective signal whose predictive performance can be recovered
+after the tested renames. It does not establish a fixed rename-invariant
+direction.
 
-With the identifier excluded, what remains is a margin of $+0.105$ over the
-matched floor, consistent in both language groups, so the model does encode
-something about roles beyond the name. But we find no evidence that it is
-language-independent: its boundary effect is indistinguishable from an
-untrained network's. At this scale and in this setting, the
-language-independent role representation the span-pooled probe appeared to
-demonstrate does not exist as measured.
+We then test a stronger causal claim in Qwen2.5-1.5B. The experiment contains
+$288$ matched class-versus-function prompts in $48$ template clusters. Let
+$D=\ell(\texttt{True})-\ell(\texttt{False})$. Denoising patches the
+class-source residual into a function prompt and defines
+$e_d=D_{\mathrm{patched\ function}}-D_{\mathrm{function}}$; noising reverses
+the patch and defines
+$e_n=D_{\mathrm{class}}-D_{\mathrm{patched\ class}}$. Recovery is the ratio of
+the mean signed effect to the mean matched gap
+$D_{\mathrm{class}}-D_{\mathrm{function}}$. Percentile intervals resample
+template clusters. The gate additionally requires positive, control-separated
+effects, recovery of at least $0.05$, and mean effects of at least $0.10$ in
+both directions.
 
-The collapse is not an artifact of one role. The identifier exclusion costs
-every role its margin, including accumulator and index\_key, whose labels come from extractors that agree well across languages. The
-role-level caveats run the other way, against the \emph{surface} effect, which is concentrated in
-iterator ($-0.225$ alone against $-0.059$ for the other two) where labelling
-across languages is least consistent.
+The behavioral readout has limited dynamic range. Both prompt classes prefer
+\texttt{True}. Their mean logit differences are $+2.75$ for class prompts and
+$+1.78$ for function prompts, although the matched class-minus-function gap is
+$+0.97$ and has the expected sign for $98.6\%$ of pairs. The gate therefore
+tests whether patching transfers this relative distinction, not whether it
+flips a well-calibrated binary decision.
 
-We think the negative result is worth having on record because the positive
-version is easy to produce and easy to believe. It requires only the standard methodology and it passes the standard controls.
-Prior work in this area reports cross-language probe transfer with untrained
-floors and without a model-free
-comparator~\citep{hernandezlopez2026syntactic,utpala2024language,kargaran2025programming}.
-Our results do not show that those findings are wrong, but they do show that
-the design cannot rule out this confound, and that in at least one natural
-setting the confound accounts for most of the effect.
+Denoising produces a mean effect of $0.0087$ with a $95\%$ interval
+$[-0.0007,0.0188]$ and recovery $0.0089$. Noising produces $0.0199$
+$[0.0109,0.0296]$ with recovery $0.0204$. The intervention therefore fails the
+specified gate. The protocol and results entered the repository together, so
+we do not claim auditable preregistration. This is a site-specific causal null,
+not evidence that class information is absent or unused everywhere. More
+directly, the intervals exclude mean effects above $0.0188$ and $0.0296$
+logit-difference units in the two tested directions. Strong decodability,
+positive selectivity, and renaming robustness therefore do not establish a
+substantive bidirectional contribution at this site and readout.
 
-\section{Where else the same gap may hide}
+\section{A claim--control matrix for scientific probing}
 
-The structure that produced this confound is general: a probe pools over a span
-whose contents correlate with the label, and every control in the battery reads
-the same span. Concrete instances we would check first, in each case by asking
-what the pooled span contains that already predicts the label:
+The experiments suggest orthogonal claims rather than a cumulative ladder.
 
-\begin{itemize}\itemsep2pt
-\item \textbf{Cross-lingual probing of multilingual text models.} Pooling over
-a mention while probing for entity type, when the mention string itself
-(names, numbers, loanwords) survives translation. Parallel and translated
-corpora concentrate exactly these invariants.
-\item \textbf{Syntactic probes pooling over the word being classified.} A POS
-or dependency-role probe that reads the target word's own embedding reads its
-identity, and word identity predicts POS to a first approximation. The selectivity
-literature~\citep{hewitt2019control} covers the capacity half of this but not
-the input half.
-\item \textbf{Time-series and multimodal probes.} Pooling a window around an
-event while probing for the event's category, when the raw signal in the
-window carries a template of the category (a spike shape, a colour histogram).
-\item \textbf{Robustness studies.} Any claim that a representation is
-invariant to a transformation, tested with a probe whose input contains a
-feature the transformation preserves. The transformation's fixed points are
-the suspect set.
-\end{itemize}
+\begin{enumerate}\itemsep2pt
+\item \textbf{Decodability.} A held-out probe exceeds a simple label baseline.
+\item \textbf{Probe-capacity control.} The probe exceeds a matched
+randomized-label task whose construction must be reported. This does not imply
+training dependence or surface irreducibility.
+\item \textbf{Cue sensitivity.} A fixed probe evaluated on a paired rename
+isolates one question; perturbation-specific refitting instead measures
+recoverability after the cue changes.
+\item \textbf{Surface sufficiency.} A model-free comparator on the same
+population tests whether the proposed surface information already predicts the
+label. A representational advantage additionally requires uncertainty on the
+paired performance difference.
+\item \textbf{Site-specific causal relevance.} A gate-specified intervention
+changes a behavioral readout in both directions and separates from placebo and
+random controls.
+\end{enumerate}
 
-In every case the remedy is the one that worked here: a read-out denied the
-suspect feature, paired with a floor at the \emph{same} read-out.
+No row entails the next. Boolean passes its name-label control and shows refit
+robustness, while masked local syntax remains sufficient. Class/structure
+passes a different permutation control, lacks a matched surface comparator,
+and fails the bidirectional causal gate at the selected site. Iterator shows refit
+robustness but lacks surface and capacity comparisons. Accumulator and index
+motivate a cue-type hypothesis but require modern replication before direct
+comparison.
 
-\paragraph{What would change our conclusion.} A context-pooled probe at larger
-scale whose margin over its floor grows rather than shrinks would show
-name-free role abstraction emerging with capacity. Input-level name masking
-that restores the flat curve would relocate the confound from the
-representation to the read-out. And a parallel corpus without shared naming
-conventions showing a flat span-pooled probe would refute our explanation
-outright. Each is a single experiment on the released pipeline.
+\paragraph{Falsifying outcomes.}
+The framework is useful only if results can change the interpretation. A
+problem-grouped rerun could shrink or reverse the accumulator-index
+dissociation. A class-stratified boolean sample could resolve a consistent
+probe advantage over the masked source line. An all-layer class-reference
+patch could reveal a causal site outside the probe-selected layer. A
+scope-correct seven-language rename pipeline could expose language-specific
+cue dependence hidden by the current coverage. Each outcome would revise a
+named claim rather than leave an elastic assertion of representation.
 
-\section{Practical recommendations}
+\paragraph{Replication standard.}
+We recommend publishing the evidence matrix with the metric table. Every cell
+should identify the prediction unit and label, model revision, corpus slice,
+split unit, layer-selection rule, random seeds, comparator input, uncertainty
+estimand, and intervention gate. Negative results should state the smallest
+effect the design can exclude. This turns a probing result from a single score
+into a set of auditable contrasts.
 
-\textbf{Vary the read-out, not only the model.} An untrained floor holds the
-probe's input fixed and varies the weights. Add at least one condition that
-varies what the probe may read: pool excluding the token span whose label is
-being predicted, or compare against a model-free classifier denied the suspect
-feature. The two catch different confounds.
+\section{Identifiability and evaluation design}
 
-\textbf{Match the floor to the read-out.} A context-pooled probe read against a
-span-pooled floor mixes two chance levels. Whatever restriction the probe gets,
-its floor gets too.
+A useful contrast changes one named factor and carries uncertainty for the
+resulting difference. The boolean probes and masked-line classifier share a
+population, but aligned predictions were not retained; a largest aggregate gap
+of $0.005$ therefore supports neither probe superiority nor equivalence.
+Renaming reuses surviving occurrences but refits probes and layers, so its
+delta measures recoverability after intervention, not fixed-direction
+invariance. The class experiment instead uses matched prompts plus placebo,
+random, and same-source controls. Its effects fall below the specified $0.10$
+gate, although noising has a positive interval; the substantive bidirectional
+claim, rather than all causal involvement, is rejected at that site.
 
-\textbf{Treat input-label correlates as first-class suspects.} In parallel
-corpora, identifiers; in translation corpora, named entities and numbers; in
-paired documents, any token the pairing preserves. If the span being pooled
-contains a feature that survives the manipulation under study, the probe's
-apparent invariance to that manipulation is uninformative until the feature is
-excluded.
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{Scientific status of the paper's main interpretations. ``Open'' means
+that the required comparison has not been run under a matched protocol.}
+\label{tab:status}
+\begin{tabular}{p{0.23\linewidth}p{0.32\linewidth}p{0.34\linewidth}}
+\toprule
+Interpretation & Evidence in this study & Status and decisive next test \\
+\midrule
+Legacy roles may use different cues &
+Opposite refit deltas in incommensurate pipelines, plus iterator stability &
+Exploratory. Repeat with problem groups, scope-aware renaming, and intervals \\
+Boolean exceeds Python local syntax &
+Three probes compared with the same masked-line classifier &
+Not resolved. Retain paired predictions and test a declared margin \\
+Class refit performance survives renaming &
+Three-model permutation selectivity and misleading-name deltas near zero &
+Supported as recoverability. Evaluate one fixed probe across paired renames \\
+Query-name signal makes a substantive bidirectional causal contribution &
+Two-direction patching with placebo and random controls &
+Not supported at Qwen layer 18. Run an explicitly exploratory all-layer sweep \\
+Cross-language role abstraction &
+Strong transfer with uneven role and model coverage &
+Open. Apply one extractor and control battery to a complete language grid \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\paragraph{Limitations.} One model at $1.5$B, three languages, three roles, and
-a boundary instantiated by a single language. Context pooling excludes the name
-but not everything correlated with it, so $+0.105$ is an upper bound on
-name-free role information. The surface effect is concentrated in one role
-(iterator, $-0.225$ alone against $-0.059$ for the other two), whose labels
-come from a different extractor path across languages. And this remains a
-probing study: it bounds what is decodable, not what the model uses.
+\section{Limitations}
+
+The study covers three models, five roles, and all seven XLCoST languages
+collectively, but not a complete $3\times5\times7$ design. Three-model
+replication applies to boolean and class-reference; iterator uses two models,
+and accumulator and index use one. Language coverage and extractors differ by
+role.
+
+Protocol quality is uneven. The accumulator-index dissociation predates
+problem-grouped splits and scope-aware renaming; function overlap, textual
+replacement, test-maximized layers, and refitting may inflate it. Iterator
+lacks matched surface and control-task baselines. Boolean's local labels are
+nearly surface-predictable; paired predictions were not retained, so
+equivalence is untested. Class-reference patching covers one model, layer,
+token site, and readout; stopping after the Qwen null was not externally
+registered in advance.
+
+Except for the reported patch, probes remain correlational. Mean pooling
+directly exposes identifiers, while refitting tests recoverability rather than
+fixed-direction invariance. Renames cover selected lexical alternatives;
+cross-language transfer may reflect shared syntax, names, or extractor
+artifacts. Hence the paper reports a matrix, not a conclusion that models
+represent abstract variable roles.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
@@ -291,15 +405,14 @@ probing study: it bounds what is decodable, not what the model uses.
 
 \section{Reproducibility}
 \label{app:repro}
-Every figure is regenerated from committed per-cell artifacts, and a regression
-test recomputes each from those files. All four conditions of
-Table~\ref{tab:main} are backed by per-cell artifacts, with the one caveat the
-table's footnote states. The probe is logistic regression on activations
-mean-pooled over either the occurrence's span or the $16$ tokens either side of
-it excluding the span; the surface classifier is a \texttt{char\_wb} tf-idf
-vectoriser with $n \in [2,4]$ and a pre-registered feature family, fitted on
-the source language only. Pooling and initialisation are recorded in each
-store's identity, so conditions cannot be silently mixed downstream.
+The appendix is generated from committed boolean, iterator, class-reference,
+and patching artifacts by \texttt{scripts/make\_interp\_appendix.py}. Modern
+probe conditions use frozen problem hashes, validation-selected layers, and
+five seeds where stated; iterator summaries are single-run. The
+class-reference intervention records model and dataset
+revisions, prompt and configuration hashes, all $4{,}032$ primary rows, and
+clustered intervals. A regression test checks source traces for the headline
+numbers and rejects LP4FM-only conditions in this manuscript.
 
 \clearpage
 \input{checklist.tex}

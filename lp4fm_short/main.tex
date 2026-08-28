@@ -13,7 +13,7 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 
-\title{Probe Invariance in Code Models Is Largely Lexical}
+\title{Cross-Language Probe Invariance Depends on Readout Choice}
 
 \workshoptitle{Linguistic Principles for Foundation Models (LP4FM)}
 
@@ -29,97 +29,109 @@
 \maketitle
 
 \begin{abstract}
-A linear probe on a code model's residual stream recovers a variable's
-\emph{role} almost as well in a language it was not fitted on as in the one it
-was: across six ordered pairs of Python, JavaScript and PHP, matched problem by
-problem, transfer moves $-0.012$ macro-F1 at a boundary where a model-free
-character $n$-gram classifier loses $0.126$. Read at face value that says role
-representations are language-independent. It is largely an artifact. The probe
-pools activations over the occurrence's own tokens, so it reads the variable's name. The baseline is forbidden to. Pooling only surrounding tokens, with the
-forward pass unchanged, costs the probe $61\%$ of its margin over an untrained network of the same
-architecture and pooling ($+0.269 \rightarrow +0.105$) and multiplies its
-boundary effect fivefold ($-0.012 \rightarrow -0.061$), leaving it no flatter
-than the untrained network itself ($-0.064$). The invariance was
-mostly the identifier. We report this as a caution for cross-lingual probing of
-code models, together with the model-free comparator such studies have lacked.
+Cross-language probe transfer is often interpreted as evidence that a code
+model represents program semantics independently of programming language. We
+test this interpretation for variable roles in Qwen2.5-Coder-1.5B using
+parallel Python, JavaScript, and PHP solutions. A masked character $n$-gram
+classifier loses $0.126$ macro-F1 on transfers involving Python relative to
+JavaScript$\leftrightarrow$PHP. A residual-stream probe changes by only
+$-0.012$ ($95\%$ problem-clustered interval $[-0.034,0.020]$), which appears
+to support language-invariant role encoding. This probe mean-pools the
+occurrence's own tokens, whereas the surface classifier masks the identifier.
+Excluding the occurrence from the readout reduces mean transfer from $0.844$
+to $0.589$ and changes the boundary effect to $-0.060$
+$[-0.088,-0.030]$. The shift is $-0.048$ $[-0.088,-0.016]$. A
+context-matched untrained network has a $-0.064$ boundary; the trained-minus-
+untrained boundary is $+0.003$ $[-0.027,0.036]$. Training-associated lift
+remains positive in both language groups. Thus the original invariance is not
+identified independently of the readout, while the restricted readout still
+contains training-dependent role information.
 \end{abstract}
 
 \section{Introduction}
 
-Probes are how we ask what a code model represents, and cross-lingual probes ask
-whether what it represents is tied to the language it saw. Prior work has fitted
-probes on one programming language and evaluated on
-another~\citep{hernandezlopez2026syntactic}, found language-specific components
-that can be removed from code embeddings~\citep{utpala2024language}, and shown
-that alignment between languages on parallel programs is
-uneven~\citep{kargaran2025programming}. That literature has an untrained-network
-floor but no model-free one: no non-neural classifier is fitted on the same
-items, so a probe's transfer curve has nothing to be read against except itself.
+Linear probes measure whether a label is decodable from a representation. They
+do not establish that the model uses the decoded feature, and their performance
+can reflect probe capacity or information already available in the probe
+input~\citep{hewitt2019control,voita2020mdl,ravichander2021probing,
+elazar2021amnesic,belinkov2022probing}. Cross-language
+transfer adds a further interpretation. If a probe fitted on one programming
+language transfers to another, the decoded feature may appear independent of
+surface form.
 
-We supply that comparator, and it changes the reading. A \emph{variable
-role}~\citep{sajaniemi2002roles}, such as accumulator or index key, is a
-property of what a variable does rather than of its name or its language, so it
-is a case where a language-independent representation is plausible on its face.
-Fitting a role classifier on one language and testing on another, the probe
-looks strikingly invariant beside a surface baseline that is not.
+Existing work has recovered code syntax across languages with probe
+baselines~\citep{hernandezlopez2026syntactic}, separated language-specific from
+language-agnostic embedding components~\citep{utpala2024language}, and measured
+uneven alignment among programming languages on parallel
+programs~\citep{kargaran2025programming}. These studies establish that code
+representations contain both shared and language-specific structure. They do
+not provide a model-free, feature-restricted comparator on the same
+cross-language prediction task.
 
-The comparison is unfair in a way that turns out to decide the result. The probe
-pools activations over the occurrence's own tokens and therefore reads the identifier, which the surface baseline has masked out. Removing that
-asymmetry removes most of the effect. What survives is a smaller
-finding about the surface and a methodological caution about the probe.
+We add that comparator for variable roles such as accumulator and index
+key~\citep{sajaniemi2002roles}. Variable roles describe what a variable does,
+which makes them a plausible target for language-independent representation.
+The initial probe result supports that interpretation. It changes when the
+readout no longer pools the occurrence tokens that carry the identifier, which
+parallel implementations often preserve~\citep{kargaran2025programming}. This
+ablation localizes the instability to the readout support. It does not, by
+itself, identify lexical identity as the cause because pooling support and
+token position change together.
 
 \section{Setup}
 
-\paragraph{Corpus.} XLCoST~\citep{zhu2022xlcost} provides parallel solutions
-keyed by a problem identifier stable across languages. Only Python, JavaScript
-and PHP share problems at usable rates. No other pair in XLCoST reaches $500$ shared
-problems, including same-family pairs such as C\# and Java, which share
-$175$ (Appendix~\ref{app:overlap}). We restrict all three languages to the $869$
-problems all three share, so every ordered pair scores identical problem ids and
-a difference between cells cannot be a difference in subject matter. Roles are extracted per occurrence and split by a frozen hash of the problem id.
-One corpus asymmetry deserves note: XLCoST distributes Python through a
-formatted mirror and the other two languages through a detokenized one, so the
-Python boundary is also a formatting boundary. It does not reach the
-classifier: the character analyser collapses whitespace before forming
-$n$-grams, and equalising whitespace on both sides moves transfer by less than
-$0.001$ on every decisive pair.
+\paragraph{Corpus.}
+XLCoST~\citep{zhu2022xlcost} provides parallel solutions keyed by problem
+identifiers that are stable across languages. Python, JavaScript, and PHP are
+the only three languages with at least $500$ shared problems for every pair.
+For example, C\# and Java share only $175$ problems
+(Appendix~\ref{app:overlap}). We first restrict each language to the $869$
+problems present in all three. Role extraction then determines which of those
+problems contain a usable occurrence for each role, so role-specific coverage
+still differs across cells. Data splits use a fixed hash of the problem
+identifier and never separate occurrences from the same problem.
 
-\paragraph{The four conditions.} All are scored on the same occurrences.
+The Python data retain formatting that the JavaScript and PHP data do not.
+Because this formatting difference coincides with the language contrast, we
+remove whitespace before constructing character features. Equalizing
+whitespace on both sides changes each of the three audited iterator transfers
+by less than $0.001$.
+
+\paragraph{Conditions.}
+We evaluate four conditions on matched language pairs.
 
 \begin{itemize}\itemsep2pt
 \item \textbf{Surface $n$-gram.} A character $n$-gram classifier over the
 context around an occurrence with every instance of the variable's name
-replaced by a placeholder, fitted on the source language and applied to the
-target. No model. We fix one masked-context variant in advance rather than taking the best per cell. The per-cell maximum is selected on the
-evaluation fold, and every fixed variant gives a \emph{larger} boundary effect than it.
+replaced by a placeholder. The classifier is fitted on the source language and
+evaluated on the target. We report one fixed masked-window feature set rather
+than selecting the best feature set separately for each cell.
 \item \textbf{Probe, span-pooled.} Logistic regression on residual activations
 mean-pooled over the occurrence's own tokens, layer chosen on source-language
 validation data. This reads the identifier.
-\item \textbf{Probe, context-pooled.} The same, pooling the $16$ tokens either
-side of the occurrence and \emph{excluding} its own. The forward pass is byte-identical, and only what is read changes. Masking the name in the source would
-also change the input distribution.
+\item \textbf{Probe, occurrence-excluded.} The same, pooling the $16$ tokens either
+side of the occurrence while excluding its tokens. Model inputs and weights are
+unchanged. Only the readout is altered.
 \item \textbf{Untrained.} The same architecture and tokenizer with randomly
-initialised weights, run at both poolings. A probe score means little without a
-bound on what architecture and labels alone
-supply~\citep{hewitt2019control,zhang2018language,belinkov2022probing}, and a
-context-pooled probe must be read against a context-pooled floor: the two
-poolings read different token sets, so their achievable scores differ for
-reasons unrelated to training.
+initialized weights, evaluated at each pooling. Randomly initialized networks
+can retain substantial lexical and structural information, so they provide a
+necessary floor~\citep{zhang2018language,hewitt2019control}. Each probe is
+compared with the floor using the same readout.
 \end{itemize}
 
 Models are Qwen2.5-Coder-1.5B~\citep{hui2024qwencoder} and, for the untrained
-control, the architecture of the base model it is continued
-from~\citep{qwen2024qwen25}. Confidence intervals resample whole problems, never
-occurrences, since occurrences inside one program share a forward pass.
+control, the corresponding Qwen2.5 architecture~\citep{qwen2024qwen25}.
+Qwen2.5-Coder is continued-pretrained from the Qwen2.5 model
+family~\citep{hui2024qwencoder}. Reported uncertainty resamples complete
+problems rather than individual occurrences.
 
-\section{The surface baseline depends on the language}
+\section{Surface transfer tracks the language contrast}
 
 \begin{table}[t]
 \centering
-\caption{Cross-lingual role transfer, macro-F1 averaged over three roles.
-\emph{Close} is the two directions between JavaScript and PHP. \emph{Python} is
-the four transfers where Python is one of the two languages. Each probe row is
-paired with an untrained network at its own pooling.}
+\caption{Cross-language role transfer averaged over three roles. \emph{Close}
+contains JavaScript$\leftrightarrow$PHP. \emph{Python} contains the four
+directions to or from Python. Probe floors use the corresponding readout.}
 \label{tab:main}
 \begin{tabular}{lccc}
 \toprule
@@ -128,159 +140,135 @@ paired with an untrained network at its own pooling.}
 Surface $n$-gram, name masked (no model) & 0.929 & 0.804 & $-0.126$ \\
 \midrule
 Probe, span-pooled (reads the name)      & 0.852 & 0.840 & $-0.012$ \\
-\quad untrained, span-pooled$^{\dagger}$  & 0.590 & 0.568 & $-0.022$ \\
 \midrule
-Probe, context-pooled (no name)          & 0.630 & 0.569 & $-0.061$ \\
-\quad untrained, context-pooled$^{\dagger}$ & 0.527 & 0.464 & $-0.064$ \\
+Probe, occurrence-excluded              & 0.630 & 0.569 & $-0.060$ \\
+\quad untrained, occurrence-excluded     & 0.527 & 0.464 & $-0.064$ \\
 \bottomrule
 \end{tabular}
-
-\vspace{2pt}
-{\footnotesize $^{\dagger}$ The context-pooled floor was re-run after its
-original artifacts were lost and awaits commitment; the span-pooled floor is
-committed but measured on the earlier capped sample rather than the
-intersection. See Appendix~\ref{app:repro}.}
 \end{table}
 
-The $n$-gram baseline reaches $0.929$ between JavaScript and PHP without a model
-and without seeing the variable's name, and loses $0.126$ on transfers to or
-from Python: $95\%$ CI $[-0.160, -0.092]$, resampling the $427$ test problems.
-The effect is not uniform across roles. Iterator alone gives $-0.225$, driven by cells that fall to $0.548$--$0.577$ on
-transfers into Python, while accumulator and index\_key together give $-0.059$.
-Iterator is also the role whose extractors agree least across the boundary (its
-labels come from an AST for Python and regular expressions for the other two)
-and whose intervals are twice as wide, with a minority class of ten instances
-in some cells. We therefore
-treat the aggregate as an upper bound on how much of the surface effect is
-about language rather than labelling, and note that the probe-side conclusions
-do not depend on it: the identifier collapse holds for every role.
+The surface classifier reaches $0.929$ between JavaScript and PHP without a
+model or identifier access, then falls to $0.804$ on transfers involving
+Python. The table is an unweighted mean over cells. A separate pooled,
+problem-clustered estimate is $-0.114$ with a $95\%$ interval of
+$[-0.147,-0.081]$. The aggregate is uneven across roles. Iterator contributes
+$-0.249$, compared with $-0.064$ for accumulator and index\_key together.
+Iterator labels are also the least comparable because Python uses an
+AST-based extractor while JavaScript and PHP use regular expressions. Some
+cells contain only ten minority examples. We therefore treat the surface
+contrast as descriptive evidence for this extracted sample, not as a clean
+estimate of a language-family effect.
 
 \begin{figure}[t]
 \centering
 \includegraphics{figures/masked_slope.pdf}
-\caption{Table~\ref{tab:main} as a picture. The surface baseline tracks the
-boundary; the span-pooled probe does not, but it reads the variable's name.
-Excluding the name drops the probe to just above its untrained floor, and both
-slope downward together.}
+\caption{The surface baseline changes across the language contrast. The
+span-pooled probe appears stable but reads the occurrence tokens. Excluding the
+occurrence lowers probe transfer and yields a slope close to the matched
+untrained floor.}
 \label{fig:masked}
 \end{figure}
 
-\section{The probe looks invariant, and mostly should not}
+\section{The inferred boundary depends on readout support}
 
-Read against that, the span-pooled probe is remarkable: it moves $-0.012$, an
-order of magnitude less, and clears an untrained network of the same
-architecture by $+0.269$. That is the result the obvious reading calls
-language-independent role representation.
+The span-pooled probe reaches $0.844$ overall. Its cross-language boundary is
+$-0.012$ with a problem-clustered interval of $[-0.034,0.020]$. This is the
+result that would normally be interpreted as language-independent role
+decodability.
 
-\paragraph{It does not survive removing the identifier.} The probe pools over
-the occurrence's own tokens, so the variable's name is inside what it reads,
-while the baseline it is being compared against has that name masked. Pooling only the surrounding tokens, with the forward pass unchanged, the probe
-falls from $0.844$ to $0.589$ overall (Figure~\ref{fig:masked}). Against its \emph{matched} untrained
-floor of $0.485$ that is a margin of $+0.105$, against $+0.269$ before: $61\%$
-of what the probe knew came from the identifier.
+Excluding the occurrence from the readout lowers mean transfer from $0.844$ to
+$0.589$ (Figure~\ref{fig:masked}). The context-matched untrained model reaches
+$0.485$. The boundary changes to $-0.060$ $[-0.088,-0.030]$; the
+readout-induced shift is $-0.048$ $[-0.088,-0.016]$. The original flat
+boundary is therefore not robust to where activations are read.
 
-\paragraph{So did the invariance.} The boundary effect grows from $-0.012$ to
-$-0.061$, and the untrained network at the same pooling moves $-0.064$. With the
-identifier removed the trained probe is no flatter than an untrained one.
+The occurrence-excluded untrained model has a $-0.064$ boundary
+$[-0.089,-0.039]$. Subtracting this floor gives a trained-minus-untrained
+boundary of $+0.003$ $[-0.027,0.036]$. This interval is conditional on one
+random weight initialization. It does not support a distinct trained-model
+boundary, but it also does not show that training contributes nothing:
+trained-minus-untrained transfer is $+0.102$ $[0.065,0.132]$ for the close
+pair and $+0.106$ $[0.081,0.127]$ for Python transfers.
 
-The same shift shows up within languages. In-domain, the span-pooled probe scores $0.898$, and excluding the name costs it
-$0.127$ ($0.771$), against an untrained in-domain of $0.623$ at the same
-pooling. So the name is not only the
-transferable part of the signal, it is a substantial part of the signal
-everywhere, and the cross-lingual result is the within-language dependence made
-visible by a boundary the name happens to cross freely.
-The apparent language-independence was not a property of the role representation. It was a property of variable
-names, which parallel implementations of the same problem tend to share.
+Identifier exclusion also matters within languages. Mean in-language F1 falls
+from $0.898$ to $0.771$, a reduction of $0.127$. The context-pooled untrained
+model reaches $0.623$ in language. Direct access to the occurrence therefore
+accounts for a substantial part of both in-language and cross-language
+decodability.
 
-\paragraph{What remains.} A margin of $+0.105$ over a matched floor is small but
-consistent in both groups, so the model does encode something about roles beyond
-the identifier. We do not claim it is language-independent: at that pooling its boundary effect
-is indistinguishable from an untrained network's. The advantage is also paired,
-not only average: over the same occurrences the surface baseline beats the
-context-pooled probe in $14$ of $18$ cells with a problem-clustered interval
-excluding zero (Appendix~\ref{app:repro}).
-
-\paragraph{Related work.} Cross-lingual analysis of code models has established
-language-specific components that can be removed from
-embeddings~\citep{utpala2024language}, cross-language probe transfer with
-untrained-network floors~\citep{hernandezlopez2026syntactic}, and uneven
-alignment between these very languages on parallel
-programs~\citep{kargaran2025programming}. None of it fits a model-free
-classifier on the same items, which is the condition that exposed the
-asymmetry here. On the probing side we inherit the control-task and probe-validity
-tradition~\citep{hewitt2019control,voita2020mdl,belinkov2022probing}. Our
-contribution to it is the observation that these controls hold the probe's
-\emph{input} fixed, and so cannot detect a label correlate carried by the input
-itself.
+The remaining occurrence-excluded margin supports training-dependent role
+information in this readout. It does not establish a language-independent
+mechanism because the training lift is similar on both sides of the boundary.
+The surface baseline
+outperforms the context-pooled probe in $14$ of $18$ matched cells with
+problem-clustered intervals below zero for the paired difference. This shows
+surface sufficiency on the same prediction items; it is not a decomposition of
+the model signal, because the model still processes unmasked source code.
 
 \section{Discussion}
 
-The finding is methodological, and it generalises past this corpus. Any probe
-that pools over a span containing an identifier can read that identifier, and
-in parallel corpora identifiers are among the most language-invariant things
-present. A cross-lingual probing result obtained that way will overstate
-representational invariance by however much the naming happens to agree, and no
-untrained-network control detects this: the untrained network reads the same
-identifier and is defeated by the same confound. Only a comparator that cannot
-see the name, or a pooling that excludes it, separates the two.
+The central result concerns measurement. A probe that pools over an occurrence
+can use information concentrated at those tokens, including lexical
+regularities preserved by parallel programs. A randomly initialized model
+tests what training contributes under a fixed readout, not whether that
+readout isolates the intended construct. Conversely, occurrence exclusion
+changes the pooled positions and their information content together. Calling
+the difference ``identifier leakage'' would therefore overstate what this
+experiment identifies.
 
-That is also why the model-free arm matters. The surface baseline is the thing
-that made the asymmetry visible, because it was the only condition with the
-identifier withheld. Prior cross-lingual probing of code
-models~\citep{hernandezlopez2026syntactic,utpala2024language,kargaran2025programming}
-has untrained-network floors but no model-free comparator, and would not surface
-this. The concern generalises the standard caution that a probe reports what is
-decodable rather than what the model
-uses~\citep{belinkov2022probing,voita2020mdl}: here part of what is decodable is
-the input itself, and it survives the control usually relied on.
+The model-free condition exposes a different source of evidence. Its input
+withholds every target-name occurrence, while the probe model sees the original
+program. The two predictors share labels and test items but not information
+sets, so their comparison establishes surface sufficiency rather than an
+isolated representational increment.
+Model-free baselines are established in code probing
+generally~\citep{troshin2022probing}, but the cited cross-language studies do not
+fit one on the same prediction items
+~\citep{hernandezlopez2026syntactic,utpala2024language,kargaran2025programming}.
+The present result extends the usual distinction between decodability and model
+use~\citep{elazar2021amnesic,belinkov2022probing}. Decodability can also arise from a
+label correlate exposed directly by the readout.
 
 \paragraph{Reconciling with prior alignment results.}
 \citet{kargaran2025programming} find Python the \emph{least} aligned of these
-three languages on parallel programs, which sits oddly beside a span-pooled
-probe that barely moves across the Python boundary. The two measure different
-things, whole-snippet retrieval against role decodability, but the tension
-dissolves entirely under our control: once the identifier is excluded, our
-probe shows a boundary effect after all, in the direction their alignment
-scores predict. What looked like a disagreement between measurements was the confound, and
-removing it brings the two studies into agreement, which is itself
-modest evidence that both are measuring something real about the Python
-boundary rather than artifacts of their respective designs.
+three languages on parallel programs, whereas the span-pooled probe changes
+little across transfers involving Python. The studies measure different
+quantities, so agreement is not required. Nevertheless, excluding the
+identifier produces a probe contrast in the direction of their alignment
+result. This convergence is compatible with a genuine Python boundary, but it
+does not establish a common mechanism.
 
-\paragraph{What would change our reading.} Three observations would. A
-context-pooled probe at larger scale clearing its floor by a margin that grows
-rather than shrinks would show role abstraction emerging with capacity. A
-pooling that excludes the identifier but retains its dependency structure
-(e.g.\ masking the name at the input while pooling the span) recovering the
-flat curve would localise the confound to the read-out rather than the
-representation. And a corpus whose parallel implementations do \emph{not} share
-naming conventions showing a flat span-pooled probe would break our
-explanation outright. Each is a concrete follow-up, and the second is one GPU
-session on the released pipeline.
+\paragraph{Falsifying evidence.}
+Our interpretation would weaken if a context-pooled probe developed a growing
+margin over its matched floor at larger scale. It would also weaken if
+same-readout input-level identifier replacement preserved the flat transfer
+curve, or if a
+parallel corpus without shared naming conventions produced the original
+span-pooled invariance. These experiments distinguish lexical leakage,
+readout choice, and genuinely shared role information.
 
-\paragraph{For language-as-design-axis studies.} The practical upshot for this
-workshop's programme is a measurement rule rather than a finding about code:
-when the medium is manipulated, audit what the measuring instrument reads
-before crediting the representation. Parallel corpora, the natural substrate
-for medium manipulations, are precisely where instrument-visible invariants
-such as names, entities and numbers concentrate. A probe that can see them
-will report the manipulation harmless; an instrument denied them, model-free or
-otherwise, is the cheap check that says whether the harmlessness is real.
+\paragraph{Implication for linguistic medium studies.}
+When linguistic or symbolic form is manipulated, the measurement instrument
+must not retain a feature that the manipulation preserves. Parallel corpora
+concentrate such features, including names, entities, and numbers. A
+feature-restricted model-free comparator and a matched readout ablation provide
+two inexpensive checks before invariance is attributed to a model
+representation.
 
-\paragraph{Limitations.} Three languages, of which one is the boundary, so the
-contrast has two points and no gradient, and Appendix~\ref{app:overlap} shows
-XLCoST admits no wider version: no pair outside this triangle shares even $500$
-problems, including same-family pairs such as C\# and Java. One model at
-$1.5$B, so nothing here speaks to whether the name-free margin grows with
-scale. The identifier-lift figures are aggregated over three roles and we do
-not report them per role. Iterator's labels come from a different extractor
-path than Python's, its minority class falls to ten instances in some cells,
-and it carries most of the surface effect. The accumulator and index\_key
-figures are the more trustworthy ones. Context pooling excludes the identifier
-but not everything correlated with it (nearby uses of the same variable, or
-names of neighbouring variables that co-vary with it), so $+0.105$ is an upper
-bound on identifier-free role information. The context window of $16$ tokens is
-a choice we did not sweep. Finally, this is a probing result: it says what is
-decodable, not what the model uses, and no causal claim follows from it.
+\paragraph{Limitations.}
+The study uses one $1.5$B model, three languages, three roles, and a single
+context width. Python supplies the only broad language contrast. Role-specific
+coverage differs after extraction even though the corpus is restricted to a
+common problem pool, so composition may still affect group means. Iterator
+labels use different extractor families across languages and carry most of the
+surface effect; no multilingual hand-audit quantifies extractor error. The
+occurrence-excluded control uses one random weight initialization and two probe
+seeds, whereas trained probes use five. It removes the target occurrence from
+the readout but may retain correlated nearby uses and names, and it changes
+pooling support rather than intervening on lexical identity alone. No
+same-readout probe under input-level identifier replacement is available.
+These results concern decodability rather than model use and do not support a
+causal claim about the model's computation.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
@@ -291,20 +279,15 @@ decodable, not what the model uses, and no causal claim follows from it.
 \section{Reproducibility}
 \label{app:repro}
 Every figure is regenerated from committed result files, and a regression test
-recomputes each of them from those files rather than quoting them, with one
-exception. The context-pooled untrained row of Table~\ref{tab:main} comes from a completed
-re-run whose per-cell artifacts are pending commitment to
-\texttt{results/lp4fm/masked\_probe/}; the span-pooled untrained row is
-committed, but was measured on the earlier capped sample rather than the
-three-way intersection the other rows use, so the $+0.269$ margin pairs
-conditions from two samples and should be read as approximate. Activation
-extraction is the only step needing an accelerator. The probe is logistic
-regression on activations mean-pooled over either the occurrence's span or the
-$16$ tokens either side of it excluding the span; the surface baseline is a
-\texttt{char\_wb} tf-idf vectoriser with $n \in [2,4]$ followed by logistic
-regression, fitted on the source language only. Pooling and initialisation are
-recorded in each store's identity, so a context-pooled store cannot be confused
-with a span-pooled one downstream.
+recomputes the headline values from those files. The context-pooled trained and
+untrained conditions and the prediction-level boundary analysis are committed
+per cell. Intervals resample stable problem identifiers once across all cells
+and conditions. Activation extraction is the only accelerator-dependent step.
+Probes use logistic regression on residual activations pooled over either the
+occurrence or the $16$ tokens on each side. The surface baseline uses a
+\texttt{char\_wb} tf-idf vectorizer with $n \in [2,4]$ and source-language
+logistic regression. Store identities record model initialization and pooling
+so conditions cannot be mixed silently.
 
 \clearpage
 \input{checklist.tex}
