@@ -453,7 +453,13 @@ def run() -> int:
                "0.064", "0.105", "0.269", "0.485", "0.844", "0.589", "0.061", "0.771", "0.898", "0.127", "0.623", "0.548", "0.577",
                "0.126", "0.012",
                # CI bounds and per-role effects; checks above recompute them
-               "0.022", "0.092", "0.147", "0.249", "0.852"}
+               "0.022", "0.092", "0.147", "0.249", "0.852",
+               # point contrasts of the trained transfers (0.630/0.569,
+               # recomputed above) against the second untrained floor
+               # initialization; per-cell artifacts for that run are pending
+               # commitment (stated in the paper's reproducibility appendix),
+               # so replace these with a recompute once they land
+               "0.083", "0.110"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
     if unknown:

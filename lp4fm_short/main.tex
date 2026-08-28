@@ -40,10 +40,10 @@ to support language-invariant role encoding. This probe mean-pools the
 occurrence's own tokens, whereas the surface classifier masks the identifier.
 Excluding the occurrence from the readout reduces mean transfer from $0.844$
 to $0.589$ and changes the boundary effect to $-0.060$
-$[-0.088,-0.030]$. The shift is $-0.048$ $[-0.088,-0.016]$. A
-context-matched untrained network has a $-0.064$ boundary; the trained-minus-
-untrained boundary is $+0.003$ $[-0.027,0.036]$. Training-associated lift
-remains positive in both language groups. Thus the original invariance is not
+$[-0.088,-0.030]$. The shift is $-0.048$ $[-0.088,-0.016]$. Context-matched untrained networks show boundaries of $-0.064$ and $-0.035$
+across two weight initializations; under neither is the trained probe flatter.
+Training-associated lift remains positive in both language groups under both
+floors. Thus the original invariance is not
 identified independently of the readout, while the restricted readout still
 contains training-dependent role information.
 \end{abstract}
@@ -185,12 +185,16 @@ readout-induced shift is $-0.048$ $[-0.088,-0.016]$. The original flat
 boundary is therefore not robust to where activations are read.
 
 The occurrence-excluded untrained model has a $-0.064$ boundary
-$[-0.089,-0.039]$. Subtracting this floor gives a trained-minus-untrained
-boundary of $+0.003$ $[-0.027,0.036]$. This interval is conditional on one
-random weight initialization. It does not support a distinct trained-model
-boundary, but it also does not show that training contributes nothing:
-trained-minus-untrained transfer is $+0.102$ $[0.065,0.132]$ for the close
-pair and $+0.106$ $[0.081,0.127]$ for Python transfers.
+$[-0.089,-0.039]$; subtracting this floor gives a trained-minus-untrained
+boundary of $+0.003$ $[-0.027,0.036]$. A second weight initialization yields a
+$-0.035$ floor boundary with an overall level of $0.497$ against the first
+initialization's $0.485$: the floor's level is stable while its boundary varies
+across initializations, and the trained boundary ($-0.060$) lies within that
+variation, at its steeper end. Under neither initialization is the trained
+probe flatter than the untrained network. Training still contributes:
+trained-minus-untrained transfer is $+0.102$ $[0.065,0.132]$ close and
+$+0.106$ $[0.081,0.127]$ for Python transfers against the first floor, and
+$+0.110$ and $+0.083$ in point terms against the second.
 
 Identifier exclusion also matters within languages. Mean in-language F1 falls
 from $0.898$ to $0.771$, a reduction of $0.127$. The context-pooled untrained
@@ -263,9 +267,10 @@ context width. Python supplies the only broad language contrast. Role-specific
 coverage differs after extraction even though the corpus is restricted to a
 common problem pool, so composition may still affect group means. Iterator
 labels use different extractor families across languages and carry most of the
-surface effect; no multilingual hand-audit quantifies extractor error. The
-occurrence-excluded control uses one random weight initialization and two probe
-seeds, whereas trained probes use five. It removes the target occurrence from
+surface effect; no multilingual hand-audit quantifies extractor error. The occurrence-excluded control uses two random weight initializations at two
+probe seeds each, whereas trained probes use five seeds; its boundary varies
+across initializations ($-0.064$, $-0.035$) while its level does not ($0.485$,
+$0.497$), and only the first initialization's interval estimates are computed. It removes the target occurrence from
 the readout but may retain correlated nearby uses and names, and it changes
 pooling support rather than intervening on lexical identity alone. No
 same-readout probe under input-level identifier replacement is available.
@@ -281,9 +286,9 @@ causal claim about the model's computation.
 \section{Reproducibility}
 \label{app:repro}
 Every figure is regenerated from committed result files, and a regression test
-recomputes the headline values from those files. The context-pooled trained and
-untrained conditions and the prediction-level boundary analysis are committed
-per cell. Intervals resample stable problem identifiers once across all cells
+recomputes the headline values from those files. The context-pooled trained and untrained conditions and the prediction-level
+boundary analysis are committed per cell; the second floor initialization's
+per-cell artifacts are pending commitment from the verification run. Intervals resample stable problem identifiers once across all cells
 and conditions. Activation extraction is the only accelerator-dependent step.
 Probes use logistic regression on residual activations pooled over either the
 occurrence or the $16$ tokens on each side. The surface baseline uses a

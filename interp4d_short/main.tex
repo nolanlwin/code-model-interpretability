@@ -31,11 +31,12 @@ from all seven programming languages in XLCoST, although coverage is not a
 complete model-by-language grid. High probe accuracy supports different
 conclusions under matched controls. Misleading names reduce index probe F1 by
 $0.272$ yet increase accumulator F1 by $0.079$; iterator probes can be refit
-after the same intervention in two models. On Python, boolean occurrence type
-is decodable at $0.981$--$0.988$ macro-F1, but a masked source-line classifier
-reaches $0.983$ without a language model. The retained summaries do not support
-uncertainty on that difference, so they do not establish a probe advantage
-beyond local syntax. Class or structure labels remain decodable after
+after the same intervention in two models. On Python, boolean occurrence type is decodable at $0.981$--$0.988$ macro-F1,
+but a masked source-line classifier reaches $0.983$ without a language model.
+Rerunning both predictors with aligned predictions gives paired
+problem-clustered deltas of $-0.003$ to $+0.002$ across the three models, with
+intervals excluding any probe advantage above $0.014$--$0.017$: a resolved
+negative. Class or structure labels remain decodable after
 perturbation-specific refitting and pass a within-program label-permutation
 control in three models, yet a gate-specified activation patch at the
 query-name site fails in Qwen2.5-1.5B. These outcomes motivate a control matrix:
@@ -189,8 +190,8 @@ Accumulator & 0.893 & $\Delta=+0.079$ &
 Refit performance survives that rename in the legacy run \\
 Iterator & 0.988, 0.990 & $\Delta=+0.012,+0.009$ &
 Refit performance survives misleading names in two models \\
-Boolean & 0.981--0.988 & surface 0.983 &
-No resolved evidence beyond masked local source in Python \\
+Boolean & 0.981--0.988 & paired $\Delta \in [-0.003,+0.002]$ &
+Probe advantage over masked local source excluded above $0.017$ \\
 Class or struct & 0.979--0.982 & $|\Delta|\leq0.004$ &
 Refit robustness plus within-program permutation selectivity \\
 \bottomrule
@@ -230,13 +231,15 @@ usage labels. Yet a character classifier on
 the enclosing source line, with the variable name masked, reaches $0.983$.
 The probe-minus-surface differences are $-0.001$, $-0.002$, and $+0.005$.
 
-The committed probe and surface exports retain aggregate scores but not aligned
-predictions from both predictors. Consequently, these small differences have
-no paired interval and cannot support equivalence or superiority. Five
-renaming conditions also change refit performance by at most $0.013$. The
-supported claim is narrow: boolean occurrence type is linearly decodable after
-the tested renames, while masked local syntax is a sufficient alternative
-explanation for the high Python score. The cross-language runs extend
+We reran both predictors on the frozen sample with aligned predictions kept
+(the original exports had none): the paired, problem-clustered
+probe-minus-surface deltas are $-0.002$ $[-0.017, 0.014]$, $-0.003$
+$[-0.037, 0.014]$, and $+0.002$ $[-0.016, 0.017]$ over $915$ problem clusters,
+the reruns reproducing the committed scores before pairing. Every interval covers zero, and each excludes a
+probe advantage larger than $0.014$--$0.017$ macro-F1. Five renaming conditions
+also change refit performance by at most $0.013$. The supported claim is now sharper: boolean occurrence type is decodable after
+the tested renames, and the paired intervals rule out a meaningful probe
+advantage over masked local syntax on Python. The cross-language runs extend
 decodability to Java, JavaScript, and PHP. Only Python has renaming runs, so
 they do not extend the refit-robustness claim.
 
@@ -315,9 +318,8 @@ comparison.
 \paragraph{Falsifying outcomes.}
 The framework is useful only if results can change the interpretation. A
 problem-grouped rerun could shrink or reverse the accumulator-index
-dissociation. A class-stratified boolean sample could resolve a consistent
-probe advantage over the masked source line. An all-layer class-reference
-patch could reveal a causal site outside the probe-selected layer. A
+dissociation. An all-layer class-reference patch could reveal a causal site outside the
+probe-selected layer. A
 scope-correct seven-language rename pipeline could expose language-specific
 cue dependence hidden by the current coverage. Each outcome would revise a
 named claim rather than leave an elastic assertion of representation.
@@ -333,9 +335,10 @@ into a set of auditable contrasts.
 \section{Identifiability and evaluation design}
 
 A useful contrast changes one named factor and carries uncertainty for the
-resulting difference. The boolean probes and masked-line classifier share a
-population, but aligned predictions were not retained; a largest aggregate gap
-of $0.005$ therefore supports neither probe superiority nor equivalence.
+resulting difference. The boolean probes and masked-line classifier share a population, and the
+paired rerun turns their comparison into an interval: no model's probe
+advantage exceeds $0.017$, which converts an unresolvable aggregate gap of
+$0.005$ into a bounded negative.
 Renaming reuses surviving occurrences but refits probes and layers, so its
 delta measures recoverability after intervention, not fixed-direction
 invariance. The class experiment instead uses matched prompts plus placebo,
@@ -358,8 +361,8 @@ Legacy roles may use different cues &
 Opposite refit deltas in incommensurate pipelines, plus iterator stability &
 Exploratory. Repeat with problem groups, scope-aware renaming, and intervals \\
 Boolean exceeds Python local syntax &
-Three probes compared with the same masked-line classifier &
-Not resolved. Retain paired predictions and test a declared margin \\
+Paired reruns, three models, $915$ problem clusters &
+Resolved negative: intervals exclude advantages above $0.014$--$0.017$ \\
 Class refit performance survives renaming &
 Three-model permutation selectivity and misleading-name deltas near zero &
 Supported as recoverability. Evaluate one fixed probe across paired renames \\
@@ -376,26 +379,22 @@ Open. Apply one extractor and control battery to a complete language grid \\
 \section{Limitations}
 
 The study covers three models, five roles, and all seven XLCoST languages
-collectively, but not a complete $3\times5\times7$ design. Three-model
-replication applies to boolean and class-reference; iterator uses two models,
-and accumulator and index use one. Language coverage and extractors differ by
-role.
+collectively, but not a complete $3\times5\times7$ design: boolean and
+class-reference are three-model, iterator two, accumulator and index one, and
+language coverage and extractors differ by role.
 
 Protocol quality is uneven. The accumulator-index dissociation predates
 problem-grouped splits and scope-aware renaming; function overlap, textual
 replacement, test-maximized layers, and refitting may inflate it. Iterator
-lacks matched surface and control-task baselines. Boolean's local labels are
-nearly surface-predictable; paired predictions were not retained, so
-equivalence is untested. Class-reference patching covers one model, layer,
-token site, and readout; stopping after the Qwen null was not externally
-registered in advance.
+lacks matched surface and control-task baselines. Boolean's local labels are nearly surface-predictable, and the paired rerun
+bounds any probe advantage below $0.017$. Class-reference patching covers one model, layer, token site, and readout;
+stopping after the Qwen null was not registered in advance.
 
-Except for the reported patch, probes remain correlational. Mean pooling
-directly exposes identifiers, while refitting tests recoverability rather than
-fixed-direction invariance. Renames cover selected lexical alternatives;
-cross-language transfer may reflect shared syntax, names, or extractor
-artifacts. Hence the paper reports a matrix, not a conclusion that models
-represent abstract variable roles.
+Except for the reported patch, probes remain correlational; mean pooling
+exposes identifiers, refitting tests recoverability rather than invariance,
+renames cover selected alternatives, and cross-language transfer may reflect
+shared syntax, names, or extractor artifacts. Hence: a matrix, not a conclusion
+that models represent abstract roles.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

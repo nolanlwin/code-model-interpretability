@@ -136,7 +136,6 @@ def main() -> int:
         (
             "boolean comparison does not use rho as inferential uncertainty",
             max(abs(value) for value in boolean_diffs) <= 0.005
-            and "no paired interval" in text
             and "one resolvable test instance" not in text,
         ),
         (
@@ -145,6 +144,24 @@ def main() -> int:
         ),
     ]
 
+    import csv as _csv
+    paired = list(_csv.DictReader(
+        (ROOT / "results" / "boolean" / "probe" / "paired_probe_vs_line.csv").open()))
+    checks += [
+        ("paired boolean CSV covers all three models",
+         {r["slug"] for r in paired}
+         == {"qwen2515b", "qwen25coder15b", "starcoder27b"}),
+        ("every paired interval covers zero",
+         all(float(r["ci_low"]) < 0 < float(r["ci_high"]) for r in paired)),
+        ("paper's excluded-advantage bound matches the CSV",
+         f"{min(float(r['ci_high']) for r in paired):.3f}" == "0.014"
+         and f"{max(float(r['ci_high']) for r in paired):.3f}" == "0.017"
+         and "$0.014$--$0.017$" in text),
+        ("paper's cluster count matches the CSV",
+         {r["n_clusters"] for r in paired} == {"915"} and "$915$" in text),
+        ("resolved-negative language present, unresolved language gone",
+         "Resolved negative" in text and "Not resolved. Retain paired" not in text),
+    ]
     checks += [
         (
             "heterogeneous probe units are stated",
