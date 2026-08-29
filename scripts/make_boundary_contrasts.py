@@ -20,7 +20,6 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "results/lp4fm/masked_probe"
-OUT = DATA / "boundary_contrasts.csv"
 ROLES = ("accumulator", "index_key", "iterator")
 PAIRS = (
     ("javascript", "php"),
@@ -30,11 +29,16 @@ PAIRS = (
     ("python", "javascript"),
     ("python", "php"),
 )
-CONDITIONS = {
-    "span_trained": "qwen25coder15b",
-    "context_trained": "qwen25coder15bpoolcontext16",
-    "context_untrained": "qwen25coder15brandominits0poolcontext16",
-}
+DEFAULT_BASE = "qwen25coder15b"
+
+
+def conditions_for(slug_base: str) -> dict[str, str]:
+    """The three condition slugs a model's masked-probe run produces."""
+    return {
+        "span_trained": slug_base,
+        "context_trained": f"{slug_base}poolcontext16",
+        "context_untrained": f"{slug_base}randominits0poolcontext16",
+    }
 
 
 def _macro_f1_from_confusion(counts: np.ndarray) -> np.ndarray:
@@ -55,10 +59,12 @@ def _macro_f1_from_confusion(counts: np.ndarray) -> np.ndarray:
     return (f1_negative + f1_positive) / 2
 
 
-def _load() -> tuple[list[str], dict[tuple[str, str, str, str, int], np.ndarray]]:
+def _load(
+    conditions: dict[str, str],
+) -> tuple[list[str], dict[tuple[str, str, str, str, int], np.ndarray]]:
     raw: dict[tuple[str, str, str, str, int], list[dict]] = {}
     problems: set[str] = set()
-    for condition, slug in CONDITIONS.items():
+    for condition, slug in conditions.items():
         for role in ROLES:
             for source, target in PAIRS:
                 path = DATA / f"probe_{role}_{source}_to_{target}_{slug}.json"
@@ -107,8 +113,11 @@ def _group_scores(
     return np.mean(np.stack(scores), axis=0)
 
 
-def main(n_boot: int = 5000, seed: int = 0) -> int:
-    problems, cells = _load()
+def main(n_boot: int = 5000, seed: int = 0, slug_base: str = DEFAULT_BASE) -> int:
+    conditions = conditions_for(slug_base)
+    out = DATA / ("boundary_contrasts.csv" if slug_base == DEFAULT_BASE
+                  else f"boundary_contrasts_{slug_base}.csv")
+    problems, cells = _load(conditions)
     n_problems = len(problems)
     rng = np.random.default_rng(seed)
     boot = rng.multinomial(
@@ -122,7 +131,7 @@ def main(n_boot: int = 5000, seed: int = 0) -> int:
         (condition, group): _group_scores(
             weights, cells, condition, python_pairs=(group == "python")
         )
-        for condition in CONDITIONS
+        for condition in conditions
         for group in ("close", "python")
     }
     estimates = {
@@ -173,11 +182,11 @@ def main(n_boot: int = 5000, seed: int = 0) -> int:
             "scope": "conditional on one random weight initialization",
         })
 
-    with OUT.open("w", newline="") as handle:
+    with out.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
-    print(f"wrote {len(rows)} contrasts -> {OUT.relative_to(ROOT)}")
+    print(f"wrote {len(rows)} contrasts -> {out.relative_to(ROOT)}")
     for row in rows:
         print(
             f"  {row['estimand']}: {row['estimate']:+.4f} "
@@ -187,4 +196,13 @@ def main(n_boot: int = 5000, seed: int = 0) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--slug-base", default=DEFAULT_BASE,
+                    help="model slug the condition suffixes attach to; a "
+                         "non-default base writes boundary_contrasts_<base>.csv")
+    ap.add_argument("--n-boot", type=int, default=5000)
+    ap.add_argument("--seed", type=int, default=0)
+    args = ap.parse_args()
+    raise SystemExit(main(n_boot=args.n_boot, seed=args.seed, slug_base=args.slug_base))
