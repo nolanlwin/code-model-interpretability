@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "interp4d_short" / "appendix_generated.tex"
+OUT = ROOT / "interp_science_short" / "appendix_generated.tex"
 MODEL = {
     "qwen2515b": "Qwen2.5-1.5B",
     "qwen25coder15b": "Qwen2.5-Coder-1.5B",

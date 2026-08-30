@@ -7,9 +7,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MAIN = ROOT / "interp4d_short/main.tex"
-BIB = ROOT / "interp4d_short/refs.bib"
-APPENDIX = ROOT / "interp4d_short/appendix_generated.tex"
+MAIN = ROOT / "interp_science_short/main.tex"
+BIB = ROOT / "interp_science_short/refs.bib"
+APPENDIX = ROOT / "interp_science_short/appendix_generated.tex"
 
 
 def rows(path: Path) -> list[dict[str, str]]:
@@ -35,7 +35,7 @@ def main() -> int:
     ))
     checks.append((
         "LP4FM appendix generator cannot overwrite Interp",
-        "interp4d_short" not in (
+        "interp_science_short" not in (
             ROOT / "scripts/make_appendix.py"
         ).read_text(),
     ))
