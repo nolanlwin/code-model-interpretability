@@ -33,6 +33,8 @@ MASKED = ROOT / "results" / "lp4fm" / "masked_probe" / "conditions.csv"
 MECHABL = ROOT / "results" / "lp4fm" / "transfer_mechanism_ablation.csv"
 TRANSFER_INTERVALS = ROOT / "results" / "lp4fm" / "transfer_intervals.csv"
 BOUNDARY_CONTRASTS = ROOT / "results" / "lp4fm" / "masked_probe" / "boundary_contrasts.csv"
+BOUNDARY_STARCODER = ROOT / "results" / "lp4fm" / "masked_probe" / "boundary_contrasts_starcoder27b.csv"
+BOUNDARY_FLOOR1 = ROOT / "results" / "lp4fm" / "masked_probe" / "boundary_contrasts_floors1.csv"
 
 f = lambda r, k: float(r[k])
 
@@ -367,8 +369,56 @@ def run() -> int:
             ("identifier share 61%",
              round(100 * (1 - ctx_lift / span_lift)) == 61),
         ]
+        # Table 1's StarCoder2-7B block and the replication paragraph.
+        spn, spf, nsp = cond("starcoder27b")
+        scn, scf, nsc = cond("starcoder27bpoolcontext16")
+        sun, suf, nsu = cond("starcoder27brandominits0poolcontext16")
+        f1n, f1f, nf1 = cond("qwen25coder15brandominits1poolcontext16")
+        checks += [
+            ("starcoder conditions at 18 cells", nsp == nsc == nsu == 18),
+            ("starcoder span row 0.877 / 0.863",
+             f"{spn:.3f}" == "0.877" and f"{spf:.3f}" == "0.863"),
+            ("starcoder context row 0.734 / 0.586",
+             f"{scn:.3f}" == "0.734" and f"{scf:.3f}" == "0.586"),
+            ("starcoder untrained row 0.552 / 0.473",
+             f"{sun:.3f}" == "0.552" and f"{suf:.3f}" == "0.473"),
+            ("starcoder margin over floor +0.181 close / +0.114 Python",
+             f"{scn - sun:+.3f}" == "+0.181" and f"{scf - suf:+.3f}" == "+0.114"),
+            ("second floor init at 18 cells, level 0.497, boundary -0.035",
+             nf1 == 18
+             and f"{(f1n * 2 + f1f * 4) / 6:.3f}" == "0.497"
+             and f"{f1f - f1n:+.3f}" == "-0.035"),
+        ]
     else:
         checks.append(("masked-probe conditions present", False))
+
+    for label, path, expect in (
+        ("starcoder", BOUNDARY_STARCODER, {
+            "span_trained_boundary": ("-0.014", "-0.036", "+0.018"),
+            "context_trained_boundary": ("-0.147", "-0.186", "-0.092"),
+            "context_untrained_boundary": ("-0.080", "-0.110", "-0.049"),
+            "context_boundary_difference_in_differences": ("-0.068", "-0.114", "-0.009"),
+            "boundary_shift_after_excluding_occurrence": ("-0.134", "-0.168", "-0.086"),
+        }),
+        ("floor s1", BOUNDARY_FLOOR1, {
+            "context_untrained_boundary": ("-0.035", "-0.062", "-0.008"),
+            "context_trained_minus_untrained_close": ("+0.109", "+0.067", "+0.145"),
+            "context_trained_minus_untrained_python": ("+0.084", "+0.058", "+0.107"),
+        }),
+    ):
+        if not path.exists():
+            checks.append((f"{label} boundary contrasts present", False))
+            continue
+        got = {r["estimand"]: r for r in load(path)}
+        for estimand, (est, lo, hi) in expect.items():
+            row = got.get(estimand)
+            checks.append((
+                f"{label} {estimand} {est} [{lo}, {hi}]",
+                row is not None
+                and f"{f(row, 'estimate'):+.3f}" == est
+                and f"{f(row, 'ci_low'):+.3f}" == lo
+                and f"{f(row, 'ci_high'):+.3f}" == hi,
+            ))
 
     if BOUNDARY_CONTRASTS.exists():
         boundary = {r["estimand"]: r for r in load(BOUNDARY_CONTRASTS)}
@@ -430,10 +480,13 @@ def run() -> int:
         for k in ("macro_f1", "ci_low", "ci_high"):
             if r.get(k):
                 known.add(f"{abs(float(r[k])):.3f}")
-    for r in load(BOUNDARY_CONTRASTS):
-        for k in ("estimate", "ci_low", "ci_high"):
-            if r.get(k):
-                known.add(f"{abs(float(r[k])):.3f}")
+    for path in (BOUNDARY_CONTRASTS, BOUNDARY_STARCODER, BOUNDARY_FLOOR1):
+        if not path.exists():
+            continue
+        for r in load(path):
+            for k in ("estimate", "ci_low", "ci_high"):
+                if r.get(k):
+                    known.add(f"{abs(float(r[k])):.3f}")
     derived = {"0.952", "0.893", "0.785", "0.887", "0.390", "0.107", "0.166",
                "0.006", "0.165", "0.013", "0.038", "0.015", "0.032", "0.047",
                "0.195", "0.272", "0.079", "0.039", "0.314", "0.126", "0.111",
@@ -454,12 +507,9 @@ def run() -> int:
                "0.126", "0.012",
                # CI bounds and per-role effects; checks above recompute them
                "0.022", "0.092", "0.147", "0.249", "0.852",
-               # point contrasts of the trained transfers (0.630/0.569,
-               # recomputed above) against the second untrained floor
-               # initialization; per-cell artifacts for that run are pending
-               # commitment (stated in the paper's reproducibility appendix),
-               # so replace these with a recompute once they land
-               "0.083", "0.110"}
+               # StarCoder2-7B replication cells, each asserted individually
+               # above; the contrast CSVs supply every interval bound
+               "0.877", "0.863", "0.734", "0.586", "0.552", "0.473", "0.181"}
     lits = {m for m in re.findall(r"0\.\d{3}(?!\d)", tex)}
     unknown = sorted(lits - known - derived)
     if unknown:

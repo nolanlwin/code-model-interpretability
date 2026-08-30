@@ -32,12 +32,18 @@ PAIRS = (
 DEFAULT_BASE = "qwen25coder15b"
 
 
-def conditions_for(slug_base: str) -> dict[str, str]:
-    """The three condition slugs a model's masked-probe run produces."""
+def conditions_for(slug_base: str, untrained_seed: int = 0) -> dict[str, str]:
+    """The three condition slugs a model's masked-probe run produces.
+
+    untrained_seed selects the untrained control's WEIGHT initialization, not
+    a probe seed: the floor is one random network, and the boundary it shows
+    is a property of that draw. Running this with each initialization is how
+    the paper separates the floor's level (stable) from its boundary (not).
+    """
     return {
         "span_trained": slug_base,
         "context_trained": f"{slug_base}poolcontext16",
-        "context_untrained": f"{slug_base}randominits0poolcontext16",
+        "context_untrained": f"{slug_base}randominits{untrained_seed}poolcontext16",
     }
 
 
@@ -113,10 +119,15 @@ def _group_scores(
     return np.mean(np.stack(scores), axis=0)
 
 
-def main(n_boot: int = 5000, seed: int = 0, slug_base: str = DEFAULT_BASE) -> int:
-    conditions = conditions_for(slug_base)
-    out = DATA / ("boundary_contrasts.csv" if slug_base == DEFAULT_BASE
-                  else f"boundary_contrasts_{slug_base}.csv")
+def main(n_boot: int = 5000, seed: int = 0, slug_base: str = DEFAULT_BASE,
+         untrained_seed: int = 0) -> int:
+    conditions = conditions_for(slug_base, untrained_seed)
+    stem = "boundary_contrasts"
+    if slug_base != DEFAULT_BASE:
+        stem += f"_{slug_base}"
+    if untrained_seed:
+        stem += f"_floors{untrained_seed}"
+    out = DATA / f"{stem}.csv"
     problems, cells = _load(conditions)
     n_problems = len(problems)
     rng = np.random.default_rng(seed)
@@ -179,7 +190,7 @@ def main(n_boot: int = 5000, seed: int = 0, slug_base: str = DEFAULT_BASE) -> in
             "n_problem_ids": n_problems,
             "n_boot": n_boot,
             "interval": "problem-clustered percentile",
-            "scope": "conditional on one random weight initialization",
+            "scope": f"conditional on random weight initialization s{untrained_seed}",
         })
 
     with out.open("w", newline="") as handle:
@@ -202,7 +213,12 @@ if __name__ == "__main__":
     ap.add_argument("--slug-base", default=DEFAULT_BASE,
                     help="model slug the condition suffixes attach to; a "
                          "non-default base writes boundary_contrasts_<base>.csv")
+    ap.add_argument("--untrained-seed", type=int, default=0,
+                    help="weight initialization of the untrained control; a "
+                         "non-zero seed writes ..._floors<seed>.csv")
     ap.add_argument("--n-boot", type=int, default=5000)
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
-    raise SystemExit(main(n_boot=args.n_boot, seed=args.seed, slug_base=args.slug_base))
+    raise SystemExit(main(n_boot=args.n_boot, seed=args.seed,
+                          slug_base=args.slug_base,
+                          untrained_seed=args.untrained_seed))

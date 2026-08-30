@@ -238,6 +238,67 @@ def masked_probe_tables() -> str:
         )
     out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
 
+    # Replication evidence: the second model's per-cell scores, and the
+    # aggregate contrasts for both the second model and the second floor
+    # initialization. Each headline number in the paper's replication
+    # paragraph is one row here.
+    out += [
+        "\\begin{table}[h]\\centering\\small",
+        "\\caption{Per-cell macro-F1 for the StarCoder2-7B replication, on the "
+        "same prediction items as the Qwen run. \\emph{Lift} subtracts the "
+        "context-matched randomly initialized result from the context-pooled "
+        "trained result.}",
+        "\\label{tab:masked-full-starcoder}",
+        "\\begin{tabular}{llrrrr}", "\\toprule",
+        "role & pair & span & context & random & lift \\\\", "\\midrule",
+    ]
+    for role in roles:
+        for source, target in pairs:
+            role_tex = role.replace("_", "\\_")
+
+            def sc_score(condition):
+                return f(by_key[(condition, role, source, target)], "transfer")
+
+            span = sc_score("starcoder27b")
+            context = sc_score("starcoder27bpoolcontext16")
+            random = sc_score("starcoder27brandominits0poolcontext16")
+            out.append(
+                f"{role_tex} & {LANG[source]}$\\rightarrow${LANG[target]} & "
+                f"{span:.3f} & {context:.3f} & {random:.3f} & "
+                f"{context-random:+.3f} \\\\"
+            )
+    out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
+
+    for csv_name, caption, label in (
+        ("boundary_contrasts_starcoder27b.csv",
+         "Boundary contrasts for the StarCoder2-7B replication, same estimator "
+         "and resampling as the Qwen table. Conditional on one random weight "
+         "initialization.",
+         "tab:boundary-contrasts-starcoder"),
+        ("boundary_contrasts_floors1.csv",
+         "Qwen2.5-Coder-1.5B boundary contrasts recomputed against the second "
+         "untrained weight initialization. Trained conditions are unchanged; "
+         "only the floor differs from the main table.",
+         "tab:boundary-contrasts-floor1"),
+    ):
+        path = R / "masked_probe" / csv_name
+        if not path.exists():
+            continue
+        out += [
+            "\\begin{table}[h]\\centering\\small",
+            f"\\caption{{{caption}}}",
+            f"\\label{{{label}}}",
+            "\\begin{tabular}{lrr}", "\\toprule",
+            "estimand & estimate & 95\\% CI \\\\", "\\midrule",
+        ]
+        for row in rows(path):
+            out.append(
+                f"{contrast_labels[row['estimand']]} & "
+                f"{f(row, 'estimate'):+.3f} & "
+                f"[{f(row, 'ci_low'):+.3f}, {f(row, 'ci_high'):+.3f}] \\\\"
+            )
+        out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
+
     labels = {
         "surface_window_masked": "surface window",
         "qwen25coder15b": "span-pooled trained",

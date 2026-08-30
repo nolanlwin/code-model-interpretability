@@ -190,6 +190,71 @@ iterator & -0.067 & -0.008 & +0.123 & +0.064 & +0.060 \\
 \end{table}
 
 \begin{table}[h]\centering\small
+\caption{Per-cell macro-F1 for the StarCoder2-7B replication, on the same prediction items as the Qwen run. \emph{Lift} subtracts the context-matched randomly initialized result from the context-pooled trained result.}
+\label{tab:masked-full-starcoder}
+\begin{tabular}{llrrrr}
+\toprule
+role & pair & span & context & random & lift \\
+\midrule
+accumulator & JavaScript$\rightarrow$PHP & 0.854 & 0.689 & 0.658 & +0.030 \\
+accumulator & PHP$\rightarrow$JavaScript & 0.859 & 0.672 & 0.598 & +0.075 \\
+accumulator & JavaScript$\rightarrow$Python & 0.844 & 0.516 & 0.516 & -0.000 \\
+accumulator & PHP$\rightarrow$Python & 0.821 & 0.420 & 0.486 & -0.066 \\
+accumulator & Python$\rightarrow$JavaScript & 0.881 & 0.636 & 0.561 & +0.075 \\
+accumulator & Python$\rightarrow$PHP & 0.884 & 0.640 & 0.488 & +0.152 \\
+index\_key & JavaScript$\rightarrow$PHP & 0.846 & 0.768 & 0.573 & +0.195 \\
+index\_key & PHP$\rightarrow$JavaScript & 0.821 & 0.780 & 0.528 & +0.252 \\
+index\_key & JavaScript$\rightarrow$Python & 0.807 & 0.637 & 0.479 & +0.158 \\
+index\_key & PHP$\rightarrow$Python & 0.778 & 0.576 & 0.364 & +0.211 \\
+index\_key & Python$\rightarrow$JavaScript & 0.870 & 0.636 & 0.526 & +0.110 \\
+index\_key & Python$\rightarrow$PHP & 0.861 & 0.739 & 0.334 & +0.405 \\
+iterator & JavaScript$\rightarrow$PHP & 0.946 & 0.767 & 0.523 & +0.244 \\
+iterator & PHP$\rightarrow$JavaScript & 0.934 & 0.726 & 0.434 & +0.292 \\
+iterator & JavaScript$\rightarrow$Python & 0.880 & 0.529 & 0.476 & +0.053 \\
+iterator & PHP$\rightarrow$Python & 0.806 & 0.498 & 0.464 & +0.033 \\
+iterator & Python$\rightarrow$JavaScript & 0.967 & 0.637 & 0.475 & +0.162 \\
+iterator & Python$\rightarrow$PHP & 0.960 & 0.571 & 0.500 & +0.071 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]\centering\small
+\caption{Boundary contrasts for the StarCoder2-7B replication, same estimator and resampling as the Qwen table. Conditional on one random weight initialization.}
+\label{tab:boundary-contrasts-starcoder}
+\begin{tabular}{lrr}
+\toprule
+estimand & estimate & 95\% CI \\
+\midrule
+span-pooled trained boundary & -0.014 & [-0.036, +0.018] \\
+occurrence-excluded trained boundary & -0.147 & [-0.186, -0.092] \\
+occurrence-excluded untrained boundary & -0.080 & [-0.110, -0.049] \\
+trained $-$ untrained boundary & -0.068 & [-0.114, -0.009] \\
+training lift, close pair & +0.181 & [+0.118, +0.227] \\
+training lift, Python pairs & +0.114 & [+0.086, +0.136] \\
+boundary shift after exclusion & -0.134 & [-0.168, -0.086] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]\centering\small
+\caption{Qwen2.5-Coder-1.5B boundary contrasts recomputed against the second untrained weight initialization. Trained conditions are unchanged; only the floor differs from the main table.}
+\label{tab:boundary-contrasts-floor1}
+\begin{tabular}{lrr}
+\toprule
+estimand & estimate & 95\% CI \\
+\midrule
+span-pooled trained boundary & -0.012 & [-0.034, +0.020] \\
+occurrence-excluded trained boundary & -0.060 & [-0.088, -0.030] \\
+occurrence-excluded untrained boundary & -0.035 & [-0.062, -0.008] \\
+trained $-$ untrained boundary & -0.025 & [-0.061, +0.013] \\
+training lift, close pair & +0.109 & [+0.067, +0.145] \\
+training lift, Python pairs & +0.084 & [+0.058, +0.107] \\
+boundary shift after exclusion & -0.048 & [-0.088, -0.016] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]\centering\small
 \caption{Aggregate diagnostics retained in the intersection-sample masked-probe export. Surface counts are test occurrences; probe counts are shared source--target problems. Surface rows have no in-domain or seed fields. The untrained condition has two probe seeds versus five for the trained conditions.}
 \label{tab:masked-diagnostics}
 \begin{tabular}{lrrrrr}
