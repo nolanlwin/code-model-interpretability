@@ -61,95 +61,106 @@ Python & 0.217 & 0.422 & 0.970 & 0.983 & 0.605 & 0.216 \\
 
 \paragraph{Boolean probe figures.} The baseline panels retain the individual surface comparators hidden by the best-baseline table. Renaming is available only for Python. The absence of corresponding figures in other languages is a coverage hole.
 \begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_java_train_qwen2515b.png}
-\caption{Boolean probe and model-free baselines for Java, Qwen2.5-1.5B.}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_java_train_qwen2515b.png}
+\caption{Java}
 \label{fig:boolean-probe-java-qwen2515b}
-\end{figure}
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_java_train_qwen25coder15b.png}
-\caption{Boolean probe and model-free baselines for Java, Qwen2.5-Coder-1.5B.}
-\label{fig:boolean-probe-java-qwen25coder15b}
-\end{figure}
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_java_train_starcoder27b.png}
-\caption{Boolean probe and model-free baselines for Java, StarCoder2-7B.}
-\label{fig:boolean-probe-java-starcoder27b}
-\end{figure}
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/layer_curves_java_train.png}
-\caption{Boolean probe layer curves for Java across the three models.}
-\label{fig:boolean-layers-java}
-\end{figure}
-\clearpage
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_javascript_train_qwen2515b.png}
-\caption{Boolean probe and model-free baselines for JavaScript, Qwen2.5-1.5B.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_javascript_train_qwen2515b.png}
+\caption{JavaScript}
 \label{fig:boolean-probe-javascript-qwen2515b}
-\end{figure}
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_javascript_train_qwen25coder15b.png}
-\caption{Boolean probe and model-free baselines for JavaScript, Qwen2.5-Coder-1.5B.}
-\label{fig:boolean-probe-javascript-qwen25coder15b}
-\end{figure}
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_javascript_train_starcoder27b.png}
-\caption{Boolean probe and model-free baselines for JavaScript, StarCoder2-7B.}
-\label{fig:boolean-probe-javascript-starcoder27b}
-\end{figure}
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/layer_curves_javascript_train.png}
-\caption{Boolean probe layer curves for JavaScript across the three models.}
-\label{fig:boolean-layers-javascript}
-\end{figure}
-\clearpage
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_php_train_qwen2515b.png}
-\caption{Boolean probe and model-free baselines for PHP, Qwen2.5-1.5B.}
+\end{subfigure}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_php_train_qwen2515b.png}
+\caption{PHP}
 \label{fig:boolean-probe-php-qwen2515b}
-\end{figure}
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_php_train_qwen25coder15b.png}
-\caption{Boolean probe and model-free baselines for PHP, Qwen2.5-Coder-1.5B.}
-\label{fig:boolean-probe-php-qwen25coder15b}
-\end{figure}
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_php_train_starcoder27b.png}
-\caption{Boolean probe and model-free baselines for PHP, StarCoder2-7B.}
-\label{fig:boolean-probe-php-starcoder27b}
-\end{figure}
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/layer_curves_php_train.png}
-\caption{Boolean probe layer curves for PHP across the three models.}
-\label{fig:boolean-layers-php}
-\end{figure}
-\clearpage
-\begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_python_train_qwen2515b.png}
-\caption{Boolean probe and model-free baselines for Python, Qwen2.5-1.5B.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_python_train_qwen2515b.png}
+\caption{Python}
 \label{fig:boolean-probe-python-qwen2515b}
+\end{subfigure}
+\caption{Boolean probe and model-free baselines for Qwen2.5-1.5B across the four committed languages.}
+\label{fig:boolean-gallery-probe-qwen2515b}
 \end{figure}
 \begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_python_train_qwen25coder15b.png}
-\caption{Boolean probe and model-free baselines for Python, Qwen2.5-Coder-1.5B.}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_java_train_qwen25coder15b.png}
+\caption{Java}
+\label{fig:boolean-probe-java-qwen25coder15b}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_javascript_train_qwen25coder15b.png}
+\caption{JavaScript}
+\label{fig:boolean-probe-javascript-qwen25coder15b}
+\end{subfigure}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_php_train_qwen25coder15b.png}
+\caption{PHP}
+\label{fig:boolean-probe-php-qwen25coder15b}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_python_train_qwen25coder15b.png}
+\caption{Python}
 \label{fig:boolean-probe-python-qwen25coder15b}
+\end{subfigure}
+\caption{Boolean probe and model-free baselines for Qwen2.5-Coder-1.5B across the four committed languages.}
+\label{fig:boolean-gallery-probe-qwen25coder15b}
 \end{figure}
 \begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/probe_vs_baselines_python_train_starcoder27b.png}
-\caption{Boolean probe and model-free baselines for Python, StarCoder2-7B.}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_java_train_starcoder27b.png}
+\caption{Java}
+\label{fig:boolean-probe-java-starcoder27b}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_javascript_train_starcoder27b.png}
+\caption{JavaScript}
+\label{fig:boolean-probe-javascript-starcoder27b}
+\end{subfigure}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_php_train_starcoder27b.png}
+\caption{PHP}
+\label{fig:boolean-probe-php-starcoder27b}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/probe_vs_baselines_python_train_starcoder27b.png}
+\caption{Python}
 \label{fig:boolean-probe-python-starcoder27b}
+\end{subfigure}
+\caption{Boolean probe and model-free baselines for StarCoder2-7B across the four committed languages.}
+\label{fig:boolean-gallery-probe-starcoder27b}
 \end{figure}
 \begin{figure}[htbp]\centering
-\includegraphics[width=0.78\linewidth]{../results/boolean/layer_curves_python_train.png}
-\caption{Boolean probe layer curves for Python across the three models.}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/layer_curves_java_train.png}
+\caption{Java}
+\label{fig:boolean-layers-java}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/layer_curves_javascript_train.png}
+\caption{JavaScript}
+\label{fig:boolean-layers-javascript}
+\end{subfigure}
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/layer_curves_php_train.png}
+\caption{PHP}
+\label{fig:boolean-layers-php}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+\includegraphics[width=\linewidth]{../results/boolean/layer_curves_python_train.png}
+\caption{Python}
 \label{fig:boolean-layers-python}
+\end{subfigure}
+\caption{Boolean probe layer curves per language across the three models.}
+\label{fig:boolean-gallery-layers}
 \end{figure}
-\clearpage
 \begin{figure}[htbp]\centering
 \includegraphics[width=0.78\linewidth]{../results/boolean/renaming_deltas_python_train.png}
 \caption{Problem-paired boolean refit-performance deltas on Python. No corresponding committed renaming run exists for other languages.}
 \label{fig:boolean-renaming-python}
 \end{figure}
-\clearpage
 
 \begin{table}[htbp]\centering\small
 \caption{Complete class/structure perturbation results under the shared five-seed protocol. Each condition refits a probe and selects its own layer on validation data, so cross-condition deltas do not test a fixed direction.}

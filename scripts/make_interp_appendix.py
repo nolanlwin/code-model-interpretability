@@ -612,34 +612,48 @@ def boolean_causal_figures() -> str:
 
 
 def boolean_probe_figures() -> str:
+    """2x2 galleries: one per model over the four languages, then the layer
+    curves, then the single committed renaming figure. Panel labels stay on
+    the subfigures so every figure keeps its own \\label and cross-reference."""
     blocks = [
         "\\paragraph{Boolean probe figures.} The baseline panels retain the "
         "individual surface comparators hidden by the best-baseline table. "
         "Renaming is available only for Python. The absence of corresponding "
         "figures in other languages is a coverage hole."
     ]
-    for language in ("java", "javascript", "php", "python"):
-        for model in ("qwen2515b", "qwen25coder15b", "starcoder27b"):
+    langs = ("java", "javascript", "php", "python")
+    for model in ("qwen2515b", "qwen25coder15b", "starcoder27b"):
+        blocks.append("\\begin{figure}[htbp]\\centering")
+        for i, language in enumerate(langs):
             blocks += [
-                "\\begin{figure}[htbp]\\centering",
-                f"\\includegraphics[width=0.78\\linewidth]{{../results/boolean/"
+                "\\begin{subfigure}{0.49\\linewidth}\\centering",
+                f"\\includegraphics[width=\\linewidth]{{../results/boolean/"
                 f"probe_vs_baselines_{language}_train_{model}.png}}",
-                f"\\caption{{Boolean probe and model-free baselines for "
-                f"{LANG[language]}, {MODEL[model]}.}}",
+                f"\\caption{{{LANG[language]}}}",
                 f"\\label{{fig:boolean-probe-{language}-{model}}}",
-                "\\end{figure}",
+                "\\end{subfigure}" + ("\\hfill" if i % 2 == 0 else ""),
             ]
         blocks += [
-            "\\begin{figure}[htbp]\\centering",
-            f"\\includegraphics[width=0.78\\linewidth]{{../results/boolean/"
-            f"layer_curves_{language}_train.png}}",
-            f"\\caption{{Boolean probe layer curves for {LANG[language]} across "
-            "the three models.}",
-            f"\\label{{fig:boolean-layers-{language}}}",
+            f"\\caption{{Boolean probe and model-free baselines for "
+            f"{MODEL[model]} across the four committed languages.}}",
+            f"\\label{{fig:boolean-gallery-probe-{model}}}",
             "\\end{figure}",
         ]
-        blocks.append("\\clearpage")
+    blocks.append("\\begin{figure}[htbp]\\centering")
+    for i, language in enumerate(langs):
+        blocks += [
+            "\\begin{subfigure}{0.49\\linewidth}\\centering",
+            f"\\includegraphics[width=\\linewidth]{{../results/boolean/"
+            f"layer_curves_{language}_train.png}}",
+            f"\\caption{{{LANG[language]}}}",
+            f"\\label{{fig:boolean-layers-{language}}}",
+            "\\end{subfigure}" + ("\\hfill" if i % 2 == 0 else ""),
+        ]
     blocks += [
+        "\\caption{Boolean probe layer curves per language across the three "
+        "models.}",
+        "\\label{fig:boolean-gallery-layers}",
+        "\\end{figure}",
         "\\begin{figure}[htbp]\\centering",
         "\\includegraphics[width=0.78\\linewidth]{../results/boolean/"
         "renaming_deltas_python_train.png}",
@@ -647,7 +661,6 @@ def boolean_probe_figures() -> str:
         "No corresponding committed renaming run exists for other languages.}",
         "\\label{fig:boolean-renaming-python}",
         "\\end{figure}",
-        "\\clearpage",
     ]
     return "\n".join(blocks)
 
