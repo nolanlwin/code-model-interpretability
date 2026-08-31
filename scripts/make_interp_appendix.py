@@ -52,7 +52,7 @@ def boolean_table() -> str:
         "results. The best baseline is selected from name-only, masked statement, "
         "masked line, masked window, covariate-only, and majority features. "
         "$\\rho$ is a descriptive one-instance score step, not an interval or "
-        "equivalence test; aligned probe/baseline predictions were not retained.}",
+        "equivalence test. Aligned probe/baseline predictions were not retained.}",
         "\\label{tab:boolean-full}",
         "\\resizebox{\\linewidth}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",
@@ -76,7 +76,7 @@ def boolean_table() -> str:
         "\\caption{Boolean Python identifier-renaming audit. C1--C5 are the five "
         "committed renaming conditions. Each condition refits a probe and reselects "
         "its layer, so deltas measure recoverability rather than fixed-direction "
-        "invariance; intervals are problem-clustered. Empty "
+        "invariance. Intervals are problem-clustered. Empty "
         "renaming fields for other languages indicate that those runs were not "
         "committed, not a null result.}",
         "\\label{tab:boolean-renaming-full}",
@@ -144,7 +144,7 @@ def class_struct_table() -> str:
             / "class_struct/perturbation/summary.csv"
         )
         for row in summary:
-            delta = "---" if not row["delta_f1_vs_baseline"] else (
+            delta = "N/A" if not row["delta_f1_vs_baseline"] else (
                 f"{float(row['delta_f1_vs_baseline']):+.3f}"
             )
             lines.append(
@@ -160,7 +160,7 @@ def class_struct_table() -> str:
     lines += [
         "\\begin{table}[p]\\centering\\small",
         "\\caption{Class/structure cross-language results. Transfer uses the "
-        "Python-selected layer; in-domain layers are selected separately. "
+        "Python-selected layer. In-domain layers are selected separately. "
         "Only languages present in the committed exports are shown.}",
         "\\label{tab:class-crosslang}",
         "\\resizebox{\\linewidth}{!}{%",
@@ -174,10 +174,10 @@ def class_struct_table() -> str:
             / "class_struct/crosslang/crosslang.csv"
         )
         for row in cross:
-            transfer_acc = "---" if not row["transfer_acc_at_py_best"] else (
+            transfer_acc = "N/A" if not row["transfer_acc_at_py_best"] else (
                 f"{float(row['transfer_acc_at_py_best']):.3f}"
             )
-            transfer_f1 = "---" if not row["transfer_f1_at_py_best"] else (
+            transfer_f1 = "N/A" if not row["transfer_f1_at_py_best"] else (
                 f"{float(row['transfer_f1_at_py_best']):.3f}"
             )
             lines.append(
@@ -191,7 +191,7 @@ def class_struct_table() -> str:
     lines += [
         "\\begin{table}[p]\\centering\\small",
         "\\caption{Layerwise class/structure robustness summaries. The F1 range "
-        "is taken over all committed layers; maximum cosine similarity is measured "
+        "is taken over all committed layers. Maximum cosine similarity is measured "
         "against the baseline activation direction for each renamed condition.}",
         "\\label{tab:class-layerwise}",
         "\\resizebox{\\linewidth}{!}{%",
@@ -215,7 +215,7 @@ def class_struct_table() -> str:
             low = min(float(row["test_f1"]) for row in curve)
             high = max(curve, key=lambda row: float(row["test_f1"]))
             if strategy == "baseline":
-                cosine_cell = "---"
+                cosine_cell = "N/A"
             else:
                 c_row = cosine_by_strategy[strategy]
                 layer_values = [
@@ -260,7 +260,7 @@ def iterator_table() -> str:
     for label, root, stem in configs:
         summary = read_csv(root / "perturbation" / f"{stem}_summary.csv")
         for row in summary:
-            delta = "---" if not row["delta_f1_vs_baseline"] else (
+            delta = "N/A" if not row["delta_f1_vs_baseline"] else (
                 f"{float(row['delta_f1_vs_baseline']):+.3f}"
             )
             lines.append(
@@ -283,10 +283,10 @@ def iterator_table() -> str:
     for label, root, stem in configs:
         transfer = read_csv(root / "crosslang" / f"{stem}_crosslang.csv")
         for row in transfer:
-            transfer_acc = "---" if not row["transfer_acc_at_py_best"] else (
+            transfer_acc = "N/A" if not row["transfer_acc_at_py_best"] else (
                 f"{float(row['transfer_acc_at_py_best']):.3f}"
             )
-            transfer_f1 = "---" if not row["transfer_f1_at_py_best"] else (
+            transfer_f1 = "N/A" if not row["transfer_f1_at_py_best"] else (
                 f"{float(row['transfer_f1_at_py_best']):.3f}"
             )
             lines.append(
@@ -300,7 +300,7 @@ def iterator_table() -> str:
     lines += [
         "\\begin{table}[p]\\centering\\small",
         "\\caption{Layerwise iterator robustness summaries. F1 ranges cover every "
-        "committed layer; cosine similarity compares each perturbation direction "
+        "committed layer. Cosine similarity compares each perturbation direction "
         "with the baseline direction.}",
         "\\label{tab:iterator-layerwise}",
         "\\resizebox{\\linewidth}{!}{%",
@@ -319,7 +319,7 @@ def iterator_table() -> str:
             low = min(float(row["test_f1"]) for row in curve)
             high = max(curve, key=lambda row: float(row["test_f1"]))
             if strategy == "baseline":
-                cosine_cell = "---"
+                cosine_cell = "N/A"
             else:
                 c_row = cosine_by_strategy[strategy]
                 layer_values = [
@@ -393,7 +393,7 @@ def iterator_patching_tables() -> str:
                 for column in recovery_columns:
                     value = row[column]
                     recoveries.append(
-                        "---" if value.lower() == "nan" else f"{float(value):.3f}"
+                        "N/A" if value.lower() == "nan" else f"{float(value):.3f}"
                     )
                 lines.append(
                     f"{condition} & L{int(row['readout_layer'])} & "
@@ -426,7 +426,7 @@ def class_causal_table() -> str:
     ]
     for row in rows:
         minus_random = (
-            "---" if not row["minus_random"]
+            "N/A" if not row["minus_random"]
             else f"{float(row['minus_random']):+.4f}"
         )
         lines.append(
@@ -477,7 +477,7 @@ def class_causal_table() -> str:
     lines += [
         "\\begin{table}[h]\\centering\\small",
         "\\caption{Class/structure gate and readout audit. Both prompt classes "
-        "favor \\texttt{True}; the pairwise gap remains separable, but the "
+        "favor \\texttt{True}. The pairwise gap remains separable, but the "
         "binary readout is not calibrated to distinguish function prompts.}",
         "\\label{tab:class-gate-audit}",
         "\\begin{tabular}{lrrr}", "\\toprule",
@@ -496,11 +496,11 @@ def class_causal_table() -> str:
         f"{behavior_gate['pair_gap_acc']['ci_high']:.3f}] & pass \\\\",
         f"query/declaration probe AUC & "
         f"{primary_gate['probe_ood']['query_auc']:.3f}/"
-        f"{primary_gate['probe_ood']['declaration_auc']:.3f} & --- & pass \\\\",
+        f"{primary_gate['probe_ood']['declaration_auc']:.3f} & N/A & pass \\\\",
         "\\bottomrule", "\\end{tabular}", "\\end{table}", "",
         "\\begin{table}[h]\\centering\\small",
         "\\caption{Patching audit trail. Completeness establishes that the "
-        "scheduled Qwen evaluation finished; it does not turn the failed causal "
+        "scheduled Qwen evaluation finished. It does not turn the failed causal "
         "gate into positive evidence. The controller stopped before Coder and "
         "StarCoder2 after the Qwen null.}",
         "\\label{tab:class-patching-audit}",
@@ -614,7 +614,7 @@ def boolean_probe_figures() -> str:
     blocks = [
         "\\paragraph{Boolean probe figures.} The baseline panels retain the "
         "individual surface comparators hidden by the best-baseline table. "
-        "Renaming is available only for Python; the absence of corresponding "
+        "Renaming is available only for Python. The absence of corresponding "
         "figures in other languages is a coverage hole."
     ]
     for language in ("java", "javascript", "php", "python"):
@@ -782,16 +782,16 @@ def role_figures() -> str:
 def coverage_holes() -> str:
     return "\n".join([
         "\\begin{itemize}",
-        "\\item Accumulator and index/key results use legacy exports; no committed "
+        "\\item Accumulator and index/key results use legacy exports. No committed "
         "problem-grouped, five-seed CSV reproduces those roles under the modern protocol.",
         "\\item Iterator results are available for Qwen2.5-Coder-1.5B and "
         "StarCoder2-7B, but not Qwen2.5-1.5B.",
         "\\item Class/structure transfer exports include Python, C++, JavaScript, "
         "and C, but not Java, C\\#, or PHP.",
-        "\\item Boolean probe exports include Python, Java, JavaScript, and PHP; "
+        "\\item Boolean probe exports include Python, Java, JavaScript, and PHP. "
         "C, C\\#, and C++ are absent, and renaming is available only for Python.",
         "\\item Gate-specified class/structure patching stopped after the Qwen2.5-1.5B "
-        "null; Coder, StarCoder2, and the all-layer core sweep were not attempted.",
+        "null. Coder, StarCoder2, and the all-layer core sweep were not attempted.",
         "\\item No matched model-free surface comparator is committed for the "
         "class/structure role.",
         "\\end{itemize}",

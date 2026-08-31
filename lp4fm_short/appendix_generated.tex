@@ -4,7 +4,7 @@
 \label{app:complete-transfer}
 
 \begin{table}[h]\centering\small
-\caption{All eighteen transfer cells for Qwen2.5-Coder-1.5B. \emph{Surface} is the strongest masked-context $n$-gram feature; \emph{name} uses the variable's name alone; \emph{probe} is the residual-stream probe. Majority and shuffled-label controls sit near chance throughout. $\rho$ is a descriptive one-instance score step, not a confidence interval or hypothesis test.}
+\caption{All eighteen transfer cells for Qwen2.5-Coder-1.5B. \emph{Surface} is the strongest masked-context $n$-gram feature. \emph{Name} uses the variable's name alone. \emph{Probe} is the residual-stream probe. Majority and shuffled-label controls sit near chance throughout. $\rho$ is a descriptive one-instance score step, not a confidence interval or hypothesis test.}
 \label{tab:full}
 \begin{tabular}{llrrrrrrr}
 \toprule
@@ -63,7 +63,7 @@ ALL & Python pairs $-$ close pair & -0.114 & [-0.147, -0.081] & 432 \\
 \end{table}
 
 \begin{table}[h]\centering
-\caption{Probe transfer per model, averaged within each group. The untrained network shares Qwen2.5-1.5B's architecture and tokenizer with randomly initialised weights; it is the floor a representational claim must clear, and it is itself flat.}
+\caption{Probe transfer per model, averaged within each group. The untrained network shares Qwen2.5-1.5B's architecture and tokenizer with randomly initialised weights. It is the floor a representational claim must clear, and it is itself flat.}
 \label{tab:models}
 \begin{tabular}{lrrrr}
 \toprule
@@ -71,7 +71,7 @@ model & close pair & Python pairs & all & vs.\ untrained \\
 \midrule
 Qwen2.5-1.5B & 0.899 & 0.888 & 0.892 & $+0.316$ \\
 Qwen2.5-Coder-1.5B & 0.893 & 0.887 & 0.889 & $+0.314$ \\
-Qwen2.5-1.5B (untrained) & 0.590 & 0.568 & 0.575 & --- \\
+Qwen2.5-1.5B (untrained) & 0.590 & 0.568 & 0.575 & N/A \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -80,18 +80,18 @@ Qwen2.5-1.5B (untrained) & 0.590 & 0.568 & 0.575 & --- \\
 \label{app:overlap}
 
 \begin{table}[h]\centering
-\caption{Shared problem identifiers between every pair of XLCoST languages, train split. Matched cross-lingual transfer needs a pair to share enough problems to hold out a test fold; only the three bold cells clear $500$. No pair outside Python/JavaScript/PHP does, including same-family pairs.}
+\caption{Shared problem identifiers between every pair of XLCoST languages, train split. Matched cross-lingual transfer needs a pair to share enough problems to hold out a test fold. Only the three bold cells clear $500$. No pair outside Python/JavaScript/PHP does, including same-family pairs.}
 \label{tab:overlap}
 \begin{tabular}{lrrrrrr}
 \toprule
  & C++ & C\# & Java & JavaScript & PHP & Python \\
 \midrule
-C++ & --- & 115 & 122 & 75 & 17 & 74 \\
-C\# & 115 & --- & 175 & 75 & 14 & 62 \\
-Java & 122 & 175 & --- & 85 & 11 & 66 \\
-JavaScript & 75 & 75 & 85 & --- & \textbf{1,529} & \textbf{2,953} \\
-PHP & 17 & 14 & 11 & \textbf{1,529} & --- & \textbf{1,145} \\
-Python & 74 & 62 & 66 & \textbf{2,953} & \textbf{1,145} & --- \\
+C++ & N/A & 115 & 122 & 75 & 17 & 74 \\
+C\# & 115 & N/A & 175 & 75 & 14 & 62 \\
+Java & 122 & 175 & N/A & 85 & 11 & 66 \\
+JavaScript & 75 & 75 & 85 & N/A & \textbf{1,529} & \textbf{2,953} \\
+PHP & 17 & 14 & 11 & \textbf{1,529} & N/A & \textbf{1,145} \\
+Python & 74 & 62 & 66 & \textbf{2,953} & \textbf{1,145} & N/A \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -176,7 +176,7 @@ boundary shift after exclusion & -0.048 & [-0.088, -0.016] \\
 \end{table}
 
 \begin{table}[h]\centering\small
-\caption{Rolewise occurrence-excluded effects and floor-adjusted transfer. Effects are Python minus close-pair macro-F1; lift subtracts the matched untrained score. The final column is close-pair lift minus Python-transfer lift. These descriptive role summaries do not carry separate intervals.}
+\caption{Rolewise occurrence-excluded effects and floor-adjusted transfer. Effects are Python minus close-pair macro-F1. Lift subtracts the matched untrained score. The final column is close-pair lift minus Python-transfer lift. These descriptive role summaries do not carry separate intervals.}
 \label{tab:rolewise-floor-adjusted}
 \begin{tabular}{lrrrrr}
 \toprule
@@ -237,7 +237,7 @@ boundary shift after exclusion & -0.134 & [-0.168, -0.086] \\
 \end{table}
 
 \begin{table}[h]\centering\small
-\caption{Qwen2.5-Coder-1.5B boundary contrasts recomputed against the second untrained weight initialization. Trained conditions are unchanged; only the floor differs from the main table.}
+\caption{Qwen2.5-Coder-1.5B boundary contrasts recomputed against the second untrained weight initialization. Trained conditions are unchanged. Only the floor differs from the main table.}
 \label{tab:boundary-contrasts-floor1}
 \begin{tabular}{lrr}
 \toprule
@@ -255,13 +255,13 @@ boundary shift after exclusion & -0.048 & [-0.088, -0.016] \\
 \end{table}
 
 \begin{table}[h]\centering\small
-\caption{Aggregate diagnostics retained in the intersection-sample masked-probe export. Surface counts are test occurrences; probe counts are shared source--target problems. Surface rows have no in-domain or seed fields. The untrained condition has two probe seeds versus five for the trained conditions.}
+\caption{Aggregate diagnostics retained in the intersection-sample masked-probe export. Surface counts are test occurrences. Probe counts are shared source--target problems. Surface rows have no in-domain or seed fields. The untrained condition has two probe seeds versus five for the trained conditions.}
 \label{tab:masked-diagnostics}
 \begin{tabular}{lrrrrr}
 \toprule
 condition & transfer & in-domain & shuffled source & seeds & cell population \\
 \midrule
-surface window & 0.846 & --- & 0.476 & --- & 2,617--3,138 occ. \\
+surface window & 0.846 & N/A & 0.476 & N/A & 2,617--3,138 occ. \\
 span-pooled trained & 0.844 & 0.898 & 0.468 & 5 & 374--406 problems \\
 context-pooled trained & 0.589 & 0.771 & 0.448 & 5 & 374--406 problems \\
 context-pooled untrained & 0.485 & 0.623 & 0.465 & 2 & 374--406 problems \\
@@ -319,7 +319,7 @@ Python$\rightarrow$JavaScript & 0.7901 & 0.7901 & +0.0000 \\
 \label{app:mechanism}
 
 \begin{table}[h]\centering\small
-\caption{Transfer mechanism for the iterator role. \emph{Surviving} is the share of the source classifier's discriminative mass realised in the target; \emph{flip} is the share of that mass whose sign reverses. Surviving mass is uncorrelated with transfer; flipped mass predicts it almost exactly. Source-weighted variants are given for robustness.}
+\caption{Transfer mechanism for the iterator role. \emph{Surviving} is the share of the source classifier's discriminative mass realised in the target. \emph{Flip} is the share of that mass whose sign reverses. Surviving mass is uncorrelated with transfer. Flipped mass predicts it almost exactly. Source-weighted variants are given for robustness.}
 \label{tab:mech}
 \begin{tabular}{lrrrrr}
 \toprule
@@ -360,7 +360,7 @@ PHP$\rightarrow$Python & operator & 0.5801 & +0.0045 \\
 \label{app:geometry}
 
 \begin{table}[h]\centering
-\caption{Point-biserial correlation between PC1 of last-token residual activations and a static/dynamic typing label, by layer, with PC1's explained-variance ratio. The sign of $r$ is arbitrary (PCA fixes the axis only up to reflection, and each layer is refit independently); magnitude is what carries meaning.}
+\caption{Point-biserial correlation between PC1 of last-token residual activations and a static/dynamic typing label, by layer, with PC1's explained-variance ratio. The sign of $r$ is arbitrary (PCA fixes the axis only up to reflection, and each layer is refit independently). Magnitude is what carries meaning.}
 \label{tab:geomlayers}
 \begin{tabular}{rrr|rrr}
 \toprule
@@ -385,7 +385,7 @@ layer & $|r|$ & EVR & layer & $|r|$ & EVR \\
 \end{tabular}
 \end{table}
 
-\paragraph{The typing axis is not privileged.} Probing the same activations under every alternative $4$-versus-$3$ partition of the seven languages ($\binom{7}{4}=35$ groupings minus the real one, so 34 controls) gives best-layer macro-F1 0.9959 on average (min 0.9918, max 1.0000), against 1.0000 for the true static/dynamic split; 5 of the 34 controls match or exceed it. Any grouping of these languages is near-perfectly decodable, so the decodability of the typing split is evidence that language identity is encoded, not that type discipline is. At layer 4, where $|r|$ peaks at 0.941, the remaining components carry almost none of the label: PC2 $r=-0.014$, PC3 $r=+0.026$, PC4 $r=+0.171$.
+\paragraph{The typing axis is not privileged.} Probing the same activations under every alternative $4$-versus-$3$ partition of the seven languages ($\binom{7}{4}=35$ groupings minus the real one, so 34 controls) gives best-layer macro-F1 0.9959 on average (min 0.9918, max 1.0000), against 1.0000 for the true static/dynamic split. 5 of the 34 controls match or exceed it. Any grouping of these languages is near-perfectly decodable, so the decodability of the typing split is evidence that language identity is encoded, not that type discipline is. At layer 4, where $|r|$ peaks at 0.941, the remaining components carry almost none of the label. PC2 $r=-0.014$, PC3 $r=+0.026$, PC4 $r=+0.171$.
 
 \section{Complete transfer heatmaps}
 \label{app:heatmaps}

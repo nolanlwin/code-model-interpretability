@@ -49,8 +49,14 @@ def load(p, probe_only=False):
 def run() -> int:
     # Both papers are checked: the short paper is the submission, the long
     # one still carries the figures the appendix generator reads.
-    tex = TEX.read_text() + "\n" + TEX_LONG.read_text()
+    main_text = TEX.read_text()
+    tex = main_text + "\n" + TEX_LONG.read_text()
     appendix = APPENDIX.read_text()
+    prose = re.sub(
+        r"\\(?:label|ref)\{[^}]+\}",
+        "",
+        main_text + "\n" + appendix,
+    )
     cap = load(CAPPED, probe_only=True)
     orig = [r for r in load(CAPPED) if (r.get("condition") or "original") == "original"]
     unc = load(UNCAPPED)
@@ -73,6 +79,14 @@ def run() -> int:
     rho_factor = min(effects) / max(rhos)
 
     checks = [
+        (
+            "manuscript prose avoids prohibited punctuation",
+            "—" not in prose
+            and r"\textemdash" not in prose
+            and "---" not in prose
+            and ";" not in prose
+            and ":" not in prose,
+        ),
         (
             "LP4FM appendix covers every committed result family",
             all(label in appendix for label in (

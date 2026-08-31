@@ -34,17 +34,17 @@ model represents program semantics independently of programming language. We
 test this interpretation for variable roles in Qwen2.5-Coder-1.5B and
 StarCoder2-7B using parallel Python, JavaScript, and PHP solutions. A masked character $n$-gram
 classifier loses $0.126$ macro-F1 on transfers involving Python relative to
-JavaScript$\leftrightarrow$PHP. A residual-stream probe changes by only
+JavaScript$\leftrightarrow$PHP. A residual-stream probe differs by only
 $-0.012$ ($95\%$ problem-clustered interval $[-0.034,0.020]$), which appears
 to support language-invariant role encoding. This probe mean-pools the
 occurrence's own tokens, whereas the surface classifier masks the identifier.
 Excluding the occurrence from the readout reduces mean transfer from $0.844$
 to $0.589$ and changes the boundary effect to $-0.060$
 $[-0.088,-0.030]$. The shift is $-0.048$ $[-0.088,-0.016]$. Context-matched untrained networks show boundaries of $-0.064$ and $-0.035$
-across two weight initializations; under neither is the trained probe flatter.
-StarCoder2-7B reproduces the reversal on the same items with a larger
-separation, from $-0.014$ $[-0.036,0.018]$ span-pooled to $-0.147$
-$[-0.186,-0.092]$ occurrence-excluded, and there the trained boundary is
+across two weight initializations. Neither comparison supports a reliably
+flatter trained boundary. StarCoder2-7B reproduces the reversal on the same items with a
+larger separation, moving from $-0.014$ $[-0.036,0.018]$ span-pooled to
+$-0.147$ $[-0.186,-0.092]$ occurrence-excluded. Its trained boundary is
 steeper than its untrained floor ($-0.068$ $[-0.114,-0.009]$) rather than
 indistinguishable from it. Thus the original invariance is not identified
 independently of the readout, while the restricted readout still contains
@@ -58,16 +58,16 @@ whether the model uses it, and their performance can reflect probe capacity or
 information already available in the probe
 input~\citep{hewitt2019control,voita2020mdl,ravichander2021probing,
 elazar2021amnesic,belinkov2022probing}. Cross-language transfer adds a further
-interpretation: if a probe fitted on one programming language transfers to
+interpretation. If a probe fitted on one programming language transfers to
 another, the decoded feature may appear independent of surface form.
 
 Existing work has recovered code syntax across languages with probe
 baselines~\citep{hernandezlopez2026syntactic}, separated language-specific from
 language-agnostic embedding components~\citep{utpala2024language}, and measured
 uneven alignment among programming languages on parallel
-programs~\citep{kargaran2025programming}; within-language suites map what code
+programs~\citep{kargaran2025programming}. Within-language suites map what code
 models encode across many probe tasks~\citep{karmakar2021what,troshin2022probing,karmakar2024inspect}.
-We do not add a task. These studies establish that code representations
+Our contribution is a comparator rather than a new task. These studies establish that code representations
 contain both shared and language-specific structure, but not a model-free,
 feature-restricted comparator on the same cross-language prediction task.
 
@@ -104,19 +104,19 @@ by less than $0.001$.
 We evaluate four conditions on matched language pairs.
 
 \begin{itemize}\itemsep2pt
-\item \textbf{Surface $n$-gram.} A character $n$-gram classifier over the
-context around an occurrence with every instance of the variable's name
-replaced by a placeholder. The classifier is fitted on the source language and
+\item \textbf{Surface $n$-gram.} We apply a character $n$-gram classifier to
+the context around an occurrence after replacing every instance of the
+variable's name with a placeholder. The classifier is fitted on the source language and
 evaluated on the target. We report one fixed masked-window feature set rather
 than selecting the best feature set separately for each cell.
 \item \textbf{Probe, span-pooled.} Logistic regression on residual activations
-mean-pooled over the occurrence's own tokens, layer chosen on source-language
-validation data. This reads the identifier.
-\item \textbf{Probe, occurrence-excluded.} The same, pooling the $16$ tokens either
-side of the occurrence while excluding its tokens. Model inputs and weights are
-unchanged. Only the readout is altered.
-\item \textbf{Untrained.} The same architecture and tokenizer with randomly
-initialized weights, evaluated at each pooling. Randomly initialized networks
+mean-pooled over the occurrence's own tokens uses a layer chosen on
+source-language validation data. This reads the identifier.
+\item \textbf{Probe, occurrence-excluded.} We use the same probe but pool the
+$16$ tokens on either side of the occurrence while excluding its tokens. Model
+inputs and weights are unchanged. Only the readout is altered.
+\item \textbf{Untrained.} We evaluate the same architecture and tokenizer with
+randomly initialized weights under each pooling method. Randomly initialized networks
 can retain substantial lexical and structural information, so they provide a
 necessary floor~\citep{zhang2018language,hewitt2019control}. Each probe is
 compared with the floor using the same readout.
@@ -143,7 +143,7 @@ directions to or from Python. Probe floors use the corresponding readout.}
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
  & close & Python & effect & close & Python & effect \\
 \midrule
-Surface $n$-gram, name masked & 0.929 & 0.804 & $-0.126$ & \multicolumn{3}{c}{no model; shared} \\
+Surface $n$-gram, name masked & 0.929 & 0.804 & $-0.126$ & \multicolumn{3}{c}{shared model-free baseline} \\
 \midrule
 Probe, span-pooled (reads the name) & 0.852 & 0.840 & $-0.012$ & 0.877 & 0.863 & $-0.014$ \\
 \midrule
@@ -157,9 +157,9 @@ The surface classifier reaches $0.929$ between JavaScript and PHP without a
 model or identifier access, then falls to $0.804$ on transfers involving
 Python. The table is an unweighted mean over cells. A separate pooled,
 problem-clustered estimate is $-0.114$ with a $95\%$ interval of
-$[-0.147,-0.081]$. The aggregate is uneven across roles. Iterator contributes
+$[-0.147,-0.081]$. Effects vary across roles. Iterator contributes
 $-0.249$, compared with $-0.064$ for accumulator and index\_key together.
-Iterator labels are also the least comparable because Python uses an
+Iterator labels have the weakest cross-language comparability because Python uses an
 AST-based extractor while JavaScript and PHP use regular expressions. Some
 cells contain only ten minority examples. We therefore treat the surface
 contrast as descriptive evidence for this extracted sample, not as a clean
@@ -184,68 +184,68 @@ decodability.
 
 Excluding the occurrence from the readout lowers mean transfer from $0.844$ to
 $0.589$ (Figure~\ref{fig:masked}). The context-matched untrained model reaches
-$0.485$. The boundary changes to $-0.060$ $[-0.088,-0.030]$; the
+$0.485$. The boundary changes to $-0.060$ $[-0.088,-0.030]$. The
 readout-induced shift is $-0.048$ $[-0.088,-0.016]$. The original flat
 boundary is therefore not robust to where activations are read.
 
 The occurrence-excluded untrained model has a $-0.064$ boundary
-$[-0.089,-0.039]$; subtracting this floor gives a trained-minus-untrained
+$[-0.089,-0.039]$. Subtracting this floor gives a trained-minus-untrained
 boundary of $+0.003$ $[-0.027,0.036]$. A second weight initialization yields a
 $-0.035$ $[-0.062,-0.008]$ floor boundary with an overall level of $0.497$
-against the first initialization's $0.485$: the floor's level is stable while
+against the first initialization's $0.485$. The floor's level is stable while
 its boundary varies across initializations, and the trained boundary
 ($-0.060$) lies within that variation, at its steeper end. Under neither
 initialization is the trained probe flatter than the untrained network.
-Training still contributes: trained-minus-untrained transfer is $+0.102$
+Training still contributes. Trained-minus-untrained transfer is $+0.102$
 $[0.065,0.132]$ close and $+0.106$ $[0.081,0.127]$ for Python transfers
 against the first floor, and $+0.109$ $[0.067,0.145]$ and $+0.084$
 $[0.058,0.107]$ against the second.
 
 \paragraph{A second model.} StarCoder2-7B repeats the reversal on the same
 prediction items, more sharply. Its span-pooled boundary is $-0.014$
-$[-0.036,0.018]$, as flat as Qwen's; excluding the occurrence moves it to
+$[-0.036,0.018]$, as flat as Qwen's. Excluding the occurrence moves it to
 $-0.147$ $[-0.186,-0.092]$, a shift of $-0.134$ $[-0.168,-0.086]$ against
-Qwen's $-0.048$. The models differ in how that boundary relates to its floor:
-StarCoder2's untrained boundary is $-0.080$ $[-0.110,-0.049]$ and the
-trained-minus-untrained difference $-0.068$ $[-0.114,-0.009]$ excludes zero,
-where the same contrast was null in Qwen ($+0.003$ $[-0.027,0.036]$). Readout
-dependence holds across model family and scale; the boundary's relation to its
-untrained floor does not.
+Qwen's $-0.048$. The models differ in how that boundary relates to its floor.
+StarCoder2's untrained boundary is $-0.080$ $[-0.110,-0.049]$. Its
+trained-minus-untrained difference is $-0.068$ $[-0.114,-0.009]$ and excludes
+zero, whereas the same contrast was null in Qwen ($+0.003$
+$[-0.027,0.036]$). Readout dependence holds across model family and scale.
+The boundary's relation to its untrained floor does not.
 
-Identifier exclusion also matters within languages: mean in-language F1 falls
+Identifier exclusion also matters within languages. Mean in-language F1 falls
 from $0.898$ to $0.771$ against an untrained $0.623$. Direct access to the
 occurrence accounts for a substantial part of both in-language and
 cross-language decodability.
 
 The remaining occurrence-excluded margin supports training-dependent role
-information in this readout, but not a language-independent mechanism: in
+information in this readout, but not a language-independent mechanism. In
 Qwen the training lift is similar on both sides of the boundary.
 The surface baseline
 outperforms the context-pooled probe in $14$ of $18$ matched cells with
 problem-clustered intervals below zero for the paired difference. This shows
-surface sufficiency on the same prediction items; it is not a decomposition of
+surface sufficiency on the same prediction items. It is not a decomposition of
 the model signal, because the model still processes unmasked source code.
 
 \section{Discussion}
 
 The central result concerns measurement. A probe that pools over an occurrence
 can use information concentrated at those tokens, including lexical
-regularities preserved by parallel programs. A randomly initialized model tests what training contributes under a fixed
-readout, not whether that readout isolates the intended construct, and
-occurrence exclusion changes the pooled positions and their information
-content together. Calling
-the difference ``identifier leakage'' would therefore overstate what this
-experiment identifies.
+regularities preserved by parallel programs. A randomly initialized model
+tests what training contributes under a fixed readout, not whether that readout
+isolates the intended construct. Occurrence exclusion changes the pooled
+positions and their information content together. Calling the difference
+``identifier leakage'' would therefore overstate what this experiment
+identifies.
 
 The model-free condition exposes a different source of evidence. Its input
 withholds every target-name occurrence, while the probe model sees the original
 program. The two predictors share labels and test items but not information
 sets, so their comparison establishes surface sufficiency rather than an
 isolated representational increment.
-Model-free baselines are established in code probing
-generally~\citep{troshin2022probing}, but the cited cross-language studies do not
-fit one on the same prediction items
-~\citep{hernandezlopez2026syntactic,utpala2024language,kargaran2025programming}.
+Model-free baselines are established generally in code
+probing~\citep{troshin2022probing}. The cited cross-language studies do not fit
+one on the same prediction
+items~\citep{hernandezlopez2026syntactic,utpala2024language,kargaran2025programming}.
 The present result extends the usual distinction between decodability and model
 use~\citep{elazar2021amnesic,belinkov2022probing}. Decodability can also arise from a
 label correlate exposed directly by the readout.
@@ -253,42 +253,42 @@ label correlate exposed directly by the readout.
 \paragraph{Reconciling with prior alignment results.}
 \citet{kargaran2025programming} find Python the \emph{least} aligned of these
 three languages on parallel programs, whereas the span-pooled probe changes
-little across transfers involving Python. The studies measure different quantities, so agreement is not required; still,
-excluding the identifier moves the probe contrast toward their result, which is
-compatible with a genuine Python boundary without establishing a common
-mechanism.
+little across transfers involving Python. The studies measure different
+quantities, so agreement is not required. Even so, excluding the identifier
+moves the probe contrast toward their result, which is compatible with a
+genuine Python boundary without establishing a common mechanism.
 
 \paragraph{Falsifying evidence.} StarCoder2-7B ran a test this design named in
-advance: the context-pooled margin over the matched floor grows with scale
+advance. The context-pooled margin over the matched floor grows with scale
 ($+0.181$ close, against Qwen's $+0.102$), and its boundary difference now
-excludes zero. The deflationary reading is bounded accordingly \textemdash{}
-at $7$B the occurrence-excluded readout carries boundary structure its floor
-does not \textemdash{} while the measurement claim is untouched, the boundary
-having steepened rather than flattened. The interpretation would weaken
+excludes zero. The deflationary reading is therefore bounded. At $7$B, the
+occurrence-excluded readout carries boundary structure absent from its floor.
+The measurement claim remains unchanged because the boundary steepened rather
+than flattened. The interpretation would weaken
 further if same-readout identifier replacement preserved the flat transfer
 curve, or if a parallel corpus without shared naming conventions produced the
 original span-pooled invariance.
 
 \paragraph{Implication for linguistic medium studies.}
 When linguistic or symbolic form is manipulated, the measurement instrument
-must not retain a feature the manipulation preserves, and parallel corpora
-concentrate such features: names, entities, numbers. A feature-restricted
+must not retain a feature the manipulation preserves. Parallel corpora
+concentrate such features, including names, entities, and numbers. A feature-restricted
 model-free comparator and a matched readout ablation are two inexpensive
 checks before invariance is attributed to a representation.
 
 \paragraph{Limitations.}
 The study uses two models ($1.5$B and $7$B), three languages, three roles,
-and a single context width. Python supplies the only broad language contrast. Role coverage differs after
-extraction despite the common problem pool, so composition may affect group
-means. Iterator
-labels use different extractor families across languages and carry most of the
-surface effect; no multilingual hand-audit quantifies extractor error. The untrained control uses two weight initializations for Qwen and one for
-StarCoder2, at two probe seeds against the trained probes' five; the Qwen
-boundary varies across initializations ($-0.064$, $-0.035$) while its level
-does not ($0.485$, $0.497$), so the cross-model difference rests on a single
-StarCoder2 draw. It may retain correlated nearby uses and names, and changes pooling support
-rather than intervening on lexical identity alone. These results concern
-decodability, not model use.
+and one context width. Python supplies the sole broad contrast. Role coverage
+varies after extraction, so composition may affect group means. Iterator
+extractors differ across languages and carry most of the surface effect. No
+multilingual hand-audit quantifies extractor error. The untrained controls use
+two probe seeds rather than five and use two Qwen weight initializations but
+only one StarCoder2 initialization. The Qwen boundary varies across
+initializations ($-0.064$, $-0.035$), while its level does not ($0.485$,
+$0.497$). The cross-model comparison therefore rests on one StarCoder2 draw.
+Occurrence exclusion may retain correlated nearby uses and changes pooling
+support rather than lexical identity alone. These results concern decodability,
+not model use.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

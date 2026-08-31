@@ -4,7 +4,7 @@
 \label{app:controls}
 
 \begin{table}[p]\centering\small
-\caption{Complete boolean occurrence-type probe and model-free baseline results. The best baseline is selected from name-only, masked statement, masked line, masked window, covariate-only, and majority features. $\rho$ is a descriptive one-instance score step, not an interval or equivalence test; aligned probe/baseline predictions were not retained.}
+\caption{Complete boolean occurrence-type probe and model-free baseline results. The best baseline is selected from name-only, masked statement, masked line, masked window, covariate-only, and majority features. $\rho$ is a descriptive one-instance score step, not an interval or equivalence test. Aligned probe/baseline predictions were not retained.}
 \label{tab:boolean-full}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{llrrrrrr}
@@ -28,7 +28,7 @@ Python & StarCoder2-7B & 1,301 & 0.988 & 0.983 & +0.005 & 0.0068 & +0.288 \\
 \end{table}
 
 \begin{table}[h]\centering\small
-\caption{Boolean Python identifier-renaming audit. C1--C5 are the five committed renaming conditions. Each condition refits a probe and reselects its layer, so deltas measure recoverability rather than fixed-direction invariance; intervals are problem-clustered. Empty renaming fields for other languages indicate that those runs were not committed, not a null result.}
+\caption{Boolean Python identifier-renaming audit. C1--C5 are the five committed renaming conditions. Each condition refits a probe and reselects its layer, so deltas measure recoverability rather than fixed-direction invariance. Intervals are problem-clustered. Empty renaming fields for other languages indicate that those runs were not committed, not a null result.}
 \label{tab:boolean-renaming-full}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lrrrrr}
@@ -58,7 +58,7 @@ Python & 0.217 & 0.422 & 0.970 & 0.983 & 0.605 & 0.216 \\
 \end{tabular}}
 \end{table}
 
-\paragraph{Boolean probe figures.} The baseline panels retain the individual surface comparators hidden by the best-baseline table. Renaming is available only for Python; the absence of corresponding figures in other languages is a coverage hole.
+\paragraph{Boolean probe figures.} The baseline panels retain the individual surface comparators hidden by the best-baseline table. Renaming is available only for Python. The absence of corresponding figures in other languages is a coverage hole.
 \begin{figure}[p]\centering
 \includegraphics[width=0.9\linewidth]{../results/boolean/probe_vs_baselines_java_train_qwen2515b.png}
 \caption{Boolean probe and model-free baselines for Java, Qwen2.5-1.5B.}
@@ -158,19 +158,19 @@ Python & 0.217 & 0.422 & 0.970 & 0.983 & 0.605 & 0.216 \\
 \toprule
 model & strategy & layer & F1 & 95\% CI & control F1 & selectivity & $\Delta$ \\
 \midrule
-Qwen2.5-1.5B & baseline & L18 & 0.979 & [0.967, 0.987] & 0.427 & +0.552 & --- \\
+Qwen2.5-1.5B & baseline & L18 & 0.979 & [0.967, 0.987] & 0.427 & +0.552 & N/A \\
 Qwen2.5-1.5B & random\_nouns & L20 & 0.986 & [0.976, 0.992] & 0.426 & +0.560 & +0.007 \\
 Qwen2.5-1.5B & single\_chars & L11 & 0.957 & [0.936, 0.969] & 0.423 & +0.534 & -0.022 \\
 Qwen2.5-1.5B & all\_same & L0 & 1.000 & [1.000, 1.000] & 0.440 & +0.560 & +0.021 \\
 Qwen2.5-1.5B & numeric\_vars & L21 & 0.965 & [0.952, 0.972] & 0.422 & +0.543 & -0.014 \\
 Qwen2.5-1.5B & misleading\_class\_struct & L7 & 0.976 & [0.962, 0.982] & 0.416 & +0.559 & -0.004 \\
-Qwen2.5-Coder-1.5B & baseline & L8 & 0.982 & [0.969, 0.989] & 0.429 & +0.553 & --- \\
+Qwen2.5-Coder-1.5B & baseline & L8 & 0.982 & [0.969, 0.989] & 0.429 & +0.553 & N/A \\
 Qwen2.5-Coder-1.5B & random\_nouns & L19 & 0.978 & [0.965, 0.985] & 0.427 & +0.551 & -0.004 \\
 Qwen2.5-Coder-1.5B & single\_chars & L7 & 0.956 & [0.936, 0.967] & 0.423 & +0.533 & -0.026 \\
 Qwen2.5-Coder-1.5B & all\_same & L0 & 1.000 & [1.000, 1.000] & 0.440 & +0.560 & +0.018 \\
 Qwen2.5-Coder-1.5B & numeric\_vars & L21 & 0.968 & [0.955, 0.975] & 0.424 & +0.544 & -0.014 \\
 Qwen2.5-Coder-1.5B & misleading\_class\_struct & L7 & 0.978 & [0.967, 0.984] & 0.415 & +0.562 & -0.004 \\
-StarCoder2-7B & baseline & L5 & 0.981 & [0.967, 0.990] & 0.478 & +0.503 & --- \\
+StarCoder2-7B & baseline & L5 & 0.981 & [0.967, 0.990] & 0.478 & +0.503 & N/A \\
 StarCoder2-7B & random\_nouns & L6 & 0.976 & [0.962, 0.983] & 0.466 & +0.510 & -0.006 \\
 StarCoder2-7B & single\_chars & L4 & 0.957 & [0.921, 0.971] & 0.475 & +0.482 & -0.025 \\
 StarCoder2-7B & all\_same & L0 & 1.000 & [1.000, 1.000] & 0.445 & +0.555 & +0.019 \\
@@ -181,22 +181,22 @@ StarCoder2-7B & misleading\_class\_struct & L5 & 0.985 & [0.976, 0.990] & 0.467 
 \end{table}
 
 \begin{table}[p]\centering\small
-\caption{Class/structure cross-language results. Transfer uses the Python-selected layer; in-domain layers are selected separately. Only languages present in the committed exports are shown.}
+\caption{Class/structure cross-language results. Transfer uses the Python-selected layer. In-domain layers are selected separately. Only languages present in the committed exports are shown.}
 \label{tab:class-crosslang}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{llrrrrrr}
 \toprule
 model & language & programs & in-domain layer & in-domain F1 & transfer accuracy & transfer F1 \\
 \midrule
-Qwen2.5-1.5B & Python & 400 & L18 & 0.979 & --- & --- \\
+Qwen2.5-1.5B & Python & 400 & L18 & 0.979 & N/A & N/A \\
 Qwen2.5-1.5B & C++ & 606 & L10 & 0.991 & 0.993 & 0.933 \\
 Qwen2.5-1.5B & JavaScript & 285 & L5 & 0.987 & 0.998 & 0.957 \\
 Qwen2.5-1.5B & C & 97 & L8 & 0.986 & 0.984 & 0.886 \\
-Qwen2.5-Coder-1.5B & Python & 400 & L8 & 0.982 & --- & --- \\
+Qwen2.5-Coder-1.5B & Python & 400 & L8 & 0.982 & N/A & N/A \\
 Qwen2.5-Coder-1.5B & C++ & 606 & L8 & 0.988 & 0.991 & 0.918 \\
 Qwen2.5-Coder-1.5B & JavaScript & 285 & L6 & 0.985 & 0.996 & 0.913 \\
 Qwen2.5-Coder-1.5B & C & 97 & L20 & 0.980 & 0.983 & 0.885 \\
-StarCoder2-7B & Python & 400 & L5 & 0.981 & --- & --- \\
+StarCoder2-7B & Python & 400 & L5 & 0.981 & N/A & N/A \\
 StarCoder2-7B & C++ & 606 & L5 & 0.992 & 0.996 & 0.965 \\
 StarCoder2-7B & JavaScript & 285 & L3 & 0.989 & 0.999 & 0.980 \\
 StarCoder2-7B & C & 97 & L5 & 0.986 & 0.987 & 0.906 \\
@@ -205,7 +205,7 @@ StarCoder2-7B & C & 97 & L5 & 0.986 & 0.987 & 0.906 \\
 \end{table}
 
 \begin{table}[p]\centering\small
-\caption{Layerwise class/structure robustness summaries. The F1 range is taken over all committed layers; maximum cosine similarity is measured against the baseline activation direction for each renamed condition.}
+\caption{Layerwise class/structure robustness summaries. The F1 range is taken over all committed layers. Maximum cosine similarity is measured against the baseline activation direction for each renamed condition.}
 \label{tab:class-layerwise}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{llrrrr}
@@ -213,19 +213,19 @@ StarCoder2-7B & C & 97 & L5 & 0.986 & 0.987 & 0.906 \\
 model & strategy & minimum F1 & maximum F1 (layer) & maximum cosine (layer) \\
 \midrule
 Qwen2.5-1.5B & all\_same & 0.999 & 1.000 (L0) & 0.105 (L11) \\
-Qwen2.5-1.5B & baseline & 0.806 & 0.983 (L18) & --- \\
+Qwen2.5-1.5B & baseline & 0.806 & 0.983 (L18) & N/A \\
 Qwen2.5-1.5B & misleading\_class\_struct & 0.708 & 0.980 (L7) & 0.311 (L15) \\
 Qwen2.5-1.5B & numeric\_vars & 0.445 & 0.966 (L21) & 0.329 (L22) \\
 Qwen2.5-1.5B & random\_nouns & 0.529 & 0.989 (L15) & 0.493 (L26) \\
 Qwen2.5-1.5B & single\_chars & 0.530 & 0.965 (L7) & 0.392 (L15) \\
 Qwen2.5-Coder-1.5B & all\_same & 0.999 & 1.000 (L0) & 0.126 (L28) \\
-Qwen2.5-Coder-1.5B & baseline & 0.807 & 0.985 (L7) & --- \\
+Qwen2.5-Coder-1.5B & baseline & 0.807 & 0.985 (L7) & N/A \\
 Qwen2.5-Coder-1.5B & misleading\_class\_struct & 0.708 & 0.978 (L7) & 0.324 (L7) \\
 Qwen2.5-Coder-1.5B & numeric\_vars & 0.445 & 0.969 (L24) & 0.352 (L22) \\
 Qwen2.5-Coder-1.5B & random\_nouns & 0.530 & 0.983 (L23) & 0.464 (L19) \\
 Qwen2.5-Coder-1.5B & single\_chars & 0.530 & 0.959 (L7) & 0.415 (L15) \\
 StarCoder2-7B & all\_same & 0.999 & 1.000 (L0) & 0.101 (L21) \\
-StarCoder2-7B & baseline & 0.763 & 0.984 (L6) & --- \\
+StarCoder2-7B & baseline & 0.763 & 0.984 (L6) & N/A \\
 StarCoder2-7B & misleading\_class\_struct & 0.717 & 0.985 (L3) & 0.387 (L3) \\
 StarCoder2-7B & numeric\_vars & 0.443 & 0.971 (L26) & 0.369 (L22) \\
 StarCoder2-7B & random\_nouns & 0.502 & 0.979 (L8) & 0.511 (L3) \\
@@ -242,13 +242,13 @@ StarCoder2-7B & single\_chars & 0.529 & 0.962 (L3) & 0.467 (L6) \\
 \toprule
 model & strategy & best layer & accuracy & F1 & $\Delta$ \\
 \midrule
-Qwen2.5-Coder-1.5B & baseline & L6 & 0.998 & 0.988 & --- \\
+Qwen2.5-Coder-1.5B & baseline & L6 & 0.998 & 0.988 & N/A \\
 Qwen2.5-Coder-1.5B & random\_nouns & L9 & 0.996 & 0.974 & -0.014 \\
 Qwen2.5-Coder-1.5B & single\_chars & L9 & 0.985 & 0.923 & -0.064 \\
 Qwen2.5-Coder-1.5B & all\_same & L26 & 1.000 & 1.000 & +0.012 \\
 Qwen2.5-Coder-1.5B & numeric\_vars & L23 & 0.978 & 0.924 & -0.064 \\
 Qwen2.5-Coder-1.5B & misleading\_iterator & L3 & 1.000 & 1.000 & +0.012 \\
-StarCoder2-7B & baseline & L5 & 0.999 & 0.990 & --- \\
+StarCoder2-7B & baseline & L5 & 0.999 & 0.990 & N/A \\
 StarCoder2-7B & random\_nouns & L7 & 0.997 & 0.986 & -0.005 \\
 StarCoder2-7B & single\_chars & L5 & 0.993 & 0.961 & -0.029 \\
 StarCoder2-7B & all\_same & L4 & 1.000 & 1.000 & +0.009 \\
@@ -266,14 +266,14 @@ StarCoder2-7B & misleading\_iterator & L4 & 1.000 & 0.999 & +0.009 \\
 \toprule
 model & language & programs & in-domain layer & in-domain F1 & transfer accuracy & transfer F1 \\
 \midrule
-Qwen2.5-Coder-1.5B & Python & 256 & L7 & 0.988 & --- & --- \\
+Qwen2.5-Coder-1.5B & Python & 256 & L7 & 0.988 & N/A & N/A \\
 Qwen2.5-Coder-1.5B & Java & 188 & L12 & 0.996 & 0.991 & 0.950 \\
 Qwen2.5-Coder-1.5B & C++ & 191 & L7 & 0.994 & 0.994 & 0.967 \\
 Qwen2.5-Coder-1.5B & C & 191 & L12 & 0.991 & 0.988 & 0.936 \\
 Qwen2.5-Coder-1.5B & C\# & 189 & L13 & 0.998 & 0.992 & 0.957 \\
 Qwen2.5-Coder-1.5B & JavaScript & 266 & L12 & 0.992 & 0.995 & 0.978 \\
 Qwen2.5-Coder-1.5B & PHP & 253 & L8 & 0.995 & 0.997 & 0.983 \\
-StarCoder2-7B & Python & 256 & L10 & 0.991 & --- & --- \\
+StarCoder2-7B & Python & 256 & L10 & 0.991 & N/A & N/A \\
 StarCoder2-7B & Java & 188 & L3 & 0.997 & 0.989 & 0.929 \\
 StarCoder2-7B & C++ & 191 & L5 & 0.997 & 0.991 & 0.941 \\
 StarCoder2-7B & C & 191 & L16 & 0.992 & 0.984 & 0.906 \\
@@ -285,7 +285,7 @@ StarCoder2-7B & PHP & 253 & L17 & 0.998 & 0.993 & 0.964 \\
 \end{table}
 
 \begin{table}[p]\centering\small
-\caption{Layerwise iterator robustness summaries. F1 ranges cover every committed layer; cosine similarity compares each perturbation direction with the baseline direction.}
+\caption{Layerwise iterator robustness summaries. F1 ranges cover every committed layer. Cosine similarity compares each perturbation direction with the baseline direction.}
 \label{tab:iterator-layerwise}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{llrrr}
@@ -293,13 +293,13 @@ StarCoder2-7B & PHP & 253 & L17 & 0.998 & 0.993 & 0.964 \\
 model & strategy & minimum F1 & maximum F1 (layer) & maximum cosine (layer) \\
 \midrule
 Qwen2.5-Coder-1.5B & all\_same & 1.000 & 1.000 (L26) & 0.334 (L0) \\
-Qwen2.5-Coder-1.5B & baseline & 0.905 & 0.988 (L6) & --- \\
+Qwen2.5-Coder-1.5B & baseline & 0.905 & 0.988 (L6) & N/A \\
 Qwen2.5-Coder-1.5B & misleading\_iterator & 0.991 & 1.000 (L3) & 0.187 (L15) \\
 Qwen2.5-Coder-1.5B & numeric\_vars & 0.556 & 0.924 (L23) & 0.253 (L19) \\
 Qwen2.5-Coder-1.5B & random\_nouns & 0.633 & 0.974 (L9) & 0.360 (L16) \\
 Qwen2.5-Coder-1.5B & single\_chars & 0.664 & 0.923 (L9) & 0.498 (L0) \\
 StarCoder2-7B & all\_same & 0.999 & 1.000 (L4) & 0.337 (L9) \\
-StarCoder2-7B & baseline & 0.898 & 0.990 (L5) & --- \\
+StarCoder2-7B & baseline & 0.898 & 0.990 (L5) & N/A \\
 StarCoder2-7B & misleading\_iterator & 0.993 & 0.999 (L4) & 0.265 (L6) \\
 StarCoder2-7B & numeric\_vars & 0.552 & 0.958 (L24) & 0.248 (L13) \\
 StarCoder2-7B & random\_nouns & 0.613 & 0.986 (L7) & 0.396 (L8) \\
@@ -319,15 +319,15 @@ StarCoder2-7B & single\_chars & 0.670 & 0.961 (L5) & 0.451 (L0) \\
 \toprule
 layer & span & direction & control & $n$ & mean effect & 95\% CI & recovery & minus random \\
 \midrule
-0 & query\_name & denoise & target & 288 & +0.0000 & [0.0000, 0.0000] & +0.0000 & --- \\
-0 & query\_name & noise & target & 288 & +0.0000 & [0.0000, 0.0000] & +0.0000 & --- \\
-18 & placebo & denoise & target & 288 & +0.0015 & [-0.0010, 0.0043] & +0.0015 & --- \\
-18 & placebo & noise & target & 288 & +0.0006 & [-0.0019, 0.0032] & +0.0006 & --- \\
-18 & query\_name & denoise & random & 288 & -0.0107 & [-0.0205, -0.0014] & -0.0110 & --- \\
-18 & query\_name & denoise & same\_source & 288 & +0.0004 & [-0.0009, 0.0016] & +0.0004 & --- \\
+0 & query\_name & denoise & target & 288 & +0.0000 & [0.0000, 0.0000] & +0.0000 & N/A \\
+0 & query\_name & noise & target & 288 & +0.0000 & [0.0000, 0.0000] & +0.0000 & N/A \\
+18 & placebo & denoise & target & 288 & +0.0015 & [-0.0010, 0.0043] & +0.0015 & N/A \\
+18 & placebo & noise & target & 288 & +0.0006 & [-0.0019, 0.0032] & +0.0006 & N/A \\
+18 & query\_name & denoise & random & 288 & -0.0107 & [-0.0205, -0.0014] & -0.0110 & N/A \\
+18 & query\_name & denoise & same\_source & 288 & +0.0004 & [-0.0009, 0.0016] & +0.0004 & N/A \\
 18 & query\_name & denoise & target & 288 & +0.0087 & [-0.0007, 0.0188] & +0.0089 & +0.0194 \\
-18 & query\_name & noise & random & 288 & +0.0096 & [0.0023, 0.0164] & +0.0099 & --- \\
-18 & query\_name & noise & same\_source & 288 & -0.0005 & [-0.0018, 0.0006] & -0.0006 & --- \\
+18 & query\_name & noise & random & 288 & +0.0096 & [0.0023, 0.0164] & +0.0099 & N/A \\
+18 & query\_name & noise & same\_source & 288 & -0.0005 & [-0.0018, 0.0006] & -0.0006 & N/A \\
 18 & query\_name & noise & target & 288 & +0.0199 & [0.0109, 0.0296] & +0.0204 & +0.0103 \\
 \bottomrule
 \end{tabular}}
@@ -347,7 +347,7 @@ behavioral movement & 0.038 & 0.031 \\
 \end{table}
 
 \begin{table}[h]\centering\small
-\caption{Class/structure gate and readout audit. Both prompt classes favor \texttt{True}; the pairwise gap remains separable, but the binary readout is not calibrated to distinguish function prompts.}
+\caption{Class/structure gate and readout audit. Both prompt classes favor \texttt{True}. The pairwise gap remains separable, but the binary readout is not calibrated to distinguish function prompts.}
 \label{tab:class-gate-audit}
 \begin{tabular}{lrrr}
 \toprule
@@ -357,13 +357,13 @@ class logit difference & 2.752 & [2.624, 2.898] & pass \\
 function logit difference & 1.778 & [1.652, 1.909] & fail \\
 class-minus-function gap & 0.974 & [0.908, 1.035] & pass \\
 pair-gap accuracy & 0.986 & [0.962, 0.993] & pass \\
-query/declaration probe AUC & 0.943/0.905 & --- & pass \\
+query/declaration probe AUC & 0.943/0.905 & N/A & pass \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[h]\centering\small
-\caption{Patching audit trail. Completeness establishes that the scheduled Qwen evaluation finished; it does not turn the failed causal gate into positive evidence. The controller stopped before Coder and StarCoder2 after the Qwen null.}
+\caption{Patching audit trail. Completeness establishes that the scheduled Qwen evaluation finished. It does not turn the failed causal gate into positive evidence. The controller stopped before Coder and StarCoder2 after the Qwen null.}
 \label{tab:class-patching-audit}
 \begin{tabular}{lr}
 \toprule
@@ -406,7 +406,7 @@ condition & readout & pairs & clean/corrupt & L1 & L2 & L3 & L4 & L5 & L6 & L7 \
 \midrule
 Java & L7 & 10 & 0.989/0.709 & -0.300 & -0.146 & 0.616 & 0.867 & 0.845 & 0.940 & 1.000 \\
 C++ & L7 & 11 & 0.979/0.769 & -0.066 & 0.025 & 0.785 & 0.869 & 0.869 & 0.904 & 1.000 \\
-C & L7 & 0 & 0.000/0.000 & --- & --- & --- & --- & --- & --- & --- \\
+C & L7 & 0 & 0.000/0.000 & N/A & N/A & N/A & N/A & N/A & N/A & N/A \\
 C\# & L7 & 9 & 0.981/0.629 & 0.307 & 0.353 & 0.772 & 0.867 & 0.903 & 0.989 & 1.000 \\
 JavaScript & L7 & 13 & 0.983/0.766 & 0.708 & 0.678 & 0.968 & 0.943 & 0.953 & 0.983 & 1.000 \\
 PHP & L7 & 7 & 0.982/0.748 & -0.211 & -0.397 & 0.614 & 0.760 & 0.934 & 1.027 & 1.000 \\
@@ -441,7 +441,7 @@ condition & readout & pairs & clean/corrupt & L1 & L2 & L3 & L4 & L5 & L6 & L7 &
 \midrule
 Java & L10 & 150 & 0.996/0.750 & 0.254 & 0.634 & 0.829 & 0.913 & 0.957 & 0.964 & 0.979 & 0.988 & 0.994 & 1.000 \\
 C++ & L10 & 150 & 0.996/0.771 & 0.337 & 0.756 & 0.892 & 0.938 & 0.966 & 0.969 & 0.979 & 0.988 & 0.995 & 1.000 \\
-C & L10 & 0 & 0.000/0.000 & --- & --- & --- & --- & --- & --- & --- & --- & --- & --- \\
+C & L10 & 0 & 0.000/0.000 & N/A & N/A & N/A & N/A & N/A & N/A & N/A & N/A & N/A & N/A \\
 C\# & L10 & 150 & 0.996/0.740 & 0.294 & 0.692 & 0.877 & 0.942 & 0.969 & 0.974 & 0.984 & 0.991 & 0.996 & 1.000 \\
 JavaScript & L10 & 150 & 0.996/0.716 & 0.311 & 0.743 & 0.880 & 0.939 & 0.972 & 0.976 & 0.983 & 0.990 & 0.996 & 1.000 \\
 PHP & L10 & 73 & 0.993/0.808 & 0.491 & 0.796 & 0.938 & 0.964 & 0.979 & 0.973 & 0.983 & 0.994 & 0.999 & 1.000 \\
@@ -732,10 +732,10 @@ Python & StarCoder2-7B & 176 & L4 & 11.818 & 26.5$\times$ & 26.5$\times$ (L4) \\
 \label{app:coverage-holes}
 
 \begin{itemize}
-\item Accumulator and index/key results use legacy exports; no committed problem-grouped, five-seed CSV reproduces those roles under the modern protocol.
+\item Accumulator and index/key results use legacy exports. No committed problem-grouped, five-seed CSV reproduces those roles under the modern protocol.
 \item Iterator results are available for Qwen2.5-Coder-1.5B and StarCoder2-7B, but not Qwen2.5-1.5B.
 \item Class/structure transfer exports include Python, C++, JavaScript, and C, but not Java, C\#, or PHP.
-\item Boolean probe exports include Python, Java, JavaScript, and PHP; C, C\#, and C++ are absent, and renaming is available only for Python.
-\item Gate-specified class/structure patching stopped after the Qwen2.5-1.5B null; Coder, StarCoder2, and the all-layer core sweep were not attempted.
+\item Boolean probe exports include Python, Java, JavaScript, and PHP. C, C\#, and C++ are absent, and renaming is available only for Python.
+\item Gate-specified class/structure patching stopped after the Qwen2.5-1.5B null. Coder, StarCoder2, and the all-layer core sweep were not attempted.
 \item No matched model-free surface comparator is committed for the class/structure role.
 \end{itemize}

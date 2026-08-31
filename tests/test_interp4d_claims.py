@@ -21,10 +21,20 @@ def main() -> int:
     text = MAIN.read_text()
     appendix = APPENDIX.read_text()
     checks: list[tuple[str, bool]] = []
+    prose = re.sub(r"\\(?:label|ref)\{[^}]+\}", "", text + "\n" + appendix)
+
+    checks.append((
+        "manuscript prose avoids prohibited punctuation",
+        "—" not in prose
+        and r"\textemdash" not in prose
+        and "---" not in prose
+        and ";" not in prose
+        and ":" not in prose,
+    ))
 
     checks.append((
         "scope states three models, five roles, and seven languages collectively",
-        "three models, five roles, and all seven XLCoST languages" in text,
+        "three models, five roles, and seven languages" in text,
     ))
     checks.append((
         "LP4FM-only masked-probe story is absent",
@@ -47,7 +57,8 @@ def main() -> int:
     checks.append((
         "class causal null states the True/True readout limitation",
         "Both prompt classes prefer" in text
-        and "limited dynamic range" in text,
+        and "limits the behavioral" in text
+        and "effective decision range" in text,
     ))
 
     boolean_causal = rows(ROOT / "results/boolean/causal/summary.csv")
@@ -165,8 +176,8 @@ def main() -> int:
     checks += [
         (
             "heterogeneous probe units are stated",
-            "boolean mean-pools" in text
-            and "token probes label all other tokens negative" in text,
+            "boolean mean-pools" in text.lower()
+            and "token probes label all other tokens as negative" in text,
         ),
         (
             "repository history is not called preregistration",
