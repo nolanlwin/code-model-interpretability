@@ -20,6 +20,7 @@ def rows(path: Path) -> list[dict[str, str]]:
 def main() -> int:
     text = MAIN.read_text()
     appendix = APPENDIX.read_text()
+    generator = (ROOT / "scripts/make_interp_appendix.py").read_text()
     checks: list[tuple[str, bool]] = []
     prose = re.sub(r"\\(?:label|ref)\{[^}]+\}", "", text + "\n" + appendix)
 
@@ -111,12 +112,32 @@ def main() -> int:
             )),
         ),
         (
-            "Interp appendix includes causal, probe, and role figure families",
-            appendix.count("../results/boolean/causal/layer_profile_") == 15
-            and appendix.count("\\label{fig:boolean-probe-") == 12
+            "Interp appendix keeps the probe figure families",
+            appendix.count("\\label{fig:boolean-probe-") == 12
             and appendix.count("\\label{fig:boolean-layers-") == 4
-            and "\\label{fig:boolean-renaming-python}" in appendix
-            and appendix.count("\\label{fig:interp-") == 20,
+            and "\\label{fig:boolean-renaming-python}" in appendix,
+        ),
+        # The submission build omits the supplementary figure dumps, which cost
+        # about a page each and carry no number the tables lack. Dropping them
+        # must stay a build choice rather than a deletion, so the generator has
+        # to retain the code paths and the appendix has to say how to get them.
+        (
+            "omitted figure dumps stay regenerable and are pointed at",
+            "full-figures" in appendix
+            and all(
+                fragment in generator
+                for fragment in (
+                    "--full-figures",
+                    # exact signatures and call sites: a substring like
+                    # "def role_figures" also matches a renamed-out stub
+                    "def boolean_causal_figures() -> str:",
+                    "def role_figures() -> str:",
+                    "boolean_causal_figures(),",
+                    "role_figures(),",
+                    "layer_profile_",
+                    "fig:interp-",
+                )
+            ),
         ),
     ]
 
