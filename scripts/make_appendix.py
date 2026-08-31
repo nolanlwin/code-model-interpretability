@@ -29,7 +29,7 @@ def overlap_table() -> str:
           for r in rows(R / "xlcost_problem_overlap.csv")}
     names = sorted({k for pair in ov for k in pair})
     head = " & ".join(LANG[n] for n in names)
-    out = ["\\begin{table}[H]\\centering",
+    out = ["\\begin{table}[htbp]\\centering",
            "\\caption{Shared problem identifiers between every pair of XLCoST "
            "languages, train split. Matched cross-lingual transfer needs a pair to "
            "share enough problems to hold out a test fold. Only the three bold "
@@ -53,7 +53,7 @@ def overlap_table() -> str:
 
 def full_transfer_table() -> str:
     cap = rows(R / "summary.csv", probe_only=True)
-    out = ["\\begin{table}[H]\\centering\\small",
+    out = ["\\begin{table}[htbp]\\centering\\small",
            "\\caption{All eighteen transfer cells for Qwen2.5-Coder-1.5B. "
            "\\emph{Surface} is the strongest masked-context $n$-gram feature. "
            "\\emph{Name} uses the variable's name alone. \\emph{Probe} is the "
@@ -80,7 +80,7 @@ def full_transfer_table() -> str:
 
 
 def model_table() -> str:
-    out = ["\\begin{table}[H]\\centering",
+    out = ["\\begin{table}[htbp]\\centering",
            "\\caption{Probe transfer per model, averaged within each group. The "
            "untrained network shares Qwen2.5-1.5B's architecture and tokenizer "
            "with randomly initialised weights. It is the floor a representational "
@@ -126,7 +126,7 @@ def masked_probe_tables() -> str:
     )
 
     out = [
-        "\\begin{table}[H]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Per-cell macro-F1 for the four intersection-sample conditions. "
         "\\emph{Lift} subtracts the context-matched randomly initialized result "
         "from the context-pooled trained result.}",
@@ -151,7 +151,7 @@ def masked_probe_tables() -> str:
                 f"{context-random:+.3f} \\\\"
             )
     out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", "",
-            "\\begin{table}[H]\\centering\\small",
+            "\\begin{table}[htbp]\\centering\\small",
             "\\caption{Problem-clustered paired differences between the "
             "context-pooled probe and the surface comparator. Negative values "
             "favor the surface comparator.}",
@@ -169,7 +169,7 @@ def masked_probe_tables() -> str:
     out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
 
     out += [
-        "\\begin{table}[H]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Problem-clustered uncertainty for the aggregate boundary "
         "contrasts. The effect is Python-transfer minus "
         "JavaScript$\\leftrightarrow$PHP macro-F1. The difference-in-differences "
@@ -198,7 +198,7 @@ def masked_probe_tables() -> str:
     out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
 
     out += [
-        "\\begin{table}[H]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Rolewise occurrence-excluded effects and floor-adjusted "
         "transfer. Effects are Python minus close-pair macro-F1. Lift subtracts "
         "the matched untrained score. The final column is close-pair lift minus "
@@ -243,7 +243,7 @@ def masked_probe_tables() -> str:
     # initialization. Each headline number in the paper's replication
     # paragraph is one row here.
     out += [
-        "\\begin{table}[H]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Per-cell macro-F1 for the StarCoder2-7B replication, on the "
         "same prediction items as the Qwen run. \\emph{Lift} subtracts the "
         "context-matched randomly initialized result from the context-pooled "
@@ -285,7 +285,7 @@ def masked_probe_tables() -> str:
         if not path.exists():
             continue
         out += [
-            "\\begin{table}[H]\\centering\\small",
+            "\\begin{table}[htbp]\\centering\\small",
             f"\\caption{{{caption}}}",
             f"\\label{{{label}}}",
             "\\begin{tabular}{lrr}", "\\toprule",
@@ -306,7 +306,7 @@ def masked_probe_tables() -> str:
         "qwen25coder15brandominits0poolcontext16": "context-pooled untrained",
     }
     out += [
-        "\\begin{table}[H]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Aggregate diagnostics retained in the intersection-sample "
         "masked-probe export. Surface counts are test occurrences. Probe counts "
         "are shared source--target problems. Surface rows have no in-domain or "
@@ -345,7 +345,7 @@ def masked_probe_tables() -> str:
 def mechanism_table() -> str:
     m = rows(R / "transfer_mechanism.csv")
     a = rows(R / "transfer_mechanism_ablation.csv")
-    out = ["\\begin{table}[H]\\centering\\small",
+    out = ["\\begin{table}[htbp]\\centering\\small",
            "\\caption{Transfer mechanism for the iterator role. \\emph{Surviving} is "
            "the share of the source classifier's discriminative mass realised in the "
            "target. \\emph{Flip} is the share of that mass whose sign reverses. "
@@ -361,7 +361,7 @@ def mechanism_table() -> str:
             f"{f(r,'sign_disagreement_mass'):.3f} & {f(r,'coef_agreement'):+.3f} & "
             f"{f(r,'sign_disagreement_mass_source_weighted'):.3f} \\\\")
     out += ["\\bottomrule", "\\end{tabular}", "\\end{table}", "",
-            "\\begin{table}[H]\\centering",
+            "\\begin{table}[htbp]\\centering",
             "\\caption{Masking an entire syntactic character class on both sides of "
             "the transfer. No class accounts for more than $0.021$ of the $0.39$ gap, "
             "so the realignment is distributed rather than carried by block "
@@ -378,7 +378,7 @@ def mechanism_table() -> str:
 def transfer_interval_table() -> str:
     rs = rows(R / "transfer_intervals.csv")
     out = [
-        "\\begin{table}[H]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Problem-clustered intervals for every surface transfer cell. "
         "The final row is the Python-pair minus close-pair boundary effect.}",
         "\\label{tab:transfer-intervals}",
@@ -406,7 +406,7 @@ def renaming_table() -> str:
         if r["condition"] != "original"
     ]
     out = [
-        "\\begin{table}[H]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Uncapped renaming audit for Python-source transfer. "
         "C1, C2, and C4 are the committed identifier-renaming conditions. "
         "These samples differ slightly from the frozen main analysis and are "
@@ -431,7 +431,7 @@ def renaming_table() -> str:
 def whitespace_table() -> str:
     rs = rows(R / "whitespace_normalisation_check.csv")
     out = [
-        "\\begin{table}[H]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Whitespace-normalisation audit for the three decisive iterator "
         "surface transfers. Scores are unchanged at the displayed precision.}",
         "\\label{tab:whitespace-audit}",
@@ -463,8 +463,8 @@ def heatmap_figures() -> str:
     ]
     for stem, role in roles:
         out += [
-            "\\begin{figure}[H]\\centering",
-            f"\\includegraphics[width=0.88\\linewidth]{{../results/lp4fm/heatmap_{stem}.png}}",
+            "\\begin{figure}[htbp]\\centering",
+            f"\\includegraphics[width=0.70\\linewidth]{{../results/lp4fm/heatmap_{stem}.png}}",
             f"\\caption{{Available {role} transfer matrix for "
             "Qwen2.5-Coder-1.5B. Cells without adequate matched problem overlap "
             "are descriptive only and are not used for the main boundary estimate.}",
@@ -472,8 +472,8 @@ def heatmap_figures() -> str:
             "\\end{figure}",
         ]
     out += [
-        "\\begin{figure}[H]\\centering",
-        "\\includegraphics[width=0.9\\linewidth]{figures/transfer_slope.pdf}",
+        "\\begin{figure}[htbp]\\centering",
+        "\\includegraphics[width=0.72\\linewidth]{figures/transfer_slope.pdf}",
         "\\caption{Span-pooled transfer contrast for the two trained models and "
         "the architecture-matched random-initialization floor. This capped-sample "
         "diagnostic is distinct from the intersection-sample context-pooled analysis.}",
@@ -494,7 +494,7 @@ def geometry_tables() -> str:
     ctrl = {r["metric"]: float(r["value"]) for r in rows(G / "bucket_control.csv")}
     pcs = rows(G / "pc_correlations_layer4.csv")
     peak = max(lay, key=lambda r: f(r, "abs_r"))
-    out = ["\\begin{table}[H]\\centering",
+    out = ["\\begin{table}[htbp]\\centering",
            "\\caption{Point-biserial correlation between PC1 of last-token residual "
            "activations and a static/dynamic typing label, by layer, with PC1's "
            "explained-variance ratio. The sign of $r$ is arbitrary (PCA fixes the axis "
@@ -564,7 +564,7 @@ def causal_table() -> str:
             cur["eff"], cur["eff_spec"] = eff, spec
         if spec > cur["spec"]:
             cur["spec"], cur["spec_layer"] = spec, int(r["layer"])
-    out = [head, "", "\\begin{table}[H]\\centering\\small",
+    out = [head, "", "\\begin{table}[htbp]\\centering\\small",
            "\\caption{Causal interventions on boolean-flag occurrences. "
            "\\emph{Peak-effect spec.} is specificity at the largest-effect layer. "
            "\\emph{best spec.} is the maximum over layers, with that layer named.}",
@@ -581,22 +581,22 @@ def causal_table() -> str:
 
 content = "\n\n".join([
     "% GENERATED by scripts/make_appendix.py -- do not edit by hand.",
-    "\\section{Complete transfer results}\n\\label{app:complete-transfer}",
+    "\\FloatBarrier\n\\section{Complete transfer results}\n\\label{app:complete-transfer}",
     full_transfer_table(),
     transfer_interval_table(),
     model_table(),
-    "\\section{Pairwise problem overlap in XLCoST}\n\\label{app:overlap}",
+    "\\FloatBarrier\n\\section{Pairwise problem overlap in XLCoST}\n\\label{app:overlap}",
     overlap_table(),
-    "\\section{Full masked-probe results}\n\\label{app:full}",
+    "\\FloatBarrier\n\\section{Full masked-probe results}\n\\label{app:full}",
     masked_probe_tables(),
-    "\\section{Renaming and formatting audits}\n\\label{app:audits}",
+    "\\FloatBarrier\n\\section{Renaming and formatting audits}\n\\label{app:audits}",
     renaming_table(),
     whitespace_table(),
-    "\\section{Transfer-mechanism diagnostics}\n\\label{app:mechanism}",
+    "\\FloatBarrier\n\\section{Transfer-mechanism diagnostics}\n\\label{app:mechanism}",
     mechanism_table(),
-    "\\section{Language-geometry controls}\n\\label{app:geometry}",
+    "\\FloatBarrier\n\\section{Language-geometry controls}\n\\label{app:geometry}",
     geometry_tables(),
-    "\\section{Complete transfer heatmaps}\n\\label{app:heatmaps}",
+    "\\FloatBarrier\n\\section{Complete transfer heatmaps}\n\\label{app:heatmaps}",
     heatmap_figures(),
 ]) + "\n"
 OUT.write_text(content)
