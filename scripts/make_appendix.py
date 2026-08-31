@@ -461,16 +461,22 @@ def heatmap_figures() -> str:
         "matrices, including cells excluded from matched-pair inference because "
         "problem overlap is too small."
     ]
-    for stem, role in roles:
+    out.append("\\begin{figure}[htbp]\\centering")
+    for i, (stem, role) in enumerate(roles):
         out += [
-            "\\begin{figure}[htbp]\\centering",
-            f"\\includegraphics[width=0.70\\linewidth]{{../results/lp4fm/heatmap_{stem}.png}}",
-            f"\\caption{{Available {role} transfer matrix for "
-            "Qwen2.5-Coder-1.5B. Cells without adequate matched problem overlap "
-            "are descriptive only and are not used for the main boundary estimate.}",
+            "\\begin{subfigure}{0.32\\linewidth}\\centering",
+            f"\\includegraphics[width=\\linewidth]{{../results/lp4fm/heatmap_{stem}.png}}",
+            f"\\caption{{{role}}}",
             f"\\label{{fig:lp4fm-{stem}}}",
-            "\\end{figure}",
+            "\\end{subfigure}" + ("\\hfill" if i < 2 else ""),
         ]
+    out += [
+        "\\caption{Available transfer matrices per role for Qwen2.5-Coder-1.5B. "
+        "Cells without adequate matched problem overlap are descriptive only and "
+        "are not used for the main boundary estimate.}",
+        "\\label{fig:lp4fm-heatmap-gallery}",
+        "\\end{figure}",
+    ]
     out += [
         "\\begin{figure}[htbp]\\centering",
         "\\includegraphics[width=0.72\\linewidth]{figures/transfer_slope.pdf}",
