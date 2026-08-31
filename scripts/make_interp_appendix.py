@@ -55,7 +55,7 @@ def boolean_table() -> str:
         "$\\rho$ is a descriptive one-instance score step, not an interval or "
         "equivalence test. Aligned probe/baseline predictions were not retained.}",
         "\\label{tab:boolean-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",
         "language & model & problems & probe F1 & best baseline & difference & "
         "$\\rho$ & selectivity \\\\",
@@ -81,7 +81,7 @@ def boolean_table() -> str:
         "renaming fields for other languages indicate that those runs were not "
         "committed, not a null result.}",
         "\\label{tab:boolean-renaming-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{lrrrrr}", "\\toprule",
         "model & C1 & C2 & C3 & C4 & C5 \\\\", "\\midrule",
     ]
@@ -102,7 +102,7 @@ def boolean_table() -> str:
         "are shared across the three neural models because they use the same "
         "frozen examples and surface features.}",
         "\\label{tab:boolean-baselines-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{lrrrrrr}", "\\toprule",
         "language & majority & name & statement & line & window & covariates \\\\",
         "\\midrule",
@@ -133,7 +133,7 @@ def class_struct_table() -> str:
         "five-seed protocol. Each condition refits a probe and selects its own layer "
         "on validation data, so cross-condition deltas do not test a fixed direction.}",
         "\\label{tab:class-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",
         "model & strategy & layer & F1 & 95\\% CI & control F1 & selectivity & "
         "$\\Delta$ \\\\",
@@ -164,7 +164,7 @@ def class_struct_table() -> str:
         "Python-selected layer. In-domain layers are selected separately. "
         "Only languages present in the committed exports are shown.}",
         "\\label{tab:class-crosslang}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",
         "model & language & programs & in-domain layer & in-domain F1 & "
         "transfer accuracy & transfer F1 \\\\", "\\midrule",
@@ -195,7 +195,7 @@ def class_struct_table() -> str:
         "is taken over all committed layers. Maximum cosine similarity is measured "
         "against the baseline activation direction for each renamed condition.}",
         "\\label{tab:class-layerwise}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrr}", "\\toprule",
         "model & strategy & minimum F1 & maximum F1 (layer) & "
         "maximum cosine (layer) \\\\", "\\midrule",
@@ -253,7 +253,7 @@ def iterator_table() -> str:
         "probe and selects its own best layer. These single-run summaries do not carry the "
         "five-seed intervals used for the class/structure role.}",
         "\\label{tab:iterator-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrr}", "\\toprule",
         "model & strategy & best layer & accuracy & F1 & $\\Delta$ \\\\",
         "\\midrule",
@@ -276,7 +276,7 @@ def iterator_table() -> str:
         "\\caption{Complete iterator cross-language transfer results. "
         "Transfer columns use the Python-selected layer.}",
         "\\label{tab:iterator-crosslang}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",
         "model & language & programs & in-domain layer & in-domain F1 & "
         "transfer accuracy & transfer F1 \\\\", "\\midrule",
@@ -304,7 +304,7 @@ def iterator_table() -> str:
         "committed layer. Cosine similarity compares each perturbation direction "
         "with the baseline direction.}",
         "\\label{tab:iterator-layerwise}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrr}", "\\toprule",
         "model & strategy & minimum F1 & maximum F1 (layer) & "
         "maximum cosine (layer) \\\\", "\\midrule",
@@ -374,7 +374,7 @@ def iterator_patching_tables() -> str:
                 f"\\caption{{Exploratory iterator activation-patching recovery for "
                 f"{label}, {scope}.}}",
                 f"\\label{{tab:iterator-patching-{stem}-{scope.split('-')[0].split()[0]}}}",
-                "\\resizebox{\\linewidth}{!}{%",
+                "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
                 f"\\begin{{tabular}}{{llrr{'r' * len(recovery_columns)}}}",
                 "\\toprule",
                 "condition & readout & pairs & clean/corrupt & "
@@ -420,7 +420,7 @@ def class_causal_table() -> str:
         "a positive interval, separation from controls, and recovery at least $0.05$ "
         "in both directions.}",
         "\\label{tab:causal-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{rllllrrrr}", "\\toprule",
         "layer & span & direction & control & $n$ & mean effect & 95\\% CI & "
         "recovery & minus random \\\\", "\\midrule",
@@ -550,7 +550,7 @@ def boolean_causal_tables() -> str:
             "Effect and specificity use the exporter definitions above. "
             "No uncertainty interval is available from the committed summary.}",
             f"\\label{{tab:boolean-{mode}}}",
-            "\\resizebox{\\linewidth}{!}{%",
+            "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
             "\\begin{tabular}{llrrrrr}", "\\toprule",
             "language & model & $n$ & peak layer & peak effect & "
             "spec. at peak & best spec. (layer) \\\\",

@@ -6,7 +6,7 @@
 \begin{table}[H]\centering\small
 \caption{Complete boolean occurrence-type probe and model-free baseline results. The best baseline is selected from name-only, masked statement, masked line, masked window, covariate-only, and majority features. $\rho$ is a descriptive one-instance score step, not an interval or equivalence test. Aligned probe/baseline predictions were not retained.}
 \label{tab:boolean-full}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrr}
 \toprule
 language & model & problems & probe F1 & best baseline & difference & $\rho$ & selectivity \\
@@ -30,7 +30,7 @@ Python & StarCoder2-7B & 1,301 & 0.988 & 0.983 & +0.005 & 0.0068 & +0.288 \\
 \begin{table}[H]\centering\small
 \caption{Boolean Python identifier-renaming audit. C1--C5 are the five committed renaming conditions. Each condition refits a probe and reselects its layer, so deltas measure recoverability rather than fixed-direction invariance. Intervals are problem-clustered. Empty renaming fields for other languages indicate that those runs were not committed, not a null result.}
 \label{tab:boolean-renaming-full}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{lrrrrr}
 \toprule
 model & C1 & C2 & C3 & C4 & C5 \\
@@ -45,7 +45,7 @@ StarCoder2-7B & -0.003 & -0.013 & -0.006 & -0.001 & -0.006 \\
 \begin{table}[H]\centering\small
 \caption{Complete model-free boolean baselines by language. Baselines are shared across the three neural models because they use the same frozen examples and surface features.}
 \label{tab:boolean-baselines-full}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{lrrrrrr}
 \toprule
 language & majority & name & statement & line & window & covariates \\
@@ -153,7 +153,7 @@ Python & 0.217 & 0.422 & 0.970 & 0.983 & 0.605 & 0.216 \\
 \begin{table}[H]\centering\small
 \caption{Complete class/structure perturbation results under the shared five-seed protocol. Each condition refits a probe and selects its own layer on validation data, so cross-condition deltas do not test a fixed direction.}
 \label{tab:class-full}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrr}
 \toprule
 model & strategy & layer & F1 & 95\% CI & control F1 & selectivity & $\Delta$ \\
@@ -183,7 +183,7 @@ StarCoder2-7B & misleading\_class\_struct & L5 & 0.985 & [0.976, 0.990] & 0.467 
 \begin{table}[H]\centering\small
 \caption{Class/structure cross-language results. Transfer uses the Python-selected layer. In-domain layers are selected separately. Only languages present in the committed exports are shown.}
 \label{tab:class-crosslang}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrr}
 \toprule
 model & language & programs & in-domain layer & in-domain F1 & transfer accuracy & transfer F1 \\
@@ -207,7 +207,7 @@ StarCoder2-7B & C & 97 & L5 & 0.986 & 0.987 & 0.906 \\
 \begin{table}[H]\centering\small
 \caption{Layerwise class/structure robustness summaries. The F1 range is taken over all committed layers. Maximum cosine similarity is measured against the baseline activation direction for each renamed condition.}
 \label{tab:class-layerwise}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrr}
 \toprule
 model & strategy & minimum F1 & maximum F1 (layer) & maximum cosine (layer) \\
@@ -237,7 +237,7 @@ StarCoder2-7B & single\_chars & 0.529 & 0.962 (L3) & 0.467 (L6) \\
 \begin{table}[H]\centering\small
 \caption{Complete iterator perturbation results. Each condition refits a probe and selects its own best layer. These single-run summaries do not carry the five-seed intervals used for the class/structure role.}
 \label{tab:iterator-full}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrr}
 \toprule
 model & strategy & best layer & accuracy & F1 & $\Delta$ \\
@@ -261,7 +261,7 @@ StarCoder2-7B & misleading\_iterator & L4 & 1.000 & 0.999 & +0.009 \\
 \begin{table}[H]\centering\small
 \caption{Complete iterator cross-language transfer results. Transfer columns use the Python-selected layer.}
 \label{tab:iterator-crosslang}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrr}
 \toprule
 model & language & programs & in-domain layer & in-domain F1 & transfer accuracy & transfer F1 \\
@@ -287,7 +287,7 @@ StarCoder2-7B & PHP & 253 & L17 & 0.998 & 0.993 & 0.964 \\
 \begin{table}[H]\centering\small
 \caption{Layerwise iterator robustness summaries. F1 ranges cover every committed layer. Cosine similarity compares each perturbation direction with the baseline direction.}
 \label{tab:iterator-layerwise}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrr}
 \toprule
 model & strategy & minimum F1 & maximum F1 (layer) & maximum cosine (layer) \\
@@ -314,7 +314,7 @@ StarCoder2-7B & single\_chars & 0.670 & 0.961 (L5) & 0.451 (L0) \\
 \begin{table}[H]\centering\small
 \caption{Complete gate-specified class/structure patching summary in Qwen2.5-1.5B. The causal gate required mean effect at least $0.10$, a positive interval, separation from controls, and recovery at least $0.05$ in both directions.}
 \label{tab:causal-full}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{rllllrrrr}
 \toprule
 layer & span & direction & control & $n$ & mean effect & 95\% CI & recovery & minus random \\
@@ -382,7 +382,7 @@ controller terminal state & \texttt{stopped\_qwen\_null} \\
 \begin{table}[H]\centering\scriptsize
 \caption{Exploratory iterator activation-patching recovery for Qwen2.5-Coder-1.5B, within-language perturbations.}
 \label{tab:iterator-patching-qwen_1.5B-within}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrrrr}
 \toprule
 condition & readout & pairs & clean/corrupt & L1 & L2 & L3 & L4 & L5 & L6 \\
@@ -399,7 +399,7 @@ misleading\_iterator & L6 & 150 & 0.999/0.286 & 0.820 & 0.835 & 0.916 & 0.946 & 
 \begin{table}[H]\centering\scriptsize
 \caption{Exploratory iterator activation-patching recovery for Qwen2.5-Coder-1.5B, cross-language transfer.}
 \label{tab:iterator-patching-qwen_1.5B-cross}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrrrrr}
 \toprule
 condition & readout & pairs & clean/corrupt & L1 & L2 & L3 & L4 & L5 & L6 & L7 \\
@@ -417,7 +417,7 @@ PHP & L7 & 7 & 0.982/0.748 & -0.211 & -0.397 & 0.614 & 0.760 & 0.934 & 1.027 & 1
 \begin{table}[H]\centering\scriptsize
 \caption{Exploratory iterator activation-patching recovery for StarCoder2-7B, within-language perturbations.}
 \label{tab:iterator-patching-starcoder2-within}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrrr}
 \toprule
 condition & readout & pairs & clean/corrupt & L1 & L2 & L3 & L4 & L5 \\
@@ -434,7 +434,7 @@ misleading\_iterator & L5 & 150 & 0.997/0.628 & 0.777 & 0.104 & 0.921 & 0.843 & 
 \begin{table}[H]\centering\scriptsize
 \caption{Exploratory iterator activation-patching recovery for StarCoder2-7B, cross-language transfer.}
 \label{tab:iterator-patching-starcoder2-cross}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrrrrrrrr}
 \toprule
 condition & readout & pairs & clean/corrupt & L1 & L2 & L3 & L4 & L5 & L6 & L7 & L8 & L9 & L10 \\
@@ -457,7 +457,7 @@ PHP & L10 & 73 & 0.993/0.808 & 0.491 & 0.796 & 0.938 & 0.964 & 0.979 & 0.973 & 0
 \begin{table}[H]\centering\small
 \caption{Exploratory boolean patch diagnostics. Effect and specificity use the exporter definitions above. No uncertainty interval is available from the committed summary.}
 \label{tab:boolean-patch}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrr}
 \toprule
 language & model & $n$ & peak layer & peak effect & spec. at peak & best spec. (layer) \\
@@ -484,7 +484,7 @@ Python & StarCoder2-7B & 176 & L4 & 13.592 & 7.9$\times$ & 9.7$\times$ (L12) \\
 \begin{table}[H]\centering\small
 \caption{Exploratory boolean steer diagnostics. Effect and specificity use the exporter definitions above. No uncertainty interval is available from the committed summary.}
 \label{tab:boolean-steer}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrr}
 \toprule
 language & model & $n$ & peak layer & peak effect & spec. at peak & best spec. (layer) \\
@@ -511,7 +511,7 @@ Python & StarCoder2-7B & 88 & L20 & 0.721 & 8.6$\times$ & 55.1$\times$ (L4) \\
 \begin{table}[H]\centering\small
 \caption{Exploratory boolean ablate diagnostics. Effect and specificity use the exporter definitions above. No uncertainty interval is available from the committed summary.}
 \label{tab:boolean-ablate}
-\resizebox{\linewidth}{!}{%
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrr}
 \toprule
 language & model & $n$ & peak layer & peak effect & spec. at peak & best spec. (layer) \\
