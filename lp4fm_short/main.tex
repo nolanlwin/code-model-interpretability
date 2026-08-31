@@ -44,9 +44,9 @@ $[-0.088,-0.030]$. The shift is $-0.048$ $[-0.088,-0.016]$. Context-matched untr
 across two weight initializations. Neither comparison supports a reliably
 flatter trained boundary. StarCoder2-7B reproduces the reversal on the same items with a
 larger separation, moving from $-0.014$ $[-0.036,0.018]$ span-pooled to
-$-0.147$ $[-0.186,-0.092]$ occurrence-excluded. Its trained boundary is
-steeper than its untrained floor ($-0.068$ $[-0.114,-0.009]$) rather than
-indistinguishable from it. Thus the original invariance is not identified
+$-0.147$ $[-0.186,-0.092]$ occurrence-excluded. Its
+trained-minus-untrained boundary difference is $-0.068$
+$[-0.114,-0.009]$, so its trained boundary is reliably steeper. Thus the original invariance is not identified
 independently of the readout, while the restricted readout still contains
 training-dependent role information.
 \end{abstract}
@@ -111,7 +111,7 @@ evaluated on the target. We report one fixed masked-window feature set rather
 than selecting the best feature set separately for each cell.
 \item \textbf{Probe, span-pooled.} Logistic regression on residual activations
 mean-pooled over the occurrence's own tokens uses a layer chosen on
-source-language validation data. This reads the identifier.
+source-language validation data. This readout includes the identifier tokens.
 \item \textbf{Probe, occurrence-excluded.} We use the same probe but pool the
 $16$ tokens on either side of the occurrence while excluding its tokens. Model
 inputs and weights are unchanged. Only the readout is altered.
@@ -122,11 +122,11 @@ necessary floor~\citep{zhang2018language,hewitt2019control}. Each probe is
 compared with the floor using the same readout.
 \end{itemize}
 
-Models are Qwen2.5-Coder-1.5B~\citep{hui2024qwencoder} and, for the untrained
-control, the corresponding Qwen2.5 architecture~\citep{qwen2024qwen25}.
-Qwen2.5-Coder is continued-pretrained from the Qwen2.5 model
-family~\citep{hui2024qwencoder}. Reported uncertainty resamples complete
-problems rather than individual occurrences.
+Models are Qwen2.5-Coder-1.5B~\citep{hui2024qwencoder} and
+StarCoder2-7B~\citep{lozhkov2024starcoder2}. Their untrained controls use the
+corresponding architectures and tokenizers. Qwen2.5-Coder is
+continued-pretrained from Qwen2.5~\citep{qwen2024qwen25}. Reported uncertainty
+resamples complete problems rather than individual occurrences.
 
 \section{Surface transfer tracks the language contrast}
 
@@ -145,7 +145,7 @@ directions to or from Python. Probe floors use the corresponding readout.}
 \midrule
 Surface $n$-gram, name masked & 0.929 & 0.804 & $-0.126$ & \multicolumn{3}{c}{shared model-free baseline} \\
 \midrule
-Probe, span-pooled (reads the name) & 0.852 & 0.840 & $-0.012$ & 0.877 & 0.863 & $-0.014$ \\
+Probe, span-pooled (includes occurrence) & 0.852 & 0.840 & $-0.012$ & 0.877 & 0.863 & $-0.014$ \\
 \midrule
 Probe, occurrence-excluded & 0.630 & 0.569 & $-0.060$ & 0.734 & 0.586 & $-0.147$ \\
 \quad untrained, occurrence-excluded & 0.527 & 0.464 & $-0.064$ & 0.552 & 0.473 & $-0.080$ \\
@@ -168,10 +168,10 @@ estimate of a language-family effect.
 \begin{figure}[t]
 \centering
 \includegraphics{figures/masked_slope.pdf}
-\caption{The surface baseline changes across the language contrast. The
-span-pooled probe appears stable but reads the occurrence tokens. Excluding the
-occurrence lowers probe transfer and yields a slope close to the matched
-untrained floor.}
+\caption{For Qwen2.5-Coder-1.5B, the surface baseline changes across the
+language contrast. The span-pooled probe appears flat but includes the
+occurrence tokens. Excluding the occurrence lowers transfer and yields a slope
+close to the matched untrained control.}
 \label{fig:masked}
 \end{figure}
 
@@ -192,10 +192,10 @@ The occurrence-excluded untrained model has a $-0.064$ boundary
 $[-0.089,-0.039]$. Subtracting this floor gives a trained-minus-untrained
 boundary of $+0.003$ $[-0.027,0.036]$. A second weight initialization yields a
 $-0.035$ $[-0.062,-0.008]$ floor boundary with an overall level of $0.497$
-against the first initialization's $0.485$. The floor's level is stable while
-its boundary varies across initializations, and the trained boundary
-($-0.060$) lies within that variation, at its steeper end. Under neither
-initialization is the trained probe flatter than the untrained network.
+against the first initialization's $0.485$. The two floor levels are similar,
+while their boundary estimates differ. The trained boundary ($-0.060$) lies
+within their range, at its steeper end. Against neither initialization is it
+reliably flatter.
 Training still contributes. Trained-minus-untrained transfer is $+0.102$
 $[0.065,0.132]$ close and $+0.106$ $[0.081,0.127]$ for Python transfers
 against the first floor, and $+0.109$ $[0.067,0.145]$ and $+0.084$
@@ -209,8 +209,8 @@ Qwen's $-0.048$. The models differ in how that boundary relates to its floor.
 StarCoder2's untrained boundary is $-0.080$ $[-0.110,-0.049]$. Its
 trained-minus-untrained difference is $-0.068$ $[-0.114,-0.009]$ and excludes
 zero, whereas the same contrast was null in Qwen ($+0.003$
-$[-0.027,0.036]$). Readout dependence holds across model family and scale.
-The boundary's relation to its untrained floor does not.
+$[-0.027,0.036]$). Readout dependence appears in both tested models. Its
+relation to the untrained control differs between them.
 
 Identifier exclusion also matters within languages. Mean in-language F1 falls
 from $0.898$ to $0.771$ against an untrained $0.623$. Direct access to the
@@ -258,13 +258,13 @@ quantities, so agreement is not required. Even so, excluding the identifier
 moves the probe contrast toward their result, which is compatible with a
 genuine Python boundary without establishing a common mechanism.
 
-\paragraph{Falsifying evidence.} StarCoder2-7B ran a test this design named in
-advance. The context-pooled margin over the matched floor grows with scale
-($+0.181$ close, against Qwen's $+0.102$), and its boundary difference now
-excludes zero. The deflationary reading is therefore bounded. At $7$B, the
-occurrence-excluded readout carries boundary structure absent from its floor.
-The measurement claim remains unchanged because the boundary steepened rather
-than flattened. The interpretation would weaken
+\paragraph{Falsifying evidence.} The StarCoder2-7B experiment tests a
+prediction specified in advance. Its close-pair margin over the matched
+control is $+0.181$, compared with Qwen's $+0.102$, and its boundary difference
+excludes zero. This limits the deflationary reading. In StarCoder2-7B, the
+occurrence-excluded boundary is reliably steeper than its untrained
+counterpart. The measurement claim remains unchanged because the boundary
+steepened rather than flattened. The interpretation would weaken
 further if same-readout identifier replacement preserved the flat transfer
 curve, or if a parallel corpus without shared naming conventions produced the
 original span-pooled invariance.
@@ -299,9 +299,11 @@ not model use.
 \section{Reproducibility}
 \label{app:repro}
 Every figure is regenerated from committed result files, and a regression test
-recomputes the headline values from those files. Every condition in Table~\ref{tab:main}, both floor initializations, and the
-prediction-level boundary analysis are committed per cell. Intervals resample stable problem identifiers once across all cells
-and conditions. Activation extraction is the only accelerator-dependent step.
+recomputes the headline values from those files. Every condition in
+Table~\ref{tab:main}, both Qwen floor initializations, the StarCoder2 floor
+initialization, and the prediction-level boundary analysis are committed per
+cell. Intervals resample stable problem identifiers once across all cells and
+conditions. Activation extraction is the only accelerator-dependent step.
 Probes use logistic regression on residual activations pooled over either the
 occurrence or the $16$ tokens on each side. The surface baseline uses a
 \texttt{char\_wb} tf-idf vectorizer with $n \in [2,4]$ and source-language

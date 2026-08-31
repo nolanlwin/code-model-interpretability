@@ -36,15 +36,15 @@ after the same intervention in two models. On Python, boolean occurrence type is
 but a masked source-line classifier reaches $0.983$ without a language model.
 Rerunning both predictors with aligned predictions gives paired
 problem-clustered deltas of $-0.003$ to $+0.002$ across the three models, with
-intervals excluding any probe advantage above $0.014$--$0.017$. This is a
-resolved negative. Class or structure labels remain decodable after
+intervals excluding any probe advantage above $0.014$--$0.017$. This provides
+a bounded negative result. Class or structure labels remain decodable after
 perturbation-specific refitting and pass a within-program label-permutation
 control in three models, yet a gate-specified activation patch at the
 query-name site fails in Qwen2.5-1.5B. These outcomes motivate a five-part control matrix. Decodability,
 probe-capacity control, cue sensitivity, surface sufficiency, and
 site-specific causal relevance are distinct claims, and clearing one does not
-imply clearing another. Reporting which of the five a result has cleared, and
-which remain untested, is what makes a probing claim falsifiable.
+imply clearing another. Reporting which comparisons were run, what each found,
+and which remain untested makes a probing claim falsifiable.
 \end{abstract}
 
 \section{Introduction}
@@ -79,7 +79,7 @@ what outcome would falsify each surviving claim.
 Our evidence covers five roles, three models, and the seven-language XLCoST
 corpus~\citep{zhu2022xlcost}. The experiment is intentionally reported as an
 uneven evidence matrix rather than a full factorial study. Qwen2.5-1.5B, Qwen2.5-Coder-1.5B, and StarCoder2-7B all appear in the
-controlled boolean and class-reference
+controlled boolean and class or structure
 experiments~\citep{qwen2024qwen25,hui2024qwencoder,
 lozhkov2024starcoder2}. Earlier accumulator and index runs use one model and a
 weaker split protocol. Iterator runs cover Qwen2.5-Coder-1.5B and
@@ -88,12 +88,12 @@ This is a methodological case study of evidential boundaries, not a validation
 of the matrix as a universal framework. Its heterogeneity separates replicated
 findings from leads that still require confirmation.
 
-The central result is not that one representation type wins. It is that the
-same headline observation, high linear-probe F1, decomposes into at least four
-outcomes. Index probes depend strongly on names. Accumulator and iterator
+The central result is not that one representation type wins. The same headline
+observation, high linear-probe F1, produces different evidential outcomes.
+Index probes depend strongly on names. Accumulator and iterator
 probes can be refit after misleading renames. A model-free classifier matches
 boolean probe scores, and paired intervals exclude a probe advantage above
-$0.017$. Class-reference probe performance remains stable under tested renames
+$0.017$. Class or structure probe performance remains stable under tested renames
 and passes a randomized-label control, but the gate-specified causal
 intervention fails at one site. A single accuracy number cannot identify among
 these explanations.
@@ -105,13 +105,13 @@ We treat five roles as related case studies, not measurement-equivalent
 instances of one construct. Accumulators update within loops. Indices or keys
 appear as loop counters or subscripts. Iterators are loop-bound names and their
 uses. Boolean labels distinguish assignment, conditional, loop, and return
-uses. Class/structure labels mark declared type names and references. Binary
+uses. Class or structure labels mark declared type names and references. Binary
 token probes label all other tokens as negative. Heuristic AST and regular-
 expression extractors vary by language and lack a common multilingual gold
 set. Protocols also differ. Accumulator, index, and iterator use legacy
 token-stratified splits and test-maximized layers. Boolean mean-pools
 occurrences, uses problem-grouped splits, and predicts usage type. The
-class/structure pipeline uses token labels, problem groups, and five seeds. The modern pipelines select
+class or structure pipeline uses token labels, problem groups, and five seeds. The modern pipelines select
 layers on validation data. XLCoST contains C, C++, C\#, Java, JavaScript, PHP,
 and Python. Table~\ref{tab:scope} states actual coverage. Scores across rows do
 not estimate one common task.
@@ -122,7 +122,7 @@ not estimate one common task.
 \setlength{\tabcolsep}{3.5pt}
 \caption{Model and language coverage. No row should be read as a complete
 three-model by seven-language experiment. Table~\ref{tab:controls} gives the
-controls each role has cleared.}
+comparison coverage for each role.}
 \label{tab:scope}
 \begin{tabular}{p{0.16\linewidth}p{0.30\linewidth}p{0.44\linewidth}}
 \toprule
@@ -130,9 +130,9 @@ Role & Models & Language coverage \\
 \midrule
 Accumulator & Qwen2.5-1.5B & Python plus Java, C++, C, C\# \\
 Index or key & Qwen2.5-1.5B & Python, Java, JavaScript, C++, C, C\# \\
-Iterator & Coder-1.5B, StarCoder2-7B & Python, Java, JavaScript, PHP, C++, C, C\# \\
+Iterator & Qwen2.5-Coder-1.5B, StarCoder2-7B & Python, Java, JavaScript, PHP, C++, C, C\# \\
 Boolean & All three & Python, Java, JavaScript, PHP \\
-Class or struct & All three & Python, C++, JavaScript, C \\
+Class or structure & All three & Python, C++, JavaScript, C \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -147,7 +147,7 @@ direction is invariant. A model-free character classifier with the target name
 masked asks whether local source text already determines the label.
 Randomized-label controls ask whether the probe family can fit a specified null
 task. The boolean null assigns a random label per variable name, whereas the
-class/structure null permutes labels within programs. Activation patching asks
+class or structure null permutes labels within programs. Activation patching asks
 whether replacing a residual state at a gate-specified site moves a behavioral
 logit readout~\citep{meng2022locating}.
 
@@ -160,7 +160,7 @@ feature. A causal intervention can ground a use claim only at its specified
 layer, span, direction, and readout.
 
 \paragraph{Evidence grades.}
-Boolean and class-reference experiments use problem-grouped splits,
+Boolean and class or structure experiments use problem-grouped splits,
 validation-selected layers, five seeds, and paired or clustered uncertainty.
 Iterator artifacts use two models but retain the legacy token-level split and
 test-maximized layer, without matched surface or capacity controls.
@@ -191,7 +191,7 @@ Iterator & 0.988, 0.990 & $\Delta=+0.012,+0.009$ &
 Refit performance survives misleading names in two models \\
 Boolean & 0.981--0.988 & paired $\Delta \in [-0.003,+0.002]$ &
 Probe advantage over masked local source excluded above $0.017$ \\
-Class or struct & 0.979--0.982 & $|\Delta|\leq0.004$ &
+Class or structure & 0.979--0.982 & $|\Delta|\leq0.004$ &
 Refit robustness plus within-program permutation selectivity \\
 \bottomrule
 \end{tabular}
@@ -219,7 +219,7 @@ They do not establish feature invariance or abstraction because the probe and
 best layer are refit and the iterator runs lack a matched model-free surface
 comparator.
 
-\subsection{A model-free baseline resolves the boolean result}
+\subsection{A model-free baseline bounds the boolean result}
 
 Boolean occurrence type illustrates why a high, replicated probe score can
 still provide limited scientific evidence. On a frozen Python sample, the three models reach
@@ -232,23 +232,24 @@ The probe-minus-surface differences are $-0.001$, $-0.002$, and $+0.005$.
 
 The original exports retained no aligned predictions, so we reran both
 predictors on the frozen sample and retained aligned predictions. Before
-pairing, the reruns reproduced the committed scores. The paired,
-problem-clustered probe-minus-surface deltas over $915$ problem clusters are
-$-0.002$ $[-0.017, 0.014]$, $-0.003$ $[-0.037, 0.014]$, and $+0.002$
-$[-0.016, 0.017]$. Every interval covers zero, and each excludes a
+pairing, the reruns reproduced the committed scores. The paired
+probe-minus-surface estimates, followed by their problem-clustered $95\%$
+intervals, are $-0.002$ $[-0.017, 0.014]$, $-0.003$ $[-0.037, 0.014]$, and
+$+0.002$ $[-0.016, 0.017]$ over $915$ problem clusters. Every interval covers
+zero, and each excludes a
 probe advantage larger than $0.014$--$0.017$ macro-F1. Five renaming conditions
 also change refit performance by at most $0.013$. The supported claim is now
-sharper. Boolean occurrence type is decodable after
-the tested renames, and the paired intervals rule out a meaningful probe
-advantage over masked local syntax on Python. The cross-language runs extend
+sharper. Boolean occurrence type is decodable after the tested renames. The
+paired intervals exclude a probe advantage above $0.014$--$0.017$ over masked
+local syntax on Python. The cross-language runs extend
 decodability to Java, JavaScript, and PHP. Because only Python has renaming
 runs, the cross-language results do not extend the refit-robustness claim
 beyond Python.
 
-\subsection{A causal null limits the class-reference claim}
+\subsection{A causal null limits the class or structure claim}
 
-The class-reference and boolean experiments use different controls. Across all
-three models, baseline F1 is $0.979$--$0.982$ and within-program permutation
+The class or structure experiments and the boolean experiments use different
+controls. Across all three models, baseline F1 is $0.979$--$0.982$ and within-program permutation
 selectivity is
 $+0.503$--$+0.553$. Misleading class-style names change F1 by
 $-0.004$, $-0.004$, and $+0.004$. Python-trained probes also transfer to C++,
@@ -290,7 +291,8 @@ substantive bidirectional contribution at this site and readout.
 
 \section{A claim--control matrix for scientific probing}
 
-The experiments suggest orthogonal claims rather than a cumulative ladder.
+The experiments distinguish logically separate claims rather than a
+cumulative ladder.
 
 \begin{enumerate}\itemsep0pt\parskip0pt
 \item \textbf{Decodability.} A held-out probe exceeds a simple label baseline.
@@ -309,27 +311,27 @@ changes a behavioral readout in both directions and separates from placebo and
 random controls.
 \end{enumerate}
 
-No row entails the next, and Table~\ref{tab:controls} records what each role
-has cleared. Only boolean has a matched surface comparator, under which masked
-local syntax remains sufficient, and only class or structure has a causal
+No claim entails another. Table~\ref{tab:controls} records which comparisons
+were run for each role. Only boolean has a matched surface comparator, which
+finds masked local syntax sufficient. Only class or structure has a causal
 gate, which the intervention fails at the selected site.
 
 \begin{table}[t]
 \centering
 \small
-\caption{Controls each role has cleared. Check marks run and cleared, cross
-marks run and not cleared, circle marks a legacy-protocol result awaiting
-replication, dash marks not run.}
+\caption{Comparison coverage by role. Check marks denote modern comparisons,
+circles denote legacy comparisons awaiting replication, and NR denotes
+comparisons not run. Outcomes appear in the text and Table~\ref{tab:status}.}
 \label{tab:controls}
 \begin{tabular}{lccccc}
 \toprule
-Control & Accum. & Index & Iterator & Boolean & Class \\
+Comparison & Accum. & Index & Iterator & Boolean & Class \\
 \midrule
-Decodability & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ \\
-Probe capacity & -- & -- & -- & $\checkmark$ & $\checkmark$ \\
-Cue sensitivity & $\circ$ & $\circ$ & $\checkmark$ & $\checkmark$ & $\checkmark$ \\
-Surface sufficiency & -- & -- & -- & $\times$ & -- \\
-Causal relevance & -- & -- & -- & -- & $\times$ \\
+Decodability & $\circ$ & $\circ$ & $\circ$ & $\checkmark$ & $\checkmark$ \\
+Randomized-label control & NR & NR & NR & $\checkmark$ & $\checkmark$ \\
+Rename intervention & $\circ$ & $\circ$ & $\circ$ & $\checkmark$ & $\checkmark$ \\
+Surface comparator & NR & NR & NR & $\checkmark$ & NR \\
+Causal gate & NR & NR & NR & NR & $\checkmark$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -337,7 +339,7 @@ Causal relevance & -- & -- & -- & -- & $\times$ \\
 \paragraph{Falsifying outcomes.}
 The framework is useful only if results can change the interpretation. A
 problem-grouped rerun could shrink or reverse the accumulator-index
-dissociation. An all-layer class-reference patch could reveal a causal site outside the
+dissociation. An all-layer class or structure patch could reveal a causal site outside the
 probe-selected layer. A seven-language rename pipeline could reveal
 language-specific cue dependence. Each outcome would revise a named claim.
 
@@ -349,17 +351,10 @@ Negative results should state the smallest effect the design can exclude.
 
 \section{Identifiability and evaluation design}
 
-A useful contrast varies one specified factor and quantifies uncertainty in
-the resulting difference. The boolean probes and masked-line classifier use the
-same evaluation population. The paired rerun provides an interval for their
-difference and shows that no model's probe advantage exceeds $0.017$. This
-converts an unresolvable aggregate gap of $0.005$ into a bounded negative.
-Renaming reuses surviving occurrences but refits probes and layers, so its
-delta measures recoverability after intervention, not fixed-direction
-invariance. The class experiment instead uses matched prompts plus placebo,
-random, and same-source controls. Its effects fall below the specified $0.10$
-gate, although noising has a positive interval. The result rejects the
-substantive bidirectional claim at that site, not all causal involvement.
+Matched contrasts determine what each control identifies. The paired boolean
+intervals bound probe-minus-surface differences. Refit renaming measures
+recoverability. The class or structure patch fails the specified bidirectional
+gate at one site. None supports a broader invariance or causal claim.
 
 \begin{table}[t]
 \centering
@@ -377,7 +372,7 @@ Opposite refit deltas in incommensurate pipelines, plus iterator stability &
 Exploratory. Repeat with problem groups, scope-aware renaming, and intervals \\
 Boolean exceeds Python local syntax &
 Paired reruns, three models, $915$ problem clusters &
-Resolved negative. Intervals exclude advantages above $0.014$--$0.017$ \\
+Not supported. $95\%$ intervals exclude advantages above $0.014$--$0.017$ \\
 Class refit performance survives renaming &
 Three-model permutation selectivity and misleading-name deltas near zero &
 Supported as recoverability. Evaluate one fixed probe across paired renames \\
@@ -398,15 +393,17 @@ Open. Apply one extractor and control battery to a complete language grid \\
 
 The study collectively covers three models, five roles, and seven languages,
 but not a complete $3\times5\times7$ design, and Table~\ref{tab:scope} gives
-the per-role model, language, and extractor coverage.
+the per-role model and language coverage.
 
 Legacy accumulator-index results predate problem-grouped splits and
 scope-aware renaming, and function overlap, textual replacement, layer
 selection, and refitting may inflate the effect. Iterator has no matched surface or capacity comparator, and its legacy
-artifacts record only aggregate scores. Boolean labels are nearly predictable from local form, with paired intervals
-bounding any advantage below $0.017$. Class-reference patching covers one model, layer, site, and readout, and
+artifacts record only aggregate scores. Boolean labels are nearly predictable
+from local form, with paired $95\%$ intervals whose upper endpoints do not
+exceed $0.017$. Class or structure patching covers one model, layer, site, and readout, and
 stopping after the Qwen null was not registered in advance. Other probes
-remain correlational.
+remain correlational, and cross-language transfer may reflect shared syntax,
+names, or extractor artifacts.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
@@ -416,11 +413,11 @@ remain correlational.
 
 \section{Reproducibility}
 \label{app:repro}
-The appendix is generated from committed boolean, iterator, class-reference,
+The appendix is generated from committed boolean, iterator, class or structure,
 and patching artifacts by \texttt{scripts/make\_interp\_appendix.py}. Modern
 probe conditions use frozen problem hashes, validation-selected layers, and
 five seeds where stated. Iterator summaries are single-run. The
-class-reference intervention records model and dataset
+class or structure intervention records model and dataset
 revisions, prompt and configuration hashes, all $4{,}032$ primary rows, and
 clustered intervals. A regression test checks source traces for the headline
 numbers and rejects LP4FM-only conditions in this manuscript.

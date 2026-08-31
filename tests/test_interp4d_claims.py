@@ -191,8 +191,11 @@ def main() -> int:
          and "$0.014$--$0.017$" in text),
         ("paper's cluster count matches the CSV",
          {r["n_clusters"] for r in paired} == {"915"} and "$915$" in text),
-        ("resolved-negative language present, unresolved language gone",
-         "Resolved negative" in text and "Not resolved. Retain paired" not in text),
+        ("bounded-negative language present, unresolved language gone",
+         "bounded negative result" in text
+         and "Not supported." in text
+         and "intervals exclude advantages above" in text
+         and "Not resolved. Retain paired" not in text),
     ]
     checks += [
         (
