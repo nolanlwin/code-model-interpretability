@@ -3,8 +3,8 @@
 Official repository for two NeurIPS 2026 workshop papers on what a linear probe score can and cannot claim about code models.
 
 <p align="center">
-  <a href="paper/interp_science_short/main.pdf"><b>Same Score, Different Evidence</b></a><br>
-  Decodability, Surface Sufficiency, and Causal Relevance in Code Models<br>
+  <a href="paper/interp_science_short/main.pdf"><b>Same Score, Different Evidence: Decodability, Surface Sufficiency, and Causal Relevance in Code Models</b></a>
+  <br>
   <em>Interpretability as a Science</em>
 </p>
 
@@ -14,8 +14,6 @@ Official repository for two NeurIPS 2026 workshop papers on what a linear probe 
 </p>
 
 <p align="center">
-  <a href="paper/interp_science_short/main.pdf">PDF (Interp as a Science)</a> ·
-  <a href="paper/lp4fm_short/main.pdf">PDF (LP4FM)</a> ·
   <a href="https://huggingface.co/datasets/dhyuti-n/xlcost-variable-roles">Dataset</a> ·
   <a href="https://colab.research.google.com/github/nolanlwin/code-model-interpretability/blob/main/notebooks/colab_results.ipynb">Colab</a> ·
   <a href="LICENSE">License</a>
