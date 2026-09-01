@@ -91,7 +91,17 @@ def boolean_table() -> str:
             + " & ".join(f"{float(row[f'dC{i}']):+.3f}" for i in range(1, 6))
             + " \\\\"
         )
-    lines += ["\\bottomrule", "\\end{tabular}}", "\\end{table}", ""]
+    lines += [
+        "\\bottomrule", "\\end{tabular}}", "\\end{table}",
+        "\\FloatBarrier",
+        "\\paragraph{Renaming diagnostic.} The misleading strategy uses "
+        "role-conditioned vocabularies. Target and other identifiers receive "
+        "names from different pools, so a refit probe can recover the label "
+        "lexically. The all-same strategy is non-bijective and can alter label "
+        "extraction. These rows diagnose intervention confounds rather than "
+        "semantic robustness.",
+        "",
+    ]
 
     representative = {
         row["language"]: row for row in rows
@@ -161,7 +171,8 @@ def class_struct_table() -> str:
     lines += [
         "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Class/structure cross-language results. Transfer uses the "
-        "Python-selected layer. In-domain layers are selected separately. "
+        "Python-selected layer without a shared source-target problem partition. "
+        "In-domain layers are selected separately. "
         "Only languages present in the committed exports are shown.}",
         "\\label{tab:class-crosslang}",
         "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
@@ -244,7 +255,8 @@ def iterator_table() -> str:
         "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Complete iterator perturbation results under the shared "
         "five-seed protocol. Each condition refits a probe and selects its own layer "
-        "on validation data, so cross-condition deltas do not test a fixed direction.}",
+        "on validation data. Role-conditioned and non-bijective strategies are "
+        "confounded diagnostics rather than robustness tests.}",
         "\\label{tab:iterator-full}",
         "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",

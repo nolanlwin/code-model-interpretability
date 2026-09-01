@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MAIN = ROOT / "interp_science_short/main.tex"
 BIB = ROOT / "interp_science_short/refs.bib"
 APPENDIX = ROOT / "interp_science_short/appendix_generated.tex"
+CHECKLIST = ROOT / "interp_science_short/checklist.tex"
 
 
 def rows(path: Path) -> list[dict[str, str]]:
@@ -20,6 +21,7 @@ def rows(path: Path) -> list[dict[str, str]]:
 def main() -> int:
     text = MAIN.read_text()
     appendix = APPENDIX.read_text()
+    checklist = CHECKLIST.read_text()
     generator = (ROOT / "scripts/make_interp_appendix.py").read_text()
     checks: list[tuple[str, bool]] = []
     prose = re.sub(r"\\(?:label|ref)\{[^}]+\}", "", text + "\n" + appendix)
@@ -34,8 +36,10 @@ def main() -> int:
     ))
 
     checks.append((
-        "scope states three models, five roles, and seven languages collectively",
-        "three models, five roles, and seven languages" in text,
+        "scope states three models, five heterogeneous targets, and seven languages",
+        "three models" in text
+        and "five identifier properties and roles" in text
+        and "all seven XLCoST" in text,
     ))
     checks.append((
         "LP4FM-only masked-probe story is absent",
@@ -52,8 +56,9 @@ def main() -> int:
     ))
     checks.append((
         "boolean surface claim is scoped to Python",
-        "On Python, boolean occurrence" in text
-        and "Boolean exceeds Python local syntax" in text,
+        "On Python," in text
+        and "boolean occurrence type" in text
+        and "selected masked local-syntax" in text,
     ))
     checks.append((
         "class causal null states the True/True readout limitation",
@@ -61,6 +66,49 @@ def main() -> int:
         and "limits the behavioral" in text
         and "effective decision range" in text,
     ))
+    checks += [
+        (
+            "reporting matrix is operational rather than checkmark-only",
+            all(term in text for term in (
+                "target and prediction unit",
+                "claim and estimand",
+                "comparator and matching rule",
+                "uncertainty",
+                "falsifying next test",
+            ))
+            and "checkmark indicating that a control ran" in text,
+        ),
+        (
+            "role-conditioned renaming is labeled as confounded",
+            "The vocabulary therefore encodes the label" in text
+            and "does not support\nsemantic robustness" in text
+            and "confounded diagnostics rather than robustness tests" in appendix,
+        ),
+        (
+            "iterator and class controls are described as within-program permutations",
+            "Iterator and class or structure permute labels within\nprograms" in text
+            and "Hewitt control" not in text,
+        ),
+        (
+            "boolean cohort transition and retained evidence are explicit",
+            "$1{,}301$-problem source" in text
+            and "$1{,}410$ unique" in text
+            and "$915$ problem clusters" in text
+            and "aggregate paired summary" in text,
+        ),
+        (
+            "causal scope is site-state rather than probe-direction use",
+            "Full-residual patching tests site-state relevance" in text
+            and "not use of the decoded probe" in text
+            and "gate failure under an insensitive" in text,
+        ),
+        (
+            "checklist does not overclaim reproducibility",
+            checklist.count(r"\item[] Answer: \answerNo{}") >= 5
+            and "aligned prediction inputs" in checklist
+            and "complete environment and command record" in checklist,
+        ),
+    ]
 
     boolean_causal = rows(ROOT / "results/boolean/causal/summary.csv")
     causal_cells = {
@@ -197,14 +245,14 @@ def main() -> int:
         ("bounded-negative language present, unresolved language gone",
          "bounded negative result" in text
          and "Not supported." in text
-         and "intervals exclude advantages above" in text
+         and "excluding probe advantages above" in text
          and "Not resolved. Retain paired" not in text),
     ]
     checks += [
         (
             "heterogeneous probe units are stated",
-            "boolean mean-pools" in text.lower()
-            and "token probes label all other tokens as negative" in text,
+            "Boolean mean-pools" in text
+            and "Binary token probes label all other tokens" in text,
         ),
         (
             "repository history is not called preregistration",
@@ -212,7 +260,7 @@ def main() -> int:
         ),
         (
             "renaming is scoped to perturbation-specific refitting",
-            "perturbation-specific refitting" in text
+            "every condition refits its probe and\nlayer" in text
             and "fixed rename-invariant" in text,
         ),
     ]

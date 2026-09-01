@@ -43,6 +43,8 @@ StarCoder2-7B & -0.003 & -0.013 & -0.006 & -0.001 & -0.006 \\
 \bottomrule
 \end{tabular}}
 \end{table}
+\FloatBarrier
+\paragraph{Renaming diagnostic.} The misleading strategy uses role-conditioned vocabularies. Target and other identifiers receive names from different pools, so a refit probe can recover the label lexically. The all-same strategy is non-bijective and can alter label extraction. These rows diagnose intervention confounds rather than semantic robustness.
 
 \begin{table}[htbp]\centering\small
 \caption{Complete model-free boolean baselines by language. Baselines are shared across the three neural models because they use the same frozen examples and surface features.}
@@ -194,7 +196,7 @@ StarCoder2-7B & misleading\_class\_struct & L5 & 0.985 & [0.976, 0.990] & 0.467 
 \end{table}
 
 \begin{table}[htbp]\centering\small
-\caption{Class/structure cross-language results. Transfer uses the Python-selected layer. In-domain layers are selected separately. Only languages present in the committed exports are shown.}
+\caption{Class/structure cross-language results. Transfer uses the Python-selected layer without a shared source-target problem partition. In-domain layers are selected separately. Only languages present in the committed exports are shown.}
 \label{tab:class-crosslang}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrr}
@@ -248,7 +250,7 @@ StarCoder2-7B & single\_chars & 0.529 & 0.962 (L3) & 0.467 (L6) \\
 \end{table}
 
 \begin{table}[htbp]\centering\small
-\caption{Complete iterator perturbation results under the shared five-seed protocol. Each condition refits a probe and selects its own layer on validation data, so cross-condition deltas do not test a fixed direction.}
+\caption{Complete iterator perturbation results under the shared five-seed protocol. Each condition refits a probe and selects its own layer on validation data. Role-conditioned and non-bijective strategies are confounded diagnostics rather than robustness tests.}
 \label{tab:iterator-full}
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{llrrrrrr}
