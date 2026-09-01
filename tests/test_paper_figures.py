@@ -87,11 +87,15 @@ def run() -> int:
             and ":" not in prose,
         ),
         (
-            "checklist and appendix cite an anonymous code snapshot",
+            "checklist, appendix, and abstract cite an anonymous code snapshot",
             "anonymous.4open.science/r/CrossLanguageProbeInvariance2026"
             in checklist
             and "anonymous.4open.science/r/CrossLanguageProbeInvariance2026"
             in main_text
+            and "anonymous.4open.science/r/CrossLanguageProbeInvariance2026"
+            in main_text.split(r"\begin{abstract}", 1)[1].split(
+                r"\end{abstract}", 1
+            )[0]
             and "github.com" not in checklist
             and "github.com" not in main_text
             and "nolanlwin" not in checklist

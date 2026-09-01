@@ -179,6 +179,10 @@ def main() -> int:
             and "dataset card documents" in text
             and "anonymous.4open.science/r/SameScoreDifferentEvidence2026"
             in text
+            and "anonymous.4open.science/r/SameScoreDifferentEvidence2026"
+            in text.split(r"\begin{abstract}", 1)[1].split(
+                r"\end{abstract}", 1
+            )[0]
             and "github.com" not in text
             and "nolanlwin" not in text,
         ),
