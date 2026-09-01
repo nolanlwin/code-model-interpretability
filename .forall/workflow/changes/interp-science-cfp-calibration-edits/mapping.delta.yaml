@@ -5,7 +5,7 @@ requirements:
     requirement: "Comparator-scoped boolean reporting"
     verified: false
     code:
-      file: interp_science_short/main.tex
+      file: paper/interp_science_short/main.tex
       symbols: [document]
     contract: |
       Section 3.2 must report the boolean surface comparison across the
@@ -20,7 +20,7 @@ requirements:
     requirement: "Estimator-consistent causal interpretation"
     verified: false
     code:
-      file: interp_science_short/main.tex
+      file: paper/interp_science_short/main.tex
       symbols: [document]
     contract: |
       No passage may explain the failed patching gate by a compressed decision
@@ -35,7 +35,7 @@ requirements:
     requirement: "Artifact-accurate provenance statements"
     verified: false
     code:
-      file: interp_science_short/main.tex
+      file: paper/interp_science_short/main.tex
       symbols: [document]
     contract: |
       Sample-construction and row-count statements must match the committed
@@ -51,7 +51,7 @@ requirements:
     requirement: "Verified bibliography entries"
     verified: false
     code:
-      file: interp_science_short/refs.bib
+      file: paper/interp_science_short/refs.bib
       symbols: [bibliography]
     contract: |
       Each added entry corresponds to a record confirmed by a live arXiv or
@@ -64,7 +64,7 @@ requirements:
     requirement: "Preserved submission budget"
     verified: false
     code:
-      file: interp_science_short/main.tex
+      file: paper/interp_science_short/main.tex
       symbols: [document]
     contract: |
       The rebuilt manuscript keeps all main-text sections within five pages with

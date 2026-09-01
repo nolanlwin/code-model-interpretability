@@ -5,7 +5,7 @@ requirements:
     requirement: "Title states the paper's finding"
     verified: false
     code:
-      file: interp_science_short/main.tex
+      file: paper/interp_science_short/main.tex
       symbols: [document]
     contract: |
       The rendered title leads with the empirical finding rather than a
@@ -18,7 +18,7 @@ requirements:
     requirement: "Title is supported by the reported results"
     verified: false
     code:
-      file: interp_science_short/main.tex
+      file: paper/interp_science_short/main.tex
       symbols: [document]
     contract: |
       Section 3 reports three cases with comparable probe scores near 0.98 that
@@ -31,7 +31,7 @@ requirements:
     requirement: "Preserved submission budget"
     verified: false
     code:
-      file: interp_science_short/main.tex
+      file: paper/interp_science_short/main.tex
       symbols: [document]
     contract: |
       The rebuilt manuscript keeps all main-text sections within five pages with

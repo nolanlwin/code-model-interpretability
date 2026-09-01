@@ -19,9 +19,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TEX = ROOT / "lp4fm_short" / "main.tex"
-TEX_LONG = ROOT / "lp4fm_paper" / "section_results.tex"
-APPENDIX = ROOT / "lp4fm_short" / "appendix_generated.tex"
+TEX = ROOT / "paper" / "lp4fm_short" / "main.tex"
+APPENDIX = ROOT / "paper" / "lp4fm_short" / "appendix_generated.tex"
 CAPPED = ROOT / "results" / "lp4fm" / "summary.csv"
 UNCAPPED = ROOT / "results" / "lp4fm" / "summary_renaming_uncapped.csv"
 NONCODE = ROOT / "results" / "lp4fm_qwen2515b" / "summary.csv"
@@ -47,10 +46,8 @@ def load(p, probe_only=False):
 
 
 def run() -> int:
-    # Both papers are checked: the short paper is the submission, the long
-    # one still carries the figures the appendix generator reads.
     main_text = TEX.read_text()
-    tex = main_text + "\n" + TEX_LONG.read_text()
+    tex = main_text
     appendix = APPENDIX.read_text()
     prose = re.sub(
         r"\\(?:label|ref)\{[^}]+\}",

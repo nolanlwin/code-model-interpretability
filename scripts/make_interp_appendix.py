@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "interp_science_short" / "appendix_generated.tex"
+OUT = ROOT / "paper" / "interp_science_short" / "appendix_generated.tex"
 MODEL = {
     "qwen2515b": "Qwen2.5-1.5B",
     "qwen25coder15b": "Qwen2.5-Coder-1.5B",
@@ -460,56 +460,56 @@ def iterator_patching_tables() -> str:
 def iterator_figures() -> str:
     figures = [
         (
-            "../results/iterator/probe_f1_layer_iterator.png",
+            "../../results/iterator/probe_f1_layer_iterator.png",
             "Iterator probe macro-F1 across layers on original names, with the "
             "name-only surface baseline marked.",
             "iterator-probe-curves",
         ),
         (
-            "../results/iterator/delta_f1_iterator.png",
+            "../../results/iterator/delta_f1_iterator.png",
             "Iterator perturbation deltas relative to baseline.",
             "iterator-renaming-deltas",
         ),
         (
-            "../results/iterator/cosine_vs_baseline_iterator.png",
+            "../../results/iterator/cosine_vs_baseline_iterator.png",
             "Iterator cosine similarity to the baseline direction.",
             "iterator-cosine",
         ),
         (
-            "../results/iterator/cross_language_iterator.png",
+            "../../results/iterator/cross_language_iterator.png",
             "Available iterator cross-language transfer results.",
             "iterator-crosslang",
         ),
         (
-            "../results/iterator/probe_vs_baselines_iterator.png",
+            "../../results/iterator/probe_vs_baselines_iterator.png",
             "Iterator probe versus matched model-free surface baselines on the "
             "same 427 Python programs.",
             "iterator-surface",
         ),
         (
-            "../results/iterator/probe_f1_perturbations_iterator.png",
+            "../../results/iterator/probe_f1_perturbations_iterator.png",
             "Iterator probe macro-F1 across layers and renaming strategies.",
             "iterator-perturbation-curves",
         ),
         (
-            "../results/iterator/summary_f1_ci_iterator.png",
+            "../../results/iterator/summary_f1_ci_iterator.png",
             "Iterator val-selected F1 by renaming strategy, with BCa 95\\% "
             "intervals.",
             "iterator-summary-ci",
         ),
         (
-            "../results/iterator/heatmap_iterator.png",
+            "../../results/iterator/heatmap_iterator.png",
             "Iterator probe F1 by strategy and layer.",
             "iterator-heatmap",
         ),
         (
-            "../results/iterator/patching_recovery_iterator.png",
+            "../../results/iterator/patching_recovery_iterator.png",
             "Exploratory iterator activation-patching recovery under Python "
             "name perturbations. The terminal layer is one by construction.",
             "iterator-patching-recovery",
         ),
         (
-            "../results/iterator/crosslang_patching_recovery_iterator.png",
+            "../../results/iterator/crosslang_patching_recovery_iterator.png",
             "Exploratory iterator activation-patching recovery under "
             "cross-language transfer. C-language rows with zero pairs are omitted.",
             "iterator-patching-crosslang",
@@ -721,7 +721,7 @@ def boolean_causal_figures() -> str:
         for mode in ("patch", "steer", "ablate"):
             blocks += [
                 "\\begin{figure}[htbp]\\centering",
-                f"\\includegraphics[width=\\linewidth]{{../results/boolean/causal/"
+                f"\\includegraphics[width=\\linewidth]{{../../results/boolean/causal/"
                 f"layer_profile_{language}_{mode}.png}}",
                 f"\\caption{{Boolean {mode} layer profiles for {LANG[language]} "
                 "across all three models and available controls.}",
@@ -748,7 +748,7 @@ def boolean_probe_figures() -> str:
         for i, language in enumerate(langs):
             blocks += [
                 "\\begin{subfigure}{0.49\\linewidth}\\centering",
-                f"\\includegraphics[width=\\linewidth]{{../results/boolean/"
+                f"\\includegraphics[width=\\linewidth]{{../../results/boolean/"
                 f"probe_vs_baselines_{language}_train_{model}.png}}",
                 f"\\caption{{{LANG[language]}}}",
                 f"\\label{{fig:boolean-probe-{language}-{model}}}",
@@ -764,7 +764,7 @@ def boolean_probe_figures() -> str:
     for i, language in enumerate(langs):
         blocks += [
             "\\begin{subfigure}{0.49\\linewidth}\\centering",
-            f"\\includegraphics[width=\\linewidth]{{../results/boolean/"
+            f"\\includegraphics[width=\\linewidth]{{../../results/boolean/"
             f"layer_curves_{language}_train.png}}",
             f"\\caption{{{LANG[language]}}}",
             f"\\label{{fig:boolean-layers-{language}}}",
@@ -776,7 +776,7 @@ def boolean_probe_figures() -> str:
         "\\label{fig:boolean-gallery-layers}",
         "\\end{figure}",
         "\\begin{figure}[htbp]\\centering",
-        "\\includegraphics[width=0.78\\linewidth]{../results/boolean/"
+        "\\includegraphics[width=0.78\\linewidth]{../../results/boolean/"
         "renaming_deltas_python_train.png}",
         "\\caption{Problem-paired boolean refit-performance deltas on Python. "
         "No corresponding committed renaming run exists for other languages.}",
@@ -789,108 +789,76 @@ def boolean_probe_figures() -> str:
 def role_figures() -> str:
     figures = [
         (
-            "../sree_paper_ready/sree's experiments/accum_probe_f1.png",
-            "Accumulator probe accuracy and macro-F1 across layers and all six "
-            "identifier conditions.",
-            "accumulator-probe-curves",
-        ),
-        (
-            "../sree_paper_ready/sree's experiments/accum_delta_f1.png",
-            "Accumulator macro-F1 changes relative to baseline naming.",
-            "accumulator-renaming-deltas",
-        ),
-        (
-            "../sree_paper_ready/sree's experiments/accum_cross_language.png",
-            "Accumulator in-domain and Python-trained cross-language results for "
-            "the available compiled languages.",
-            "accumulator-crosslang",
-        ),
-        (
-            "../sree_paper_ready/sree's experiments/index_probe_f1.png",
-            "Index/key probe accuracy and macro-F1 across layers.",
-            "index-probe-curves",
-        ),
-        (
-            "../sree_paper_ready/sree's experiments/index_renamed_comparison.png",
-            "Index/key probe comparison under original and misleading names.",
-            "index-renaming-comparison",
-        ),
-        (
-            "../sree_paper_ready/sree's experiments/index_cross_language.png",
-            "Index/key in-domain and Python-trained cross-language results.",
-            "index-crosslang",
-        ),
-        (
-            "../results/accumulator/cosine_similarity_accumulator.png",
+            "../../results/accumulator/cosine_similarity_accumulator.png",
             "Legacy accumulator probe-direction cosine similarity under the "
             "identifier interventions.",
             "accumulator-cosine",
         ),
         (
-            "../results/accumulator/best_layer_f1_accumulator.png",
+            "../../results/accumulator/best_layer_f1_accumulator.png",
             "Legacy accumulator best-layer macro-F1 by identifier condition.",
             "accumulator-best-layer",
         ),
         (
-            "../results/accumulator/heatmap_accumulator.png",
+            "../../results/accumulator/heatmap_accumulator.png",
             "Legacy accumulator transfer heatmap over the available languages.",
             "accumulator-heatmap",
         ),
         (
-            "../results/accumulator/multi_model_accumulator.png",
+            "../../results/accumulator/multi_model_accumulator.png",
             "Legacy accumulator multi-model comparison. This predates the "
             "shared modern protocol and is descriptive only.",
             "accumulator-multimodel",
         ),
         (
-            "../results/baseline/probe_cosine_similarity_index_key.png",
+            "../../results/baseline/probe_cosine_similarity_index_key.png",
             "Legacy index/key probe-direction cosine similarity across layers.",
             "index-cosine",
         ),
         (
-            "../results/baseline/100_probe_cosine_similarity_index_key.png",
+            "../../results/baseline/100_probe_cosine_similarity_index_key.png",
             "Index/key cosine-similarity sensitivity run using the smaller "
             "100-example configuration.",
             "index-cosine-100",
         ),
         (
-            "../results/baseline/100_cross_language_index_key.png",
+            "../../results/baseline/100_cross_language_index_key.png",
             "Index/key cross-language sensitivity run using the smaller "
             "100-example configuration.",
             "index-crosslang-100",
         ),
         (
-            "../results/renamed/probe_accuracy_renamed.png",
+            "../../results/renamed/probe_accuracy_renamed.png",
             "Legacy index/key layer curves under the full renamed condition.",
             "index-renamed-probe",
         ),
         (
-            "../results/renamed/cosine_similarity_renamed.png",
+            "../../results/renamed/cosine_similarity_renamed.png",
             "Legacy index/key cosine similarity under renaming.",
             "index-renamed-cosine",
         ),
         (
-            "../results/renamed/cross_language_renamed.png",
+            "../../results/renamed/cross_language_renamed.png",
             "Legacy index/key cross-language transfer under renaming.",
             "index-renamed-crosslang",
         ),
         (
-            "../results/class_struct/probe_f1_layer_class_struct.png",
+            "../../results/class_struct/probe_f1_layer_class_struct.png",
             "Class/structure probe macro-F1 across layers and perturbations.",
             "class-probe-curves",
         ),
         (
-            "../results/class_struct/delta_f1_class_struct.png",
+            "../../results/class_struct/delta_f1_class_struct.png",
             "Class/structure perturbation deltas relative to baseline.",
             "class-renaming-deltas",
         ),
         (
-            "../results/class_struct/cosine_vs_baseline_class_struct.png",
+            "../../results/class_struct/cosine_vs_baseline_class_struct.png",
             "Class/structure cosine similarity to the baseline direction.",
             "class-cosine",
         ),
         (
-            "../results/class_struct/cross_language_class_struct.png",
+            "../../results/class_struct/cross_language_class_struct.png",
             "Available class/structure cross-language transfer results.",
             "class-crosslang",
         ),

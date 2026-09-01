@@ -5,7 +5,7 @@ requirements:
     requirement: "Five-page main text"
     verified: false
     code:
-      file: interp_science_short/main.tex
+      file: paper/interp_science_short/main.tex
       symbols: [document]
     contract: |
       Compile and inspect the PDF to confirm that all main-text sections finish by page five.
@@ -15,7 +15,7 @@ requirements:
     requirement: "Scientific content preservation"
     verified: false
     code:
-      file: interp_science_short/main.tex
+      file: paper/interp_science_short/main.tex
       symbols: [document]
     contract: |
       Retain the control matrix, headline findings, calibrated uncertainty, and limitations while condensing the manuscript.

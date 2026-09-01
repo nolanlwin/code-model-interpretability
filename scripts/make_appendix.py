@@ -13,7 +13,7 @@ import pathlib
 import statistics as st
 
 R = pathlib.Path("results/lp4fm")
-OUT = pathlib.Path("lp4fm_short/appendix_generated.tex")
+OUT = pathlib.Path("paper/lp4fm_short/appendix_generated.tex")
 LANG = {"python": "Python", "javascript": "JavaScript", "php": "PHP",
         "cpp": "C++", "csharp": "C\\#", "java": "Java", "c": "C"}
 f = lambda r, k: float(r[k])
@@ -465,7 +465,7 @@ def heatmap_figures() -> str:
     for i, (stem, role) in enumerate(roles):
         out += [
             "\\begin{subfigure}{0.32\\linewidth}\\centering",
-            f"\\includegraphics[width=\\linewidth]{{../results/lp4fm/heatmap_{stem}.png}}",
+            f"\\includegraphics[width=\\linewidth]{{../../results/lp4fm/heatmap_{stem}.png}}",
             f"\\caption{{{role}}}",
             f"\\label{{fig:lp4fm-{stem}}}",
             "\\end{subfigure}" + ("\\hfill" if i < 2 else ""),

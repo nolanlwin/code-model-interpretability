@@ -32,7 +32,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 R = pathlib.Path("results/lp4fm")
-OUT = pathlib.Path("lp4fm_short/figures")
+OUT = pathlib.Path("paper/lp4fm_short/figures")
 f = lambda r, k: float(r[k])
 
 # Validated categorical slots 1-4, plus recessive ink for chrome.

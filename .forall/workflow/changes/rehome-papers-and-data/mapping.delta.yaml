@@ -1,0 +1,37 @@
+version: 1
+requirements:
+  - id: manuscripts-live-under-paper
+    capability: repo-layout
+    requirement: "Manuscripts live under paper/"
+    verified: false
+    code:
+      file: paper/interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      Both workshop manuscripts live under paper/, and the old root directories
+      are gone.
+    claimcheck: false
+
+  - id: dataset-files-live-under-data
+    capability: repo-layout
+    requirement: "Dataset files live under data/"
+    verified: false
+    code:
+      file: data/dataset/README.md
+      symbols: [document]
+    contract: |
+      data/ contains patching/ and dataset/, including the Hugging Face card
+      and stats.json. The old dataset/ and dataset_card/ roots are gone.
+    claimcheck: false
+
+  - id: callers-follow-the-new-paths
+    capability: repo-layout
+    requirement: "Callers follow the new paths"
+    verified: false
+    code:
+      file: README.md
+      symbols: [document]
+    contract: |
+      Tests, generators, pipeline defaults, ignore rules, and the README
+      address paper/ and data/dataset rather than the retired roots.
+    claimcheck: false

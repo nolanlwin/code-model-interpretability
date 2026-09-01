@@ -1,11 +1,11 @@
 """Push the built dataset to the Hugging Face Hub.
 
-Uploads both configs as JSONL plus the dataset card in dataset_card/README.md.
+Uploads both configs as JSONL plus the dataset card in data/dataset/README.md.
 Requires `huggingface-cli login` (or HF_TOKEN) beforehand.
 
 Usage:
   python -m pipeline.hf_upload --repo <user-or-org>/xlcost-variable-roles \
-      --dataset dataset [--private]
+      --dataset data/dataset [--private]
 """
 
 import argparse
@@ -17,8 +17,8 @@ from huggingface_hub import HfApi
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--repo", required=True)
-    ap.add_argument("--dataset", default="dataset")
-    ap.add_argument("--card", default="dataset_card/README.md")
+    ap.add_argument("--dataset", default="data/dataset")
+    ap.add_argument("--card", default="data/dataset/README.md")
     ap.add_argument("--private", action="store_true")
     args = ap.parse_args()
 

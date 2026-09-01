@@ -5,7 +5,7 @@ requirements:
     requirement: "Professional venue-specific prose"
     verified: false
     code:
-      file: lp4fm_short/main.tex
+      file: paper/lp4fm_short/main.tex
       symbols: [document]
     contract: |
       Scholarly review of clarity, precision, qualification, and venue alignment.
@@ -25,7 +25,7 @@ requirements:
     requirement: "Source-backed factual claims"
     verified: false
     code:
-      file: lp4fm_short/main.tex
+      file: paper/lp4fm_short/main.tex
       symbols: [document]
     contract: |
       Compare factual and empirical claims with primary sources and committed results.
@@ -45,7 +45,7 @@ requirements:
     requirement: "Honest uncertainty"
     verified: false
     code:
-      file: lp4fm_short/main.tex
+      file: paper/lp4fm_short/main.tex
       symbols: [document]
     contract: |
       Scope causal, mechanistic, novelty, and generalization claims to the evidence.
@@ -55,7 +55,7 @@ requirements:
     requirement: "LP4FM page limit"
     verified: false
     code:
-      file: lp4fm_short/main.tex
+      file: paper/lp4fm_short/main.tex
       symbols: [document]
     contract: |
       Compile and inspect the PDF main-text boundary at page four.

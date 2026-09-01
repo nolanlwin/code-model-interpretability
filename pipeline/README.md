@@ -14,12 +14,12 @@ and the per-role work on the team branches).
 ## 1. Build the dataset (CPU, minutes)
 
 ```bash
-python -m pipeline.build_dataset --out dataset            # full XLCoST
-python -m pipeline.build_dataset --out dataset --max-programs 500   # notebook-sized
+python -m pipeline.build_dataset --out data/dataset            # full XLCoST
+python -m pipeline.build_dataset --out data/dataset --max-programs 500   # notebook-sized
 ```
 
-Writes `dataset/python_perturbations/{train,valid,test}.jsonl`,
-`dataset/multilingual_baseline/{train,valid,test}.jsonl`, and `dataset/stats.json`.
+Writes `data/dataset/python_perturbations/{train,valid,test}.jsonl`,
+`data/dataset/multilingual_baseline/{train,valid,test}.jsonl`, and `data/dataset/stats.json`.
 Rows are model-agnostic (code + role-name sets); token labels are derived per
 tokenizer at experiment time.
 
@@ -55,7 +55,7 @@ huggingface-cli login   # once
 python -m pipeline.hf_upload --repo <user-or-org>/xlcost-variable-roles
 ```
 
-The dataset card (`dataset_card/README.md`) credits XLCoST (Zhu et al., 2022,
+The dataset card (`data/dataset/README.md`) credits XLCoST (Zhu et al., 2022,
 arXiv:2206.08474, Apache-2.0) and documents fields, labeling, and limitations.
 
 ## Module map

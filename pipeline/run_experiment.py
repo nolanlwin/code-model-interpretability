@@ -268,7 +268,7 @@ def main():
     ap.add_argument("mode", choices=["perturbation", "crosslang"])
     ap.add_argument("--role", required=True, choices=ROLES)
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B")
-    ap.add_argument("--dataset", default="dataset")
+    ap.add_argument("--dataset", default="data/dataset")
     ap.add_argument("--split", default="train")
     ap.add_argument("--max-programs", type=int, default=None)
     ap.add_argument(

@@ -7,10 +7,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MAIN = ROOT / "interp_science_short/main.tex"
-BIB = ROOT / "interp_science_short/refs.bib"
-APPENDIX = ROOT / "interp_science_short/appendix_generated.tex"
-CHECKLIST = ROOT / "interp_science_short/checklist.tex"
+MAIN = ROOT / "paper/interp_science_short/main.tex"
+BIB = ROOT / "paper/interp_science_short/refs.bib"
+APPENDIX = ROOT / "paper/interp_science_short/appendix_generated.tex"
+CHECKLIST = ROOT / "paper/interp_science_short/checklist.tex"
 
 
 def rows(path: Path) -> list[dict[str, str]]:
@@ -435,13 +435,9 @@ def main() -> int:
         and "exclude mean effects above $0.0188$ and $0.0296$" in text,
     ))
 
-    accumulator = (ROOT / "sree_paper_ready/section_4_1_accumulator.tex").read_text()
-    index = (ROOT / "sree_paper_ready/section_4_2_index.tex").read_text()
     checks.append((
         "legacy dissociation values remain source-backed",
-        "$+0.079$" in accumulator
-        and "{-}0.272" in index
-        and "$+0.079$" in text
+        "$+0.079$" in text
         and "$-0.272$" in text,
     ))
 

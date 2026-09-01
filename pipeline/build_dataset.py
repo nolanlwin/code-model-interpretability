@@ -9,7 +9,7 @@ Rows store code + role-name sets (model-agnostic); token-level labels are
 computed at experiment time for whichever tokenizer is probed.
 
 Usage:
-  python -m pipeline.build_dataset --out dataset [--max-programs 500] [--splits train test]
+  python -m pipeline.build_dataset --out data/dataset [--max-programs 500] [--splits train test]
 """
 
 import argparse
@@ -80,7 +80,7 @@ def build_multilingual_baseline(out_dir, splits, max_programs):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--out", default="dataset")
+    ap.add_argument("--out", default="data/dataset")
     ap.add_argument("--max-programs", type=int, default=None,
                     help="cap programs per language/split (default: all)")
     ap.add_argument("--splits", nargs="+", default=["train", "valid", "test"])

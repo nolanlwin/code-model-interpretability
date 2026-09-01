@@ -3,26 +3,26 @@
 Official repository for two NeurIPS 2026 workshop papers on what a linear probe score can and cannot claim about code models.
 
 <p align="center">
-  <a href="interp_science_short/main.pdf"><b>Same Score, Different Evidence</b></a><br>
+  <a href="paper/interp_science_short/main.pdf"><b>Same Score, Different Evidence</b></a><br>
   Decodability, Surface Sufficiency, and Causal Relevance in Code Models<br>
   <em>Interpretability as a Science</em>
 </p>
 
 <p align="center">
-  <a href="lp4fm_short/main.pdf"><b>Cross-Language Probe Invariance Depends on Readout Choice</b></a><br>
+  <a href="paper/lp4fm_short/main.pdf"><b>Cross-Language Probe Invariance Depends on Readout Choice</b></a><br>
   <em>Linguistic Principles for Foundation Models (LP4FM)</em>
 </p>
 
 <p align="center">
-  <a href="interp_science_short/main.pdf">PDF (Interp as a Science)</a> ·
-  <a href="lp4fm_short/main.pdf">PDF (LP4FM)</a> ·
+  <a href="paper/interp_science_short/main.pdf">PDF (Interp as a Science)</a> ·
+  <a href="paper/lp4fm_short/main.pdf">PDF (LP4FM)</a> ·
   <a href="https://huggingface.co/datasets/dhyuti-n/xlcost-variable-roles">Dataset</a> ·
   <a href="https://colab.research.google.com/github/nolanlwin/code-model-interpretability/blob/main/notebooks/colab_results.ipynb">Colab</a> ·
   <a href="LICENSE">License</a>
 </p>
 
 <p align="center">
-  <img src="interp_science_short/figures/masked_slope.png" width="720" alt="Cross-lingual macro-F1 by readout. Span-pooled probes look language-invariant. A name-masked surface classifier and a context-pooled probe do not.">
+  <img src="paper/interp_science_short/figures/masked_slope.png" width="720" alt="Cross-lingual macro-F1 by readout. Span-pooled probes look language-invariant. A name-masked surface classifier and a context-pooled probe do not.">
 </p>
 <p align="center">
   <em>The same transfer task supports opposite conclusions once the readout stops reading the identifier name. Figure from the LP4FM paper.</em>
@@ -34,7 +34,7 @@ A high probe score establishes decodability under a particular readout. It does 
 
 ### Same Score, Different Evidence
 
-[Manuscript (PDF)](interp_science_short/main.pdf) · Interpretability as a Science, NeurIPS 2026
+[Manuscript (PDF)](paper/interp_science_short/main.pdf) · Interpretability as a Science, NeurIPS 2026
 
 Three cases report probe scores near 0.98 and license three different conclusions.
 
@@ -48,7 +48,7 @@ The study covers three models and five identifier targets, collectively across a
 
 ### Cross-Language Probe Invariance Depends on Readout Choice
 
-[Manuscript (PDF)](lp4fm_short/main.pdf) · LP4FM, NeurIPS 2026
+[Manuscript (PDF)](paper/lp4fm_short/main.pdf) · LP4FM, NeurIPS 2026
 
 A span-pooled residual probe looks language-invariant on parallel Python, JavaScript, and PHP solutions. A name-masked character *n*-gram classifier does not. Excluding the occurrence from the probe readout reverses the trained boundary relative to the surface classifier, and untrained networks show a comparable or steeper trained boundary depending on the model. The original invariance is not identified independently of the readout.
 
@@ -76,17 +76,17 @@ multi   = load_dataset("dhyuti-n/xlcost-variable-roles", "multilingual_baseline"
 ```
 
 ```bash
-hf download dhyuti-n/xlcost-variable-roles --repo-type dataset --local-dir dataset
+hf download dhyuti-n/xlcost-variable-roles --repo-type dataset --local-dir data/dataset
 ```
 
 **Rebuild from XLCoST.** Unzip `XLCoST_data.zip` into the repository root, or set `XLCOST_ROOT`, then:
 
 ```bash
-python -m pipeline.build_dataset --out dataset
-python -m pipeline.build_dataset --out dataset --max-programs 500
+python -m pipeline.build_dataset --out data/dataset
+python -m pipeline.build_dataset --out data/dataset --max-programs 500
 ```
 
-Labels come from AST and regular-expression extractors, never from the identifier name. The five roles are `index_key`, `accumulator`, `iterator`, `boolean`, and `class_struct`. Field definitions and XLCoST credits are in [`dataset_card/README.md`](dataset_card/README.md).
+Labels come from AST and regular-expression extractors, never from the identifier name. The five roles are `index_key`, `accumulator`, `iterator`, `boolean`, and `class_struct`. Field definitions and XLCoST credits are in [`data/dataset/README.md`](data/dataset/README.md). Patching inputs live in `data/patching/`.
 
 ## Experiments
 

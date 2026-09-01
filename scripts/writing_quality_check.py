@@ -5,14 +5,14 @@ Implements the checkable parts of
 high-frequency terms, em-dash and semicolon limits, throat-clearing openers,
 binary-contrast repetition, and sentence-length variation.
 
-The first run over lp4fm_short/main.tex found 20 em dashes against a limit of 3,
+The first run over paper/lp4fm_short/main.tex found 20 em dashes against a limit of 3,
 14 semicolons against 4, and 11 repetitions of one contrast construction. None
 of that is visible while writing; it needs counting. Run it after editing prose:
 
     uv run python scripts/writing_quality_check.py
 """
 import re, pathlib, statistics as st
-tex = pathlib.Path("lp4fm_short/main.tex").read_text()
+tex = pathlib.Path("paper/lp4fm_short/main.tex").read_text()
 # strip preamble, comments, and math so prose counts are honest
 body = tex.split("\\begin{document}",1)[1].split("\\appendix")[0]
 body = re.sub(r"(?m)^%.*$", "", body)
