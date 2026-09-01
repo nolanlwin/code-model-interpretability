@@ -1,0 +1,4 @@
+{
+  "copied_from": "results/modal/results/Qwen2.5-1.5B/iterator/surface_baseline",
+  "note": "Model-free occurrence baseline on the same 427 Python programs as the iterator probes. Not refit per model."
+}

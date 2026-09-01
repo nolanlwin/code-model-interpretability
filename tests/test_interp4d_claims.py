@@ -96,7 +96,8 @@ def main() -> int:
                 "tab:boolean-full", "tab:boolean-renaming-full",
                 "tab:boolean-baselines-full",
                 "tab:class-full", "tab:class-crosslang", "tab:class-layerwise",
-                "tab:iterator-full", "tab:iterator-crosslang",
+                "tab:iterator-full", "tab:iterator-baselines",
+                "tab:iterator-crosslang",
                 "tab:iterator-layerwise", "tab:causal-full",
                 "tab:class-probe-link", "tab:class-gate-audit",
                 "tab:class-patching-audit", "app:coverage-holes",
@@ -105,6 +106,8 @@ def main() -> int:
         (
             "Interp appendix includes all iterator patching exports",
             all(fragment in appendix for fragment in (
+                "tab:iterator-patching-qwen2.5-1.5B-within",
+                "tab:iterator-patching-qwen2.5-1.5B-cross",
                 "tab:iterator-patching-qwen_1.5B-within",
                 "tab:iterator-patching-qwen_1.5B-cross",
                 "tab:iterator-patching-starcoder2-within",
@@ -247,42 +250,79 @@ def main() -> int:
         ),
     ]
 
-    iterator_configs = [
-        (
-            ROOT / "results/iterator/Qwen2.5-Coder-1.5B Results",
-            "qwen_1.5B",
-            "0.988",
-            "+0.012",
-            "0.936",
-            "0.983",
-        ),
-        (
-            ROOT / "results/iterator/Starcoder2-7B Results",
-            "starcoder2",
-            "0.990",
-            "+0.009",
-            "0.906",
-            "0.964",
-        ),
-    ]
-    for root, stem, expected_f1, expected_delta, expected_min, expected_max in iterator_configs:
-        summary = rows(root / "perturbation" / f"{stem}_summary.csv")
-        baseline = next(row for row in summary if row["strategy"] == "baseline")
-        misleading = next(
-            row for row in summary if row["strategy"] == "misleading_iterator"
+    import json as _json
+    iterator_f1: list[float] = []
+    iterator_selectivity: list[float] = []
+    iterator_misleading: list[float] = []
+    iterator_transfer: list[list[float]] = []
+    for folder in ("Qwen2.5-1.5B", "Qwen2.5-Coder-1.5B", "starcoder2-7b"):
+        data = rows(
+            ROOT / "results/modal/results" / folder
+            / "iterator/perturbation/summary.csv"
         )
-        transfer = rows(root / "crosslang" / f"{stem}_crosslang.csv")
-        scores = [
+        baseline = next(row for row in data if row["strategy"] == "baseline")
+        misleading = next(
+            row for row in data if row["strategy"] == "misleading_iterator"
+        )
+        iterator_f1.append(float(baseline["test_f1_mean"]))
+        iterator_selectivity.append(float(baseline["selectivity"]))
+        iterator_misleading.append(float(misleading["delta_f1_vs_baseline"]))
+        transfer = rows(
+            ROOT / "results/modal/results" / folder
+            / "iterator/crosslang/crosslang.csv"
+        )
+        iterator_transfer.append([
             float(row["transfer_f1_at_py_best"])
             for row in transfer if row["transfer_f1_at_py_best"]
-        ]
-        checks.append((
-            f"iterator {stem} claims trace to CSV",
-            f"{float(baseline['test_f1']):.3f}" == expected_f1
-            and f"{float(misleading['delta_f1_vs_baseline']):+.3f}" == expected_delta
-            and f"{min(scores):.3f}" == expected_min
-            and f"{max(scores):.3f}" == expected_max,
-        ))
+        ])
+    name_only = float(_json.loads(
+        (
+            ROOT / "results/modal/results/Qwen2.5-1.5B/iterator"
+            / "surface_baseline/baselines.json"
+        ).read_text(encoding="utf-8")
+    )["aggregate"]["name_only"]["macro_f1"])
+    checks += [
+        (
+            "iterator probe values are 0.976, 0.978, and 0.987",
+            [f"{value:.3f}" for value in iterator_f1]
+            == ["0.976", "0.978", "0.987"]
+            and "$0.976$, $0.978$, and $0.987$" in text,
+        ),
+        (
+            "iterator selectivity range is 0.526-0.552",
+            f"{min(iterator_selectivity):.3f}" == "0.526"
+            and f"{max(iterator_selectivity):.3f}" == "0.552"
+            and "$+0.526$ to $+0.552$" in text,
+        ),
+        (
+            "iterator misleading deltas round to +0.023/+0.020/+0.012",
+            [f"{value:+.3f}" for value in iterator_misleading]
+            == ["+0.023", "+0.020", "+0.012"],
+        ),
+        (
+            "iterator name-only surface is 0.918",
+            f"{name_only:.3f}" == "0.918" and "$0.918$" in text,
+        ),
+        (
+            "iterator transfer ranges match the paper",
+            [f"{min(scores):.3f}" for scores in iterator_transfer]
+            == ["0.934", "0.898", "0.887"]
+            and [f"{max(scores):.3f}" for scores in iterator_transfer]
+            == ["0.981", "0.923", "0.938"]
+            and "$0.934$--$0.981$" in text,
+        ),
+        (
+            "iterator coverage hole is the unpaired surface gap",
+            "probe-minus-surface gap is not a paired clustered interval"
+            in appendix
+            and "not Qwen2.5-1.5B" not in appendix,
+        ),
+        (
+            "default appendix keeps the iterator figure family",
+            "\\label{fig:interp-iterator-probe-curves}" in appendix
+            and "\\label{fig:interp-iterator-patching-recovery}" in appendix,
+        ),
+    ]
 
     causal_path = (
         ROOT / "results/modal/patching/class-struct-python-v1-20260819"

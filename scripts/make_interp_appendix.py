@@ -235,41 +235,68 @@ def class_struct_table() -> str:
 
 
 def iterator_table() -> str:
-    configs = [
-        (
-            "Qwen2.5-Coder-1.5B",
-            ROOT / "results/iterator/Qwen2.5-Coder-1.5B Results",
-            "qwen_1.5B",
-        ),
-        (
-            "StarCoder2-7B",
-            ROOT / "results/iterator/Starcoder2-7B Results",
-            "starcoder2",
-        ),
+    model_paths = [
+        ("Qwen2.5-1.5B", "Qwen2.5-1.5B"),
+        ("Qwen2.5-Coder-1.5B", "Qwen2.5-Coder-1.5B"),
+        ("StarCoder2-7B", "starcoder2-7b"),
     ]
     lines = [
         "\\begin{table}[htbp]\\centering\\small",
-        "\\caption{Complete iterator perturbation results. Each condition refits a "
-        "probe and selects its own best layer. These single-run summaries do not carry the "
-        "five-seed intervals used for the class/structure role.}",
+        "\\caption{Complete iterator perturbation results under the shared "
+        "five-seed protocol. Each condition refits a probe and selects its own layer "
+        "on validation data, so cross-condition deltas do not test a fixed direction.}",
         "\\label{tab:iterator-full}",
         "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
-        "\\begin{tabular}{llrrrr}", "\\toprule",
-        "model & strategy & best layer & accuracy & F1 & $\\Delta$ \\\\",
+        "\\begin{tabular}{llrrrrrr}", "\\toprule",
+        "model & strategy & layer & F1 & 95\\% CI & control F1 & selectivity & "
+        "$\\Delta$ \\\\",
         "\\midrule",
     ]
-    for label, root, stem in configs:
-        summary = read_csv(root / "perturbation" / f"{stem}_summary.csv")
+    for label, folder in model_paths:
+        summary = read_csv(
+            ROOT / "results/modal/results" / folder
+            / "iterator/perturbation/summary.csv"
+        )
         for row in summary:
             delta = "N/A" if not row["delta_f1_vs_baseline"] else (
                 f"{float(row['delta_f1_vs_baseline']):+.3f}"
             )
             lines.append(
-                f"{label} & {esc(row['strategy'])} & L{int(row['best_layer'])} & "
-                f"{float(row['test_acc']):.3f} & {float(row['test_f1']):.3f} & "
-                f"{delta} \\\\"
+                f"{label} & {esc(row['strategy'])} & "
+                f"L{int(row['selected_layer'])} & "
+                f"{float(row['test_f1_mean']):.3f} & "
+                f"[{float(row['ci_low']):.3f}, {float(row['ci_high']):.3f}] & "
+                f"{float(row['control_f1']):.3f} & "
+                f"{float(row['selectivity']):+.3f} & {delta} \\\\"
             )
     lines += ["\\bottomrule", "\\end{tabular}}", "\\end{table}", ""]
+
+    blob = json.loads(
+        (
+            ROOT / "results/modal/results/Qwen2.5-1.5B/iterator"
+            / "surface_baseline/baselines.json"
+        ).read_text(encoding="utf-8")
+    )
+    surface_order = (
+        ("majority", "majority"),
+        ("covariates_only", "covariates"),
+        ("line_masked", "masked line"),
+        ("statement_masked", "masked statement"),
+        ("window_masked", "masked window"),
+        ("name_only", "name only"),
+    )
+    lines += [
+        "\\begin{table}[htbp]\\centering\\small",
+        "\\caption{Model-free iterator surface baselines on the same $427$ Python "
+        "programs. Scores are occurrence-level macro-F1 and are not a paired "
+        "probe-minus-surface interval.}",
+        "\\label{tab:iterator-baselines}",
+        "\\begin{tabular}{lr}", "\\toprule",
+        "comparator & macro-F1 \\\\", "\\midrule",
+    ]
+    for key, name in surface_order:
+        lines.append(f"{name} & {float(blob['aggregate'][key]['macro_f1']):.3f} \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
 
     lines += [
         "\\begin{table}[htbp]\\centering\\small",
@@ -281,8 +308,11 @@ def iterator_table() -> str:
         "model & language & programs & in-domain layer & in-domain F1 & "
         "transfer accuracy & transfer F1 \\\\", "\\midrule",
     ]
-    for label, root, stem in configs:
-        transfer = read_csv(root / "crosslang" / f"{stem}_crosslang.csv")
+    for label, folder in model_paths:
+        transfer = read_csv(
+            ROOT / "results/modal/results" / folder
+            / "iterator/crosslang/crosslang.csv"
+        )
         for row in transfer:
             transfer_acc = "N/A" if not row["transfer_acc_at_py_best"] else (
                 f"{float(row['transfer_acc_at_py_best']):.3f}"
@@ -292,8 +322,8 @@ def iterator_table() -> str:
             )
             lines.append(
                 f"{label} & {LANG_DISPLAY[row['language']]} & "
-                f"{int(row['programs'])} & L{int(row['indomain_best_layer'])} & "
-                f"{float(row['indomain_test_f1']):.3f} & "
+                f"{int(row['programs'])} & L{int(row['indomain_selected_layer'])} & "
+                f"{float(row['indomain_test_f1_mean']):.3f} & "
                 f"{transfer_acc} & {transfer_f1} \\\\"
             )
     lines += ["\\bottomrule", "\\end{tabular}}", "\\end{table}", ""]
@@ -309,10 +339,14 @@ def iterator_table() -> str:
         "model & strategy & minimum F1 & maximum F1 (layer) & "
         "maximum cosine (layer) \\\\", "\\midrule",
     ]
-    for label, root, stem in configs:
-        per_layer = read_csv(root / "perturbation" / f"{stem}_per_layer.csv")
+    for label, folder in model_paths:
+        per_layer = read_csv(
+            ROOT / "results/modal/results" / folder
+            / "iterator/perturbation/per_layer.csv"
+        )
         cosine = read_csv(
-            root / "perturbation" / f"{stem}_cosine_vs_baseline.csv"
+            ROOT / "results/modal/results" / folder
+            / "iterator/perturbation/cosine_vs_baseline.csv"
         )
         cosine_by_strategy = {row["strategy"]: row for row in cosine}
         for strategy in sorted({row["strategy"] for row in per_layer}):
@@ -340,6 +374,11 @@ def iterator_table() -> str:
 
 def iterator_patching_tables() -> str:
     configs = [
+        (
+            "Qwen2.5-1.5B",
+            ROOT / "results/iterator/Qwen2.5-1.5B Results",
+            "qwen2.5-1.5B",
+        ),
         (
             "Qwen2.5-Coder-1.5B",
             ROOT / "results/iterator/Qwen2.5-Coder-1.5B Results",
@@ -404,6 +443,76 @@ def iterator_patching_tables() -> str:
             lines += ["\\bottomrule", "\\end{tabular}}", "\\end{table}"]
             blocks.append("\n".join(lines))
     return "\n\n".join(blocks)
+
+
+def iterator_figures() -> str:
+    figures = [
+        (
+            "../results/iterator/probe_f1_layer_iterator.png",
+            "Iterator probe macro-F1 across layers on original names, with the "
+            "name-only surface baseline marked.",
+            "iterator-probe-curves",
+        ),
+        (
+            "../results/iterator/delta_f1_iterator.png",
+            "Iterator perturbation deltas relative to baseline.",
+            "iterator-renaming-deltas",
+        ),
+        (
+            "../results/iterator/cosine_vs_baseline_iterator.png",
+            "Iterator cosine similarity to the baseline direction.",
+            "iterator-cosine",
+        ),
+        (
+            "../results/iterator/cross_language_iterator.png",
+            "Available iterator cross-language transfer results.",
+            "iterator-crosslang",
+        ),
+        (
+            "../results/iterator/probe_vs_baselines_iterator.png",
+            "Iterator probe versus matched model-free surface baselines on the "
+            "same 427 Python programs.",
+            "iterator-surface",
+        ),
+        (
+            "../results/iterator/probe_f1_perturbations_iterator.png",
+            "Iterator probe macro-F1 across layers and renaming strategies.",
+            "iterator-perturbation-curves",
+        ),
+        (
+            "../results/iterator/summary_f1_ci_iterator.png",
+            "Iterator val-selected F1 by renaming strategy, with BCa 95\\% "
+            "intervals.",
+            "iterator-summary-ci",
+        ),
+        (
+            "../results/iterator/heatmap_iterator.png",
+            "Iterator probe F1 by strategy and layer.",
+            "iterator-heatmap",
+        ),
+        (
+            "../results/iterator/patching_recovery_iterator.png",
+            "Exploratory iterator activation-patching recovery under Python "
+            "name perturbations. The terminal layer is one by construction.",
+            "iterator-patching-recovery",
+        ),
+        (
+            "../results/iterator/crosslang_patching_recovery_iterator.png",
+            "Exploratory iterator activation-patching recovery under "
+            "cross-language transfer. C-language rows with zero pairs are omitted.",
+            "iterator-patching-crosslang",
+        ),
+    ]
+    blocks = []
+    for path, caption, label in figures:
+        blocks += [
+            "\\begin{figure}[htbp]\\centering",
+            f"\\includegraphics[width=0.78\\linewidth]{{\\detokenize{{{path}}}}}",
+            f"\\caption{{{caption}}}",
+            f"\\label{{fig:interp-{label}}}",
+            "\\end{figure}",
+        ]
+    return "\n".join(blocks)
 
 
 def class_causal_table() -> str:
@@ -798,8 +907,8 @@ def coverage_holes() -> str:
         "\\begin{itemize}",
         "\\item Accumulator and index/key results use legacy exports. No committed "
         "problem-grouped, five-seed CSV reproduces those roles under the modern protocol.",
-        "\\item Iterator results are available for Qwen2.5-Coder-1.5B and "
-        "StarCoder2-7B, but not Qwen2.5-1.5B.",
+        "\\item Iterator has a model-free surface comparator. The "
+        "probe-minus-surface gap is not a paired clustered interval.",
         "\\item Class/structure transfer exports include Python, C++, JavaScript, "
         "and C, but not Java, C\\#, or PHP.",
         "\\item Boolean probe exports include Python, Java, JavaScript, and PHP. "
@@ -831,6 +940,7 @@ sections = [
     boolean_probe_figures(),
     class_struct_table(),
     iterator_table(),
+    iterator_figures(),
     "\\FloatBarrier\n\\Needspace{16\\baselineskip}\n\\section{Causal intervention details}\n\\label{app:causal}",
     class_causal_table(),
     iterator_patching_tables(),
