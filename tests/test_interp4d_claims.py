@@ -91,16 +91,41 @@ def main() -> int:
         ),
         (
             "boolean cohort transition and retained evidence are explicit",
-            "$1{,}301$-problem source" in text
+            "$1{,}301$ source problems" in text
             and "$1{,}410$ unique" in text
-            and "$915$ problem clusters" in text
+            and "$2{,}067$ seed-level predictions" in text
             and "aggregate paired summary" in text,
+        ),
+        (
+            "paired cohort reduction is attributed to seed pooling, not overlap",
+            "Pooling the five seed test folds" in text
+            and "predictor overlap is complete on every fold" in text
+            and "Requiring complete predictor overlap" not in text,
         ),
         (
             "causal scope is site-state rather than probe-direction use",
             "Full-residual patching tests site-state relevance" in text
             and "not use of the decoded probe" in text
-            and "gate failure under an insensitive" in text,
+            and "bounded negative at the tested site" in text,
+        ),
+        (
+            "causal null is not excused by readout scale",
+            "Recovery divides by the matched" in text
+            and "does not explain a ratio" in text
+            and "insensitive readout" not in text
+            and "insensitive\nreadout" not in text,
+        ),
+        (
+            "boolean bound reports comparator and language sensitivity",
+            "masked enclosing statement at $0.970$" in text
+            and "$+0.010$ to $+0.017$" in text
+            and "$-0.004$ to $+0.021$" in text
+            and "degenerate outside Python" in text,
+        ),
+        (
+            "patching row count spans both schedules",
+            "rows across its primary and behavior" in text
+            and "primary rows" not in text,
         ),
         (
             "checklist does not overclaim reproducibility",
@@ -244,7 +269,7 @@ def main() -> int:
          {r["n_clusters"] for r in paired} == {"915"} and "$915$" in text),
         ("bounded-negative language present, unresolved language gone",
          "bounded negative result" in text
-         and "Not supported." in text
+         and "Not supported on Python." in text
          and "excluding probe advantages above" in text
          and "Not resolved. Retain paired" not in text),
     ]

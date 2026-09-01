@@ -42,10 +42,11 @@ statement, outcome, and falsifier. Two matched cases motivate it. On Python,
 boolean occurrence type is decodable at $0.981$--$0.988$ macro-F1, while a
 masked source-line classifier reaches $0.983$ without a language model.
 Paired problem-clustered deltas are $-0.003$ to $+0.002$, with intervals
-excluding probe advantages above $0.014$--$0.017$. A full-residual patch at a
+excluding probe advantages above $0.014$--$0.017$, although the sign of that
+difference varies by language and by comparator. A full-residual patch at a
 class or structure query-name site also fails its specified bidirectional gate
-in Qwen2.5-1.5B. Both prompt classes prefer \texttt{True}, so this is a gate
-failure under the tested readout rather than evidence of global non-use. A
+in Qwen2.5-1.5B, recovering $0.009$ to $0.020$ of the matched behavioral gap.
+This bounds the effect at that site rather than showing global non-use. A
 third case exposes a failed control. Role-conditioned iterator renaming yields
 $0.998$--$0.999$ F1 at embedding layer zero, consistent with a lexical code
 introduced by the intervention rather than semantic robustness. Decodability,
@@ -80,7 +81,13 @@ models~\citep{karmakar2021what,troshin2022probing,karmakar2024inspect}. We do
 not propose another probe, control, or task taxonomy. Existing work catalogs
 probing limitations and shows that activation-patching conclusions depend on
 metric and intervention choices~\citep{belinkov2022probing,
-zhang2023patching,heimersheim2024patching}. Our distinct contribution is an
+zhang2023patching,heimersheim2024patching}. Subspace interventions can also
+create an illusion of localization~\citep{makelov2023illusion}, which motivates
+calls for falsifiable interpretability designs~\citep{leavitt2020falsifiable}
+and for naming the causal mediator a claim is about~\citep{mueller2024mediator}.
+Reporting standards in other empirical sciences answer a related need by binding
+a published claim to its estimand, comparator, and uncertainty
+statement~\citep{schulz2010consort}. Our distinct contribution is an
 outcome-aware reporting unit that binds each claim to its estimand, comparator,
 matching unit, uncertainty, observed outcome, and falsifying next test. Unlike
 a control checklist, the record preserves failed and confounded comparisons
@@ -99,7 +106,7 @@ findings from leads that still require confirmation.
 
 The central result is that high probe F1 produces different evidential
 outcomes. The paired boolean comparison supports a bounded negative. The class
-or structure intervention fails at one site under an insensitive readout.
+or structure intervention fails its gate at one site and layer.
 Role-conditioned iterator renaming produces near-perfect embedding-layer
 scores, revealing that a nominal control can introduce a new shortcut. Legacy
 accumulator and index effects remain motivating observations. A single
@@ -202,7 +209,7 @@ The intervention encodes a lexical shortcut \\
 Boolean & 0.981--0.988 & paired $\Delta \in [-0.003,+0.002]$ &
 Probe advantage over masked local source excluded above $0.017$ \\
 Class/site & 0.979--0.982 & patch recovery 0.009, 0.020 &
-Specified site-state gate fails under the tested readout \\
+Bounded site-state effect at the tested site and layer \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -225,7 +232,7 @@ $+0.012$, but all three probes select embedding layer zero and reach
 $0.998$--$0.999$. The name pools encode target membership, so this result is
 compatible with relearning an inverted lexical rule. It does not support
 semantic robustness. Single-character and numeric names reduce F1 by
-$0.046$--$0.073$. A name-only classifier on the same $427$ Python programs
+$0.046$--$0.072$. A name-only classifier on the same $427$ Python programs
 reaches $0.918$, leaving an unpaired gap of $0.058$--$0.069$.
 Python-trained transfer ranges are $0.934$--$0.981$, $0.898$--$0.923$, and
 $0.887$--$0.938$. Because target evaluation is not separated by one global
@@ -246,21 +253,27 @@ The probe-minus-surface differences are $-0.001$, $-0.002$, and $+0.005$.
 
 The original exports retained no aligned predictions, so we reran both
 predictors on the frozen sample and used aligned occurrence identifiers.
-Requiring complete predictor overlap reduces the $1{,}301$-problem source
-sample to $2{,}067$ pooled seed-level predictions for $1{,}410$ unique
-occurrences in $915$ problem clusters. The committed artifact retains the
+Pooling the five seed test folds gives $2{,}067$ seed-level predictions for
+$1{,}410$ unique occurrences in $915$ of the $1{,}301$ source problems, and
+predictor overlap is complete on every fold. The committed artifact retains the
 aggregate paired summary, not those prediction-level inputs. The
 probe-minus-surface estimates and problem-clustered $95\%$ intervals are
 $-0.002$ $[-0.017, 0.014]$, $-0.003$ $[-0.037, 0.014]$, and $+0.002$
 $[-0.016, 0.017]$. Every interval covers zero and excludes a probe advantage
 larger than $0.014$--$0.017$ macro-F1. The masked-line comparator was the best
 of the reported surface feature families on this frozen sample, so the bound
-is conditional on that non-nested selection. Five refit renaming conditions
+is conditional on that non-nested selection. That selection matters. Against
+the next-best Python comparator, the masked enclosing statement at $0.970$,
+the differences are $+0.010$ to $+0.017$. Across the four committed languages,
+probe minus best baseline ranges from $-0.004$ to $+0.021$, the largest value
+being PHP with StarCoder2-7B, and line masking is degenerate outside Python
+because detokenized XLCoST programs there occupy a single line.
+Five refit renaming conditions
 change F1 by at most $0.013$, but the role-conditioned and non-bijective
 strategies prevent a robustness claim. The supported conclusion is narrower.
 On Python, the probe does not outperform the selected masked local-syntax
-comparator by more than $0.014$--$0.017$. Other language runs establish
-decodability only.
+comparator by more than $0.014$--$0.017$. The other languages have unpaired
+differences only, so they carry no bound.
 
 \subsection{A site-state intervention fails its specified gate}
 
@@ -300,9 +313,10 @@ Denoising produces a mean effect of $0.0087$ with a $95\%$ interval
 $[-0.0007,0.0188]$ and recovery $0.0089$. Noising produces $0.0199$
 $[0.0109,0.0296]$ with recovery $0.0204$. The full-residual intervention fails
 the specified gate. The protocol and results entered the repository together,
-so we do not claim auditable preregistration. Because both prompts prefer
-\texttt{True}, we interpret this as a gate failure under an insensitive
-readout, not evidence that class information is absent or unused. The
+so we do not claim auditable preregistration. Recovery divides by the matched
+gap, so a compressed decision range does not explain a ratio of $0.009$ to
+$0.020$. We read this as a bounded negative at the tested site, layer, and
+span rather than evidence that class information is absent or unused. The
 intervals exclude mean effects above $0.0188$ and $0.0296$ logit-difference
 units in the tested directions. Decodability and selectivity therefore do not
 establish a substantive site-state contribution under this readout.
@@ -341,11 +355,11 @@ Control is confounded. Use bijective role-agnostic renames \\
 Boolean &
 Probe minus masked line is $-0.003$ to $+0.002$ &
 $915$ clusters with paired $95\%$ intervals &
-Not supported. No selected-baseline advantage above $0.017$. Nest selection \\
+Not supported on Python. No selected-baseline advantage above $0.017$. Nest selection and add languages \\
 Class/site &
 Bidirectional residual-patch gate fails &
 $48$ template clusters with $95\%$ intervals &
-No substantive effect at one site and readout. Calibrate the readout \\
+Bounded effect at one site and layer. Test other spans and layers \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -362,7 +376,7 @@ the design can exclude.
 High probe accuracy is not a common unit of interpretability evidence. In
 these cases, matched surface prediction supports a bounded negative,
 role-conditioned renaming exposes a shortcut, and a specified patching gate
-fails under an insensitive readout. Publishing each claim as an outcome-aware
+fails at one site and layer. Publishing each claim as an outcome-aware
 record lets null and confounded outcomes constrain conclusions rather than
 disappear behind a control checkmark.
 
@@ -376,9 +390,9 @@ all-same renames can encode or alter labels. Legacy accumulator-index results
 lack problem groups and scope-aware renaming. Iterator has no paired
 probe-minus-surface interval, and its target evaluation does not enforce one
 global cross-language problem partition. The boolean bound is conditional on a
-surface comparator selected on the frozen sample, and its prediction-level
-paired inputs are not retained. Full-residual patching covers one model,
-layer, site, and insensitive readout. The gate and stopping rule were not
+surface comparator selected on the frozen sample, its sign varies across
+languages, and its prediction-level paired inputs are not retained.
+Full-residual patching covers one model, layer, site, and readout. The gate and stopping rule were not
 registered in advance. These cases motivate the reporting matrix rather than
 validate it.
 
@@ -400,7 +414,8 @@ structure, and patching artifacts with
 \texttt{uv run python tests/test\_interp4d\_claims.py}. Modern probes use
 problem hashes, validation-selected layers, and five seeds where stated. The
 class or structure intervention records model and dataset revisions, hashes,
-all $4{,}032$ primary rows, and clustered intervals. The paired boolean CSV is
+all $4{,}032$ rows across its primary and behavior schedules, and clustered
+intervals. The paired boolean CSV is
 aggregate evidence because its aligned prediction inputs were not retained.
 The regression test checks manuscript-to-artifact consistency rather than
 reproducing activation extraction or probe fitting.

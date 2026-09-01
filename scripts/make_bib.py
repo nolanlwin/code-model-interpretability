@@ -12,6 +12,8 @@ DOIS = {
  "ravichander2021probing": "10.18653/v1/2021.eacl-main.295",
  "elazar2021amnesic":    "10.1162/tacl_a_00359",
  "meng2022locating":     "10.52202/068431-1262",
+ # Reporting-standard lineage for the outcome-aware record.
+ "schulz2010consort":    "10.1136/bmj.c332",
  # Cross-lingual probing of code models, and the two results this paper's
  # framing has to reconcile with rather than claim as new.
  "utpala2024language":  "10.18653/v1/2024.naacl-long.38",
@@ -19,6 +21,11 @@ DOIS = {
  "kargaran2025programming": "10.18653/v1/2025.findings-acl.1379",
 }
 ARXIV = {
+ # Falsifiability, mediator taxonomy, and the patching-illusion result the
+ # failed rename control here is an instance of.
+ "leavitt2020falsifiable": "2010.12016",
+ "mueller2024mediator":    "2408.01416",
+ "makelov2023illusion":    "2311.17030",
  "zhu2022xlcost":  "2206.08474",
  "hui2024qwencoder":"2409.12186",
  "qwen2024qwen25": "2412.15115",
