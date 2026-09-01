@@ -1,0 +1,37 @@
+version: 1
+requirements:
+  - id: named-junk-files-are-absent
+    capability: public-repo-hygiene
+    requirement: "Named junk files are absent"
+    verified: false
+    code:
+      file: README.md
+      symbols: [document]
+    contract: |
+      AGENTS.md, PROTOCOL.md, RESULTS.md, RESULTS_TABLE.md,
+      WORK_UPDATE_ACCUMULATOR.md, pachingPlanAlgoverse.md, go_output.png, and
+      java_output.png are absent from the working tree and the git index.
+    claimcheck: false
+
+  - id: superseded-drafts-are-absent
+    capability: public-repo-hygiene
+    requirement: "Superseded drafts are absent"
+    verified: false
+    code:
+      file: README.md
+      symbols: [document]
+    contract: |
+      sree_paper_ready/, lp4fm_paper/, and docs/ are gone from the public tree.
+    claimcheck: false
+
+  - id: manuscripts-and-entry-points-remain
+    capability: public-repo-hygiene
+    requirement: "Manuscripts and entry points remain"
+    verified: false
+    code:
+      file: README.md
+      symbols: [document]
+    contract: |
+      README.md, both workshop manuscripts, and the dataset card remain, and
+      README.md no longer links to PROTOCOL.md.
+    claimcheck: false

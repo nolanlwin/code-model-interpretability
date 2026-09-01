@@ -111,7 +111,7 @@ done
 
 Outputs land in `results/unified/<model>/<role>/<mode>/` (`per_layer.csv`, `summary.csv`, `cosine_vs_baseline.csv`, `crosslang.csv`).
 
-Protocol ([`PROTOCOL.md`](PROTOCOL.md)): per-layer logistic regression on standardized frozen hidden states, problem-hash 70/10/20 splits, layer selected on the validation fold, five seeds, macro-F1 with program-clustered BCa intervals, a random-label control task, and a tokenizer-offset gate before extraction. Any Hugging Face causal model works via `--model`.
+Protocol: per-layer logistic regression on standardized frozen hidden states, problem-hash 70/10/20 splits, layer selected on the validation fold, five seeds, macro-F1 with program-clustered BCa intervals, a random-label control task, and a tokenizer-offset gate before extraction. Any Hugging Face causal model works via `--model`.
 
 The manuscript-grade boolean, renaming, and causal path lives in `scripts/`:
 
