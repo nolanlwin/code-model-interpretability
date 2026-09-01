@@ -1,0 +1,22 @@
+version: 1
+requirements:
+  - id: five-page-main-text
+    capability: interp-science-page-limit
+    requirement: "Five-page main text"
+    verified: false
+    code:
+      file: interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      Compile and inspect the PDF to confirm that all main-text sections finish by page five.
+    claimcheck: false
+  - id: scientific-content-preservation
+    capability: interp-science-page-limit
+    requirement: "Scientific content preservation"
+    verified: false
+    code:
+      file: interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      Retain the control matrix, headline findings, calibrated uncertainty, and limitations while condensing the manuscript.
+    claimcheck: false

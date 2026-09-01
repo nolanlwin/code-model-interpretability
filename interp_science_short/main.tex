@@ -35,9 +35,8 @@ five variable roles in code models. The study includes three models and
 collectively covers all seven programming languages in XLCoST, but not every
 model-language combination. High probe accuracy supports different
 conclusions under matched controls. Misleading names reduce index probe F1 by
-$0.272$ yet increase accumulator F1 by $0.079$. Iterator probes can be refit
-after the same intervention in three models, and exceed a name-only surface
-baseline of $0.918$. On Python, boolean occurrence type is decodable at $0.981$--$0.988$ macro-F1,
+$0.272$ yet increase accumulator F1 by $0.079$. Across three models, refit
+iterator probes exceed a name-only baseline of $0.918$. On Python, boolean occurrence type is decodable at $0.981$--$0.988$ macro-F1,
 but a masked source-line classifier reaches $0.983$ without a language model.
 Rerunning both predictors with aligned predictions gives paired
 problem-clustered deltas of $-0.003$ to $+0.002$ across the three models, with
@@ -216,23 +215,18 @@ the study's clearest dissociation, but occurrence-level splitting,
 test-maximized layers, and refitting prevent a fixed-direction invariance
 interpretation. This effect-size estimate remains exploratory.
 
-Iterator provides a separate refit-robust result at near-ceiling baseline
-accuracy. Qwen2.5-1.5B, Qwen2.5-Coder-1.5B, and StarCoder2-7B reach baseline F1
-of $0.976$, $0.978$, and $0.987$ (BCa $95\%$ intervals $[0.964,0.982]$,
-$[0.968,0.983]$, and $[0.981,0.990]$) at layers $7$, $7$, and $11$. Hewitt
-control selectivity is $+0.526$ to $+0.552$. Misleading iterator names change
-those scores by $+0.023$, $+0.020$, and $+0.012$, but those probes select
+Iterator provides a separate refit-robust result. Across the three models,
+baseline F1 is $0.976$, $0.978$, and $0.987$. The widest BCa $95\%$ interval
+is $[0.964,0.982]$, and Hewitt selectivity is $+0.526$ to $+0.552$. Misleading
+names increase F1 by $0.012$--$0.023$, although the selected probes are at
 embedding layers. Single-character and numeric names reduce F1 by
 $0.046$--$0.073$. A name-only classifier on the same $427$ Python programs
-reaches $0.918$. The probe remains higher by $0.058$--$0.069$, without a paired
-clustered interval on that difference. Python-trained probes transfer across
-the other six XLCoST languages with F1 ranges of $0.934$--$0.981$,
-$0.898$--$0.923$, and $0.887$--$0.938$. These results support recoverability
-after the tested naming intervention and a probe advantage over name-only
-surface form. They do not establish feature invariance or abstraction because
-the probe and layer are refit. Exploratory iterator activation patching for
-the same three models is in the appendix. Those recoveries are not the class
-or structure causal gate.
+reaches $0.918$, leaving an unpaired probe gap of $0.058$--$0.069$.
+Python-trained transfer ranges are $0.934$--$0.981$, $0.898$--$0.923$, and
+$0.887$--$0.938$. These results support refit recoverability and a probe
+advantage over name-only form, not feature invariance or abstraction.
+Exploratory iterator patching appears in the appendix and is not the class or
+structure causal gate.
 
 \subsection{A model-free baseline bounds the boolean result}
 
@@ -365,41 +359,34 @@ should identify the prediction unit, label, model, corpus, split, layer
 selection, seeds, comparator, uncertainty estimand, and intervention gate.
 Negative results should state the smallest effect the design can exclude.
 
-\section{Identifiability and evaluation design}
-
-Matched contrasts determine what each control identifies. The paired boolean
-intervals bound probe-minus-surface differences. Refit renaming measures
-recoverability. The class or structure patch fails the specified bidirectional
-gate at one site. None supports a broader invariance or causal claim.
-
 \begin{table}[t]
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Scientific status of the paper's main interpretations. ``Open'' means
-that the required comparison has not been run under a matched protocol.}
+\caption{Scientific status of the main interpretations. ``Open'' denotes a
+missing matched comparison.}
 \label{tab:status}
 \begin{tabular}{p{0.23\linewidth}p{0.32\linewidth}p{0.34\linewidth}}
 \toprule
-Interpretation & Evidence in this study & Status and decisive next test \\
+Interpretation & Evidence & Status and next test \\
 \midrule
 Legacy roles may use different cues &
-Opposite acc/index refit deltas in incommensurate pipelines &
-Exploratory. Repeat accumulator and index with problem groups and intervals \\
+Opposite legacy accumulator and index deltas &
+Exploratory. Rerun with problem groups and intervals \\
 Iterator refit performance survives misleading names &
-Three-model BCa F1 $0.976$--$0.987$, name-only $0.918$ &
-Supported as recoverability. Pair probe and surface on one occurrence sample \\
+Three-model F1 $0.976$--$0.987$, name-only $0.918$ &
+Supported as recoverability. Pair probe and surface predictions \\
 Boolean exceeds Python local syntax &
-Paired reruns, three models, $915$ problem clusters &
+Three-model paired reruns over $915$ problems &
 Not supported. $95\%$ intervals exclude advantages above $0.014$--$0.017$ \\
 Class refit performance survives renaming &
-Three-model permutation selectivity and misleading-name deltas near zero &
+Three-model selectivity and rename deltas near zero &
 Supported as recoverability. Evaluate one fixed probe across paired renames \\
 Query-name signal makes a substantive bidirectional causal contribution &
 Two-direction patching with placebo and random controls &
-Not supported at Qwen layer 18. Run an explicitly exploratory all-layer sweep \\
+Not supported at Qwen layer 18. Run an exploratory all-layer sweep \\
 Cross-language role abstraction &
-Strong transfer with uneven role and model coverage &
+Strong transfer with uneven coverage &
 Open. Apply one extractor and control battery to a complete language grid \\
 \bottomrule
 \end{tabular}
@@ -409,19 +396,15 @@ Open. Apply one extractor and control battery to a complete language grid \\
 
 The study collectively covers three models, five roles, and seven languages,
 but not a complete $3\times5\times7$ design, and Table~\ref{tab:scope} gives
-the per-role model and language coverage.
+the per-role coverage. Legacy accumulator-index results lack problem-grouped
+splits and scope-aware renaming. Iterator lacks a paired probe-minus-surface
+interval. Boolean labels are nearly predictable from local form, with paired
+$95\%$ upper endpoints at most $0.017$. Class or structure patching covers one
+model, layer, site, and readout, and stopping after the Qwen null was not
+registered in advance. Other probes remain correlational, and transfer may
+reflect shared syntax, names, or extractor artifacts.
 
-Legacy accumulator-index results predate problem-grouped splits and
-scope-aware renaming, and function overlap, textual replacement, layer
-selection, and refitting may inflate the effect. Iterator has a name-only
-comparator and a Hewitt control, but not a paired probe-minus-surface
-interval. Boolean labels are nearly predictable
-from local form, with paired $95\%$ intervals whose upper endpoints do not
-exceed $0.017$. Class or structure patching covers one model, layer, site, and readout, and
-stopping after the Qwen null was not registered in advance. Other probes
-remain correlational, and cross-language transfer may reflect shared syntax,
-names, or extractor artifacts.
-
+\clearpage
 \bibliographystyle{plainnat}
 \bibliography{refs}
 
