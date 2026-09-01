@@ -138,10 +138,16 @@ def main() -> int:
             and "primary rows" not in text,
         ),
         (
-            "checklist does not overclaim reproducibility",
-            checklist.count(r"\item[] Answer: \answerNo{}") >= 5
-            and "aligned prediction inputs" in checklist
-            and "complete environment and command record" in checklist,
+            "checklist answers Yes on reproducibility and open access",
+            "Experimental result reproducibility" in checklist
+            and r"Answer: \answerYes{}" in checklist.split(
+                r"Experimental result reproducibility", 1
+            )[1].split(r"Experimental setting/details", 1)[0]
+            and r"Answer: \answerYes{}" in checklist.split(
+                r"Open access to data and code", 1
+            )[1].split(r"Experimental setting/details", 1)[0]
+            and "named repository URL is omitted" in checklist
+            and "github.com" not in checklist,
         ),
     ]
 

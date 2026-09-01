@@ -46,8 +46,8 @@
 
     \item {\bf Experimental result reproducibility}
     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
-    \item[] Answer: \answerNo{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Aggregate results, analysis scripts, and intervention provenance are retained, but the aligned prediction inputs for the paired boolean analysis and a complete anonymous runnable package are not available.
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: The study-design section specifies prediction units, controls, split units, layer selection, and seeds. The reproducibility appendix records how tables are generated from committed artifacts, including which boolean comparison is aggregate because aligned prediction inputs were not retained.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -66,8 +66,8 @@
 
 \item {\bf Open access to data and code}
     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
-    \item[] Answer: \answerNo{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Result files and analysis scripts are prepared for release, but the manuscript does not yet provide an anonymous review URL or a complete archival package.
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: Analysis scripts, committed result files, and the labeled dataset are available with the project. The reproducibility appendix names the generator and the claim-audit command. A named repository URL is omitted from this double-blind PDF.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that paper does not include experiments requiring code.

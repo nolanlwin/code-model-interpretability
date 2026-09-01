@@ -1,0 +1,25 @@
+version: 1
+requirements:
+  - id: item-4-is-yes
+    capability: checklist-reproducibility
+    requirement: "Item 4 is Yes"
+    verified: false
+    code:
+      file: paper/interp_science_short/checklist.tex
+      symbols: [document]
+    contract: |
+      Both workshop checklists answer Yes on experimental result
+      reproducibility.
+    claimcheck: false
+
+  - id: item-5-is-yes
+    capability: checklist-reproducibility
+    requirement: "Item 5 is Yes"
+    verified: false
+    code:
+      file: paper/lp4fm_short/checklist.tex
+      symbols: [document]
+    contract: |
+      Both workshop checklists answer Yes on open access to data and code,
+      without naming a GitHub URL in the justification.
+    claimcheck: false
