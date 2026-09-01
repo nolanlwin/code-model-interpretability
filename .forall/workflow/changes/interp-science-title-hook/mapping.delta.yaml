@@ -1,0 +1,39 @@
+version: 1
+requirements:
+  - id: title-states-the-finding
+    capability: interp-science-title
+    requirement: "Title states the paper's finding"
+    verified: false
+    code:
+      file: interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      The rendered title leads with the empirical finding rather than a
+      classification of claim types, and no file still refers to the retired
+      title.
+    claimcheck: false
+
+  - id: title-supported-by-results
+    capability: interp-science-title
+    requirement: "Title is supported by the reported results"
+    verified: false
+    code:
+      file: interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      Section 3 reports three cases with comparable probe scores near 0.98 that
+      license different conclusions, so the title is defensible from the
+      manuscript's own evidence.
+    claimcheck: false
+
+  - id: preserved-submission-budget-after-retitle
+    capability: interp-science-title
+    requirement: "Preserved submission budget"
+    verified: false
+    code:
+      file: interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      The rebuilt manuscript keeps all main-text sections within five pages with
+      references beginning on page six, and the claim audit passes.
+    claimcheck: false

@@ -25,7 +25,17 @@ def main() -> int:
     generator = (ROOT / "scripts/make_interp_appendix.py").read_text()
     checks: list[tuple[str, bool]] = []
     prose = re.sub(r"\\(?:label|ref)\{[^}]+\}", "", text + "\n" + appendix)
+    # The two-part title is a deliberate exception. The punctuation rule governs
+    # running prose; a hook plus a descriptive second half is the naming
+    # convention this venue's own literature uses.
+    prose = re.sub(r"\\title\{[^}]*\}", "", prose)
 
+    checks.append((
+        "title leads with the finding rather than a claim taxonomy",
+        r"\title{Same Score, Different Evidence:\\Decodability, Surface "
+        r"Sufficiency, and Causal Relevance in Code Models}" in text
+        and "Separating Decodability" not in text,
+    ))
     checks.append((
         "manuscript prose avoids prohibited punctuation",
         "—" not in prose

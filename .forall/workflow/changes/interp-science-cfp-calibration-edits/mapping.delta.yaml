@@ -1,0 +1,73 @@
+version: 1
+requirements:
+  - id: comparator-scoped-boolean-reporting
+    capability: interp-science-claim-calibration
+    requirement: "Comparator-scoped boolean reporting"
+    verified: false
+    code:
+      file: interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      Section 3.2 must report the boolean surface comparison across the
+      committed languages and under the next-best Python comparator, so that a
+      reader of the body alone cannot mistake a Python, single-comparator
+      result for a general one. Checked by scenario assertions in
+      tests/test_interp4d_claims.py.
+    claimcheck: false
+
+  - id: estimator-consistent-causal-interpretation
+    capability: interp-science-claim-calibration
+    requirement: "Estimator-consistent causal interpretation"
+    verified: false
+    code:
+      file: interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      No passage may explain the failed patching gate by a compressed decision
+      range, because recovery divides by the matched gap and is invariant to
+      that compression. The null is reported as a bounded negative at the
+      tested site, layer, and span. Checked by scenario assertions in
+      tests/test_interp4d_claims.py.
+    claimcheck: false
+
+  - id: artifact-accurate-provenance-statements
+    capability: interp-science-claim-calibration
+    requirement: "Artifact-accurate provenance statements"
+    verified: false
+    code:
+      file: interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      Sample-construction and row-count statements must match the committed
+      artifacts they describe: the paired boolean reduction comes from pooling
+      five seed test folds rather than from a predictor-overlap requirement,
+      4,032 rows span the primary and behavior schedules, and the rename effect
+      range does not exceed 0.072. Checked by scenario assertions in
+      tests/test_interp4d_claims.py.
+    claimcheck: false
+
+  - id: verified-bibliography-entries
+    capability: interp-science-claim-calibration
+    requirement: "Verified bibliography entries"
+    verified: false
+    code:
+      file: interp_science_short/refs.bib
+      symbols: [bibliography]
+    contract: |
+      Each added entry corresponds to a record confirmed by a live arXiv or
+      Crossref lookup during this change, because the venue desk-rejects
+      submissions containing fabricated citations.
+    claimcheck: false
+
+  - id: preserved-submission-budget
+    capability: interp-science-claim-calibration
+    requirement: "Preserved submission budget"
+    verified: false
+    code:
+      file: interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      The rebuilt manuscript keeps all main-text sections within five pages with
+      references beginning on page six, the generated appendix regenerates
+      unchanged, and the manuscript-to-artifact audit passes.
+    claimcheck: false
