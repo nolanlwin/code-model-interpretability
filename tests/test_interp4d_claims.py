@@ -90,6 +90,14 @@ def main() -> int:
             and "checkmark indicating that a control ran" in text,
         ),
         (
+            "main text replaces the case-outcome table with a three-panel figure",
+            "\\label{tab:evidence}" not in text
+            and "\\label{fig:same-score}" in text
+            and "\\label{fig:patch}" not in text
+            and (ROOT / "paper/interp_science_short/figures/same_score.pdf").exists()
+            and "figures/same_score.pdf" in text,
+        ),
+        (
             "role-conditioned renaming is labeled as confounded",
             "The vocabulary therefore encodes the label" in text
             and "does not support\nsemantic robustness" in text

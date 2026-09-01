@@ -192,29 +192,15 @@ offset error invalidates its activation alignment.
 
 \section{The same probe score supports different claims}
 
-\begin{table}[t]
+\begin{figure}[t]
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
-\caption{Case outcomes after interpreting the available comparisons. Values
-are macro-F1. A diagnostic can reveal a failed control without supporting a
-representation claim.}
-\label{tab:evidence}
-\begin{tabular}{L{0.13\linewidth}L{0.15\linewidth}L{0.17\linewidth}L{0.38\linewidth}}
-\toprule
-Case & Probe & Comparison outcome & Strongest supported inference \\
-\midrule
-Legacy accum./index & 0.893, 0.959 & $\Delta=+0.079,-0.272$ &
-Exploratory cue response under a weaker protocol \\
-Iterator & 0.976--0.987 & role-conditioned rename reaches 0.998--0.999 at L0 &
-The intervention encodes a lexical shortcut \\
-Boolean & 0.981--0.988 & paired $\Delta \in [-0.003,+0.002]$ &
-Probe advantage over masked local source excluded above $0.017$ \\
-Class/site & 0.979--0.982 & patch recovery 0.009, 0.020 &
-Bounded site-state effect at the tested site and layer \\
-\bottomrule
-\end{tabular}
-\end{table}
+\includegraphics[width=\linewidth]{figures/same_score.pdf}
+\caption{Three high probe scores with different comparisons. Boolean probes on
+Python stay near a masked source-line baseline across layers. Iterator probes
+saturate at embedding layer zero under role-conditioned renaming. Class-site
+residual patching remains below the $0.05$ recovery gate.}
+\label{fig:same-score}
+\end{figure}
 
 \subsection{Renaming diagnoses an intervention confound}
 
@@ -231,7 +217,7 @@ baseline F1 is $0.976$, $0.978$, and $0.987$. The widest BCa $95\%$ interval
 is $[0.964,0.982]$, and permutation selectivity is $+0.526$ to $+0.552$.
 Role-conditioned misleading names change F1 by $+0.023$, $+0.020$, and
 $+0.012$, but all three probes select embedding layer zero and reach
-$0.998$--$0.999$. The name pools encode target membership, so this result is
+$0.998$--$0.999$ (Figure~\ref{fig:same-score}b). The name pools encode target membership, so this result is
 compatible with relearning an inverted lexical rule. It does not support
 semantic robustness. Single-character and numeric names reduce F1 by
 $0.046$--$0.072$. A name-only classifier on the same $427$ Python programs
@@ -250,7 +236,8 @@ $0.982$, $0.981$, and $0.988$ macro-F1. Selectivity ranges from $+0.272$ to
 $+0.288$. These values reject the specific hypothesis that an equally
 expressive probe predicts labels randomly assigned per variable name as well
 as it predicts the real usage labels. Yet a character classifier on
-the enclosing source line, with the variable name masked, reaches $0.983$.
+the enclosing source line, with the variable name masked, reaches $0.983$
+(Figure~\ref{fig:same-score}a).
 The probe-minus-surface differences are $-0.001$, $-0.002$, and $+0.005$.
 
 The original exports retained no aligned predictions, so we reran both
@@ -314,7 +301,7 @@ flips a well-calibrated binary decision.
 Denoising produces a mean effect of $0.0087$ with a $95\%$ interval
 $[-0.0007,0.0188]$ and recovery $0.0089$. Noising produces $0.0199$
 $[0.0109,0.0296]$ with recovery $0.0204$. The full-residual intervention fails
-the specified gate. The protocol and results entered the repository together,
+the specified gate (Figure~\ref{fig:same-score}c). The protocol and results entered the repository together,
 so we do not claim auditable preregistration. Recovery divides by the matched
 gap, so a compressed decision range does not explain a ratio of $0.009$ to
 $0.020$. We read this as a bounded negative at the tested site, layer, and
@@ -339,8 +326,8 @@ behavioral readout. No claim entails another.
 \centering
 \small
 \setlength{\tabcolsep}{3pt}
-\caption{Outcome-aware evidence records. ``Unpaired'' means that uncertainty on
-the difference is unavailable. Each next test can change the stated claim.}
+\caption{Outcome-aware evidence records. Each next test can change the stated
+claim.}
 \label{tab:controls}
 \begin{tabular}{L{0.13\linewidth}L{0.24\linewidth}L{0.24\linewidth}L{0.27\linewidth}}
 \toprule
@@ -358,7 +345,7 @@ Boolean &
 Probe minus masked line is $-0.003$ to $+0.002$ &
 $915$ clusters with paired $95\%$ intervals &
 Not supported on Python. No selected-baseline advantage above $0.017$. Nest selection and add languages \\
-Class/site &
+Class/function &
 Bidirectional residual-patch gate fails &
 $48$ template clusters with $95\%$ intervals &
 Bounded effect at one site and layer. Test other spans and layers \\
