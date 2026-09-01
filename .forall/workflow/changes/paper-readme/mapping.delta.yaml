@@ -1,0 +1,38 @@
+version: 1
+requirements:
+  - id: readme-leads-with-the-papers
+    capability: paper-readme
+    requirement: "README leads with the papers"
+    verified: false
+    code:
+      file: README.md
+      symbols: [document]
+    contract: |
+      Both workshop paper titles appear before any install command, and each
+      title links to its manuscript PDF in the repository.
+    claimcheck: false
+
+  - id: claims-stay-inside-the-manuscripts
+    capability: paper-readme
+    requirement: "Claims stay inside the manuscripts"
+    verified: false
+    code:
+      file: README.md
+      symbols: [document]
+    contract: |
+      Citation and header links do not invent authors, arXiv identifiers, or
+      acceptance status. Authors are given as Anonymous.
+    claimcheck: false
+
+  - id: reproduction-commands-survive
+    capability: paper-readme
+    requirement: "Reproduction commands survive the rewrite"
+    verified: false
+    code:
+      file: README.md
+      symbols: [document]
+    contract: |
+      The README still documents pip install of pipeline/requirements.txt,
+      pipeline.run_experiment for perturbation and crosslang, and the published
+      dataset dhyuti-n/xlcost-variable-roles.
+    claimcheck: false

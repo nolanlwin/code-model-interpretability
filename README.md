@@ -1,45 +1,72 @@
-# Probing Code LLMs — Variable Roles, Unified Pipeline
+# Code Model Interpretability
 
-Investigates whether code LLMs encode **variable roles** in their hidden
-states — using structural labels (AST/regex), never the variable's name —
-across the 7 languages of [XLCoST](https://github.com/reddy-lab-code-research/XLCoST).
+Official repository for two NeurIPS 2026 workshop papers on what a linear probe score can and cannot claim about code models.
 
-This branch (`unified-pipeline`) replaces the per-role notebooks with one
-common dataset and one set of scripts:
+<p align="center">
+  <a href="interp_science_short/main.pdf"><b>Same Score, Different Evidence</b></a><br>
+  Decodability, Surface Sufficiency, and Causal Relevance in Code Models<br>
+  <em>Interpretability as a Science</em>
+</p>
 
-- **5 roles**: `index_key`, `accumulator`, `iterator`, `boolean`, `class_struct`
-- **10 naming strategies**: `baseline`, `random_nouns`, `single_chars`,
-  `all_same`, `numeric_vars`, and `misleading_<role>` for each role
-- **7 languages**: C++, Java, Python, C#, Javascript, PHP, C
-- **Any model**: token labels are derived per tokenizer at experiment time
+<p align="center">
+  <a href="lp4fm_short/main.pdf"><b>Cross-Language Probe Invariance Depends on Readout Choice</b></a><br>
+  <em>Linguistic Principles for Foundation Models (LP4FM)</em>
+</p>
 
-The dataset is published on the Hugging Face Hub as
-[`dhyuti-n/xlcost-variable-roles`](https://huggingface.co/datasets/dhyuti-n/xlcost-variable-roles)
-(see `dataset_card/README.md` for fields, labeling method, and XLCoST credits).
+<p align="center">
+  <a href="interp_science_short/main.pdf">PDF (Interp as a Science)</a> ·
+  <a href="lp4fm_short/main.pdf">PDF (LP4FM)</a> ·
+  <a href="https://huggingface.co/datasets/dhyuti-n/xlcost-variable-roles">Dataset</a> ·
+  <a href="https://colab.research.google.com/github/nolanlwin/code-model-interpretability/blob/main/notebooks/colab_results.ipynb">Colab</a> ·
+  <a href="LICENSE">License</a>
+</p>
 
----
+<p align="center">
+  <img src="interp_science_short/figures/masked_slope.png" width="720" alt="Cross-lingual macro-F1 by readout. Span-pooled probes look language-invariant. A name-masked surface classifier and a context-pooled probe do not.">
+</p>
+<p align="center">
+  <em>The same transfer task supports opposite conclusions once the readout stops reading the identifier name. Figure from the LP4FM paper.</em>
+</p>
 
-## 1. Environment
+A high probe score establishes decodability under a particular readout. It does not establish that the feature is absent from surface form, that a renaming intervention tested semantics rather than leaking the label, or that the model uses the feature at a tested site. This repository records those distinctions on variable-role probes over XLCoST code models.
 
-Python ≥ 3.10. Create a virtual environment and install the pipeline
-dependencies:
+## Papers
+
+### Same Score, Different Evidence
+
+[Manuscript (PDF)](interp_science_short/main.pdf) · Interpretability as a Science, NeurIPS 2026
+
+Three cases report probe scores near 0.98 and license three different conclusions.
+
+| Case | Probe macro-F1 | What the comparison actually supports |
+|---|---|---|
+| Boolean occurrence type | 0.981–0.988 | A name-masked source-line classifier reaches 0.983 without a language model. Paired deltas exclude a probe advantage above 0.017 on Python. |
+| Iterator role | 0.976–0.987 | Role-conditioned renaming reaches 0.998–0.999 at embedding layer zero. The intervention encodes a lexical shortcut. |
+| Class or structure site | 0.979–0.982 | A full-residual patch recovers 0.009–0.020 of the matched behavioral gap at one site and layer. That is a bounded site-state effect, not global non-use. |
+
+The study covers three models and five identifier targets, collectively across all seven XLCoST languages, without a complete factorial design. The paper binds each claim to an estimand, comparator, matching unit, uncertainty statement, outcome, and falsifier.
+
+### Cross-Language Probe Invariance Depends on Readout Choice
+
+[Manuscript (PDF)](lp4fm_short/main.pdf) · LP4FM, NeurIPS 2026
+
+A span-pooled residual probe looks language-invariant on parallel Python, JavaScript, and PHP solutions. A name-masked character *n*-gram classifier does not. Excluding the occurrence from the probe readout reverses the trained boundary relative to the surface classifier, and untrained networks show a comparable or steeper trained boundary depending on the model. The original invariance is not identified independently of the readout.
+
+## Setup
+
+Python ≥ 3.11. GPU is recommended for probing. Dataset construction is CPU-only.
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
+source .venv/bin/activate
 pip install -r pipeline/requirements.txt
 ```
 
-GPU is recommended for the probing experiments (Colab works — the scripts
-auto-select `cuda` / `mps` / `cpu`). Building the dataset is CPU-only.
+The root `requirements.txt` is the upstream XLCoST environment for the original notebooks. The pipeline does not need it.
 
-The legacy root `requirements.txt` is the upstream XLCoST environment for the
-original notebooks; the pipeline does not need it.
+## Data
 
-## 2. Get the data
-
-**Option A — use the published dataset (no XLCoST download needed):**
+**Published dataset** (no XLCoST download required):
 
 ```python
 from datasets import load_dataset
@@ -48,37 +75,32 @@ perturb = load_dataset("dhyuti-n/xlcost-variable-roles", "python_perturbations")
 multi   = load_dataset("dhyuti-n/xlcost-variable-roles", "multilingual_baseline")
 ```
 
-To run the experiment CLIs against it, download the JSONL files into a local
-`dataset/` directory:
-
 ```bash
 hf download dhyuti-n/xlcost-variable-roles --repo-type dataset --local-dir dataset
 ```
 
-**Option B — rebuild from XLCoST:** unzip `XLCoST_data.zip` into the repo root
-(or set `XLCOST_ROOT=/path/to/XLCoST_data`), then:
+**Rebuild from XLCoST.** Unzip `XLCoST_data.zip` into the repository root, or set `XLCOST_ROOT`, then:
 
 ```bash
-python -m pipeline.build_dataset --out dataset                    # full corpus
-python -m pipeline.build_dataset --out dataset --max-programs 500 # notebook-sized
+python -m pipeline.build_dataset --out dataset
+python -m pipeline.build_dataset --out dataset --max-programs 500
 ```
 
-Writes `dataset/python_perturbations/{train,valid,test}.jsonl`,
-`dataset/multilingual_baseline/{train,valid,test}.jsonl`, and `dataset/stats.json`.
+Labels come from AST and regular-expression extractors, never from the identifier name. The five roles are `index_key`, `accumulator`, `iterator`, `boolean`, and `class_struct`. Field definitions and XLCoST credits are in [`dataset_card/README.md`](dataset_card/README.md).
 
-## 3. Run experiments
+## Experiments
 
 ```bash
 # perturbation sweep for one role (Python, all naming strategies)
 python -m pipeline.run_experiment perturbation --role accumulator \
     --model Qwen/Qwen2.5-1.5B --split train --max-programs 500
 
-# cross-language transfer for one role (Python-trained probe -> 6 languages)
+# cross-language transfer for one role (Python-trained probe to six languages)
 python -m pipeline.run_experiment crosslang --role index_key \
     --model Qwen/Qwen2.5-1.5B --split train --max-programs 300
 ```
 
-Sweep everything:
+Sweep every role:
 
 ```bash
 for role in index_key accumulator iterator boolean class_struct; do
@@ -87,86 +109,43 @@ for role in index_key accumulator iterator boolean class_struct; do
 done
 ```
 
-Results land in `results/unified/<model>/<role>/<mode>/`:
+Outputs land in `results/unified/<model>/<role>/<mode>/` (`per_layer.csv`, `summary.csv`, `cosine_vs_baseline.csv`, `crosslang.csv`).
 
-| File | Contents |
-|---|---|
-| `per_layer.csv` | train/test accuracy and macro F1 for every layer × strategy |
-| `summary.csv` | best layer per strategy with ΔF1 vs baseline |
-| `cosine_vs_baseline.csv` | probe-direction cosine similarity per layer |
-| `crosslang.csv` | in-domain F1 + transfer accuracy/F1 per language |
+Protocol ([`PROTOCOL.md`](PROTOCOL.md)): per-layer logistic regression on standardized frozen hidden states, problem-hash 70/10/20 splits, layer selected on the validation fold, five seeds, macro-F1 with program-clustered BCa intervals, a random-label control task, and a tokenizer-offset gate before extraction. Any Hugging Face causal model works via `--model`.
 
-Protocol (PROTOCOL.md): per-layer logistic regression probes
-(class-balanced, C=1.0) on standardized frozen hidden states; frozen
-problem-hash 70/10/20 splits grouped by program; layer selected on the
-validation fold; five seeds; macro F1 with program-clustered BCa CIs; a
-random-label control task (selectivity); tokenizer offset gate before
-extraction; provenance in run_meta.json. Any Hugging Face model works
-via `--model`; swap in CodeBERT, RoBERTa, Qwen2.5-0.5B, DeepSeek-Coder, etc.
-
-## 4. Publish / update the dataset
+The manuscript-grade boolean, renaming, and causal path lives in `scripts/`:
 
 ```bash
-hf auth login    # once
-python -m pipeline.hf_upload --repo <user-or-org>/xlcost-variable-roles [--private]
+bash scripts/run_language.sh Python Qwen/Qwen2.5-Coder-1.5B train
+bash scripts/run_renaming.sh Python Qwen/Qwen2.5-Coder-1.5B train
 ```
 
-Uploads both configs plus the dataset card in `dataset_card/README.md`.
+Resumable Colab entry point: [`notebooks/colab_results.ipynb`](https://colab.research.google.com/github/nolanlwin/code-model-interpretability/blob/main/notebooks/colab_results.ipynb). Set `LANGUAGE` in cell 2. Checkpoints write to Drive after each model.
 
----
+## Citation
 
-## Project structure
+The submissions are anonymous. Please cite the manuscripts as:
 
-```
-├── pipeline/                  # the unified pipeline (see pipeline/README.md)
-│   ├── xlcost.py              #   XLCoST loading and token-list reconstruction
-│   ├── roles.py               #   role extractors (Python AST; regex elsewhere)
-│   ├── perturb.py             #   naming strategies incl. per-role misleading
-│   ├── build_dataset.py       #   materialize the two dataset configs
-│   ├── probing.py             #   token labeling, hidden states, probes
-│   ├── run_experiment.py      #   perturbation + crosslang CLIs
-│   ├── hf_upload.py           #   Hub upload
-│   └── requirements.txt       #   minimal deps
-├── dataset_card/README.md     # HF dataset card (XLCoST credits, fields, limits)
-├── dataset/stats.json         # row counts of the published build (JSONL gitignored)
-├── notebooks/                 # original per-role notebooks (superseded)
-├── results/                   # experiment outputs
-├── RESULTS.md, RESULTS_TABLE.md
-└── XLCoST_data/               # source corpus (not tracked)
-```
+```bibtex
+@inproceedings{anonymous2026samescore,
+  title     = {Same Score, Different Evidence: Decodability, Surface Sufficiency, and Causal Relevance in Code Models},
+  author    = {Anonymous},
+  booktitle = {Workshop on Interpretability as a Science at NeurIPS},
+  year      = {2026},
+  note      = {Under review}
+}
 
----
-
-## Boolean workstream & protocol tooling (`scripts/`)
-
-Alongside `pipeline/`, the repo carries the **boolean-control-variable**
-workstream and the protocol-grade measurement tooling it was built with
-(frozen in [PROTOCOL.md](PROTOCOL.md)):
-
-```bash
-bash scripts/run_language.sh Python Qwen/Qwen2.5-Coder-1.5B train   # corpus -> probe -> baselines
-bash scripts/run_renaming.sh Python Qwen/Qwen2.5-Coder-1.5B train   # C1-C5 renaming deltas
+@inproceedings{anonymous2026readout,
+  title     = {Cross-Language Probe Invariance Depends on Readout Choice},
+  author    = {Anonymous},
+  booktitle = {Workshop on Linguistic Principles for Foundation Models at NeurIPS},
+  year      = {2026},
+  note      = {Under review}
+}
 ```
 
-Distinct properties of this path (see `docs/` for the analyses behind them):
+## License
 
-- **Detokenized corpus**: `scripts/xlcost_data.py` pulls XLCoST from mirrors
-  and detokenizes/validates it, so models see natural code rather than
-  space-joined token streams.
-- **Frozen problem-grouped splits** (per-problem hash), layer selected on a
-  validation fold, 5 seeds, Hewitt control task, cluster-BCa CIs, and paired
-  deltas joined on stable `occurrence_id`s.
-- **Gates before numbers**: per-token tokenizer-offset checks per model
-  (`scripts/tokenizer_gate.py`), span-integrity and re-parse gates in
-  extraction and renaming; failures are counted, never silent.
-- Colab entry point: [`notebooks/colab_results.ipynb`](https://colab.research.google.com/github/nolanlwin/code-model-interpretability/blob/main/notebooks/colab_results.ipynb)
-  (Runtime -> GPU -> Run all; set `LANGUAGE` in cell 2; resumable, checkpoints
-  to Drive after each model; several languages can run concurrently in
-  separate tabs).
+Code in this repository is released under the [Apache License 2.0](LICENSE).
 
-## Credits
-
-Source programs come from **XLCoST** (Zhu et al., 2022,
-[arXiv:2206.08474](https://arxiv.org/abs/2206.08474), Apache-2.0). This
-repository adds structural role labels, renaming perturbations, and the
-probing pipeline; full citation in `dataset_card/README.md`.
+Source programs come from [XLCoST](https://github.com/reddy-lab-code-research/XLCoST) (Zhu et al., 2022, [arXiv:2206.08474](https://arxiv.org/abs/2206.08474), Apache-2.0). This repository adds structural role labels, renaming perturbations, probes, and the reporting artifacts used in the two papers.
