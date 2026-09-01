@@ -20,11 +20,22 @@ def rows(path: Path) -> list[dict[str, str]]:
 def main() -> int:
     text = MAIN.read_text()
     appendix = APPENDIX.read_text()
+    generator = (ROOT / "scripts/make_interp_appendix.py").read_text()
     checks: list[tuple[str, bool]] = []
+    prose = re.sub(r"\\(?:label|ref)\{[^}]+\}", "", text + "\n" + appendix)
+
+    checks.append((
+        "manuscript prose avoids prohibited punctuation",
+        "—" not in prose
+        and r"\textemdash" not in prose
+        and "---" not in prose
+        and ";" not in prose
+        and ":" not in prose,
+    ))
 
     checks.append((
         "scope states three models, five roles, and seven languages collectively",
-        "three models, five roles, and all seven XLCoST languages" in text,
+        "three models, five roles, and seven languages" in text,
     ))
     checks.append((
         "LP4FM-only masked-probe story is absent",
@@ -47,7 +58,8 @@ def main() -> int:
     checks.append((
         "class causal null states the True/True readout limitation",
         "Both prompt classes prefer" in text
-        and "limited dynamic range" in text,
+        and "limits the behavioral" in text
+        and "effective decision range" in text,
     ))
 
     boolean_causal = rows(ROOT / "results/boolean/causal/summary.csv")
@@ -84,7 +96,8 @@ def main() -> int:
                 "tab:boolean-full", "tab:boolean-renaming-full",
                 "tab:boolean-baselines-full",
                 "tab:class-full", "tab:class-crosslang", "tab:class-layerwise",
-                "tab:iterator-full", "tab:iterator-crosslang",
+                "tab:iterator-full", "tab:iterator-baselines",
+                "tab:iterator-crosslang",
                 "tab:iterator-layerwise", "tab:causal-full",
                 "tab:class-probe-link", "tab:class-gate-audit",
                 "tab:class-patching-audit", "app:coverage-holes",
@@ -93,6 +106,8 @@ def main() -> int:
         (
             "Interp appendix includes all iterator patching exports",
             all(fragment in appendix for fragment in (
+                "tab:iterator-patching-qwen2.5-1.5B-within",
+                "tab:iterator-patching-qwen2.5-1.5B-cross",
                 "tab:iterator-patching-qwen_1.5B-within",
                 "tab:iterator-patching-qwen_1.5B-cross",
                 "tab:iterator-patching-starcoder2-within",
@@ -100,12 +115,32 @@ def main() -> int:
             )),
         ),
         (
-            "Interp appendix includes causal, probe, and role figure families",
-            appendix.count("../results/boolean/causal/layer_profile_") == 15
-            and appendix.count("\\label{fig:boolean-probe-") == 12
+            "Interp appendix keeps the probe figure families",
+            appendix.count("\\label{fig:boolean-probe-") == 12
             and appendix.count("\\label{fig:boolean-layers-") == 4
-            and "\\label{fig:boolean-renaming-python}" in appendix
-            and appendix.count("\\label{fig:interp-") == 20,
+            and "\\label{fig:boolean-renaming-python}" in appendix,
+        ),
+        # The submission build omits the supplementary figure dumps, which cost
+        # about a page each and carry no number the tables lack. Dropping them
+        # must stay a build choice rather than a deletion, so the generator has
+        # to retain the code paths and the appendix has to say how to get them.
+        (
+            "omitted figure dumps stay regenerable and are pointed at",
+            "full-figures" in appendix
+            and all(
+                fragment in generator
+                for fragment in (
+                    "--full-figures",
+                    # exact signatures and call sites: a substring like
+                    # "def role_figures" also matches a renamed-out stub
+                    "def boolean_causal_figures() -> str:",
+                    "def role_figures() -> str:",
+                    "boolean_causal_figures(),",
+                    "role_figures(),",
+                    "layer_profile_",
+                    "fig:interp-",
+                )
+            ),
         ),
     ]
 
@@ -159,14 +194,17 @@ def main() -> int:
          and "$0.014$--$0.017$" in text),
         ("paper's cluster count matches the CSV",
          {r["n_clusters"] for r in paired} == {"915"} and "$915$" in text),
-        ("resolved-negative language present, unresolved language gone",
-         "Resolved negative" in text and "Not resolved. Retain paired" not in text),
+        ("bounded-negative language present, unresolved language gone",
+         "bounded negative result" in text
+         and "Not supported." in text
+         and "intervals exclude advantages above" in text
+         and "Not resolved. Retain paired" not in text),
     ]
     checks += [
         (
             "heterogeneous probe units are stated",
-            "boolean mean-pools" in text
-            and "token probes label all other tokens negative" in text,
+            "boolean mean-pools" in text.lower()
+            and "token probes label all other tokens as negative" in text,
         ),
         (
             "repository history is not called preregistration",
@@ -212,42 +250,79 @@ def main() -> int:
         ),
     ]
 
-    iterator_configs = [
-        (
-            ROOT / "results/iterator/Qwen2.5-Coder-1.5B Results",
-            "qwen_1.5B",
-            "0.988",
-            "+0.012",
-            "0.936",
-            "0.983",
-        ),
-        (
-            ROOT / "results/iterator/Starcoder2-7B Results",
-            "starcoder2",
-            "0.990",
-            "+0.009",
-            "0.906",
-            "0.964",
-        ),
-    ]
-    for root, stem, expected_f1, expected_delta, expected_min, expected_max in iterator_configs:
-        summary = rows(root / "perturbation" / f"{stem}_summary.csv")
-        baseline = next(row for row in summary if row["strategy"] == "baseline")
-        misleading = next(
-            row for row in summary if row["strategy"] == "misleading_iterator"
+    import json as _json
+    iterator_f1: list[float] = []
+    iterator_selectivity: list[float] = []
+    iterator_misleading: list[float] = []
+    iterator_transfer: list[list[float]] = []
+    for folder in ("Qwen2.5-1.5B", "Qwen2.5-Coder-1.5B", "starcoder2-7b"):
+        data = rows(
+            ROOT / "results/modal/results" / folder
+            / "iterator/perturbation/summary.csv"
         )
-        transfer = rows(root / "crosslang" / f"{stem}_crosslang.csv")
-        scores = [
+        baseline = next(row for row in data if row["strategy"] == "baseline")
+        misleading = next(
+            row for row in data if row["strategy"] == "misleading_iterator"
+        )
+        iterator_f1.append(float(baseline["test_f1_mean"]))
+        iterator_selectivity.append(float(baseline["selectivity"]))
+        iterator_misleading.append(float(misleading["delta_f1_vs_baseline"]))
+        transfer = rows(
+            ROOT / "results/modal/results" / folder
+            / "iterator/crosslang/crosslang.csv"
+        )
+        iterator_transfer.append([
             float(row["transfer_f1_at_py_best"])
             for row in transfer if row["transfer_f1_at_py_best"]
-        ]
-        checks.append((
-            f"iterator {stem} claims trace to CSV",
-            f"{float(baseline['test_f1']):.3f}" == expected_f1
-            and f"{float(misleading['delta_f1_vs_baseline']):+.3f}" == expected_delta
-            and f"{min(scores):.3f}" == expected_min
-            and f"{max(scores):.3f}" == expected_max,
-        ))
+        ])
+    name_only = float(_json.loads(
+        (
+            ROOT / "results/modal/results/Qwen2.5-1.5B/iterator"
+            / "surface_baseline/baselines.json"
+        ).read_text(encoding="utf-8")
+    )["aggregate"]["name_only"]["macro_f1"])
+    checks += [
+        (
+            "iterator probe values are 0.976, 0.978, and 0.987",
+            [f"{value:.3f}" for value in iterator_f1]
+            == ["0.976", "0.978", "0.987"]
+            and "$0.976$, $0.978$, and $0.987$" in text,
+        ),
+        (
+            "iterator selectivity range is 0.526-0.552",
+            f"{min(iterator_selectivity):.3f}" == "0.526"
+            and f"{max(iterator_selectivity):.3f}" == "0.552"
+            and "$+0.526$ to $+0.552$" in text,
+        ),
+        (
+            "iterator misleading deltas round to +0.023/+0.020/+0.012",
+            [f"{value:+.3f}" for value in iterator_misleading]
+            == ["+0.023", "+0.020", "+0.012"],
+        ),
+        (
+            "iterator name-only surface is 0.918",
+            f"{name_only:.3f}" == "0.918" and "$0.918$" in text,
+        ),
+        (
+            "iterator transfer ranges match the paper",
+            [f"{min(scores):.3f}" for scores in iterator_transfer]
+            == ["0.934", "0.898", "0.887"]
+            and [f"{max(scores):.3f}" for scores in iterator_transfer]
+            == ["0.981", "0.923", "0.938"]
+            and "$0.934$--$0.981$" in text,
+        ),
+        (
+            "iterator coverage hole is the unpaired surface gap",
+            "probe-minus-surface gap is not a paired clustered interval"
+            in appendix
+            and "not Qwen2.5-1.5B" not in appendix,
+        ),
+        (
+            "default appendix keeps the iterator figure family",
+            "\\label{fig:interp-iterator-probe-curves}" in appendix
+            and "\\label{fig:interp-iterator-patching-recovery}" in appendix,
+        ),
+    ]
 
     causal_path = (
         ROOT / "results/modal/patching/class-struct-python-v1-20260819"

@@ -1,6 +1,7 @@
 """Generate the Interp as a Science appendix from committed result artifacts."""
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import statistics as st
@@ -47,14 +48,14 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 def boolean_table() -> str:
     rows = read_csv(ROOT / "results/boolean/probe/summary.csv")
     lines = [
-        "\\begin{table}[p]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Complete boolean occurrence-type probe and model-free baseline "
         "results. The best baseline is selected from name-only, masked statement, "
         "masked line, masked window, covariate-only, and majority features. "
         "$\\rho$ is a descriptive one-instance score step, not an interval or "
-        "equivalence test; aligned probe/baseline predictions were not retained.}",
+        "equivalence test. Aligned probe/baseline predictions were not retained.}",
         "\\label{tab:boolean-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",
         "language & model & problems & probe F1 & best baseline & difference & "
         "$\\rho$ & selectivity \\\\",
@@ -72,15 +73,15 @@ def boolean_table() -> str:
 
     python = [row for row in rows if row["language"] == "python"]
     lines += [
-        "\\begin{table}[h]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Boolean Python identifier-renaming audit. C1--C5 are the five "
         "committed renaming conditions. Each condition refits a probe and reselects "
         "its layer, so deltas measure recoverability rather than fixed-direction "
-        "invariance; intervals are problem-clustered. Empty "
+        "invariance. Intervals are problem-clustered. Empty "
         "renaming fields for other languages indicate that those runs were not "
         "committed, not a null result.}",
         "\\label{tab:boolean-renaming-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{lrrrrr}", "\\toprule",
         "model & C1 & C2 & C3 & C4 & C5 \\\\", "\\midrule",
     ]
@@ -96,12 +97,12 @@ def boolean_table() -> str:
         row["language"]: row for row in rows
     }
     lines += [
-        "\\begin{table}[h]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Complete model-free boolean baselines by language. Baselines "
         "are shared across the three neural models because they use the same "
         "frozen examples and surface features.}",
         "\\label{tab:boolean-baselines-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{lrrrrrr}", "\\toprule",
         "language & majority & name & statement & line & window & covariates \\\\",
         "\\midrule",
@@ -127,12 +128,12 @@ def class_struct_table() -> str:
         ("StarCoder2-7B", "starcoder2-7b"),
     ]
     lines = [
-        "\\begin{table}[p]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Complete class/structure perturbation results under the shared "
         "five-seed protocol. Each condition refits a probe and selects its own layer "
         "on validation data, so cross-condition deltas do not test a fixed direction.}",
         "\\label{tab:class-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",
         "model & strategy & layer & F1 & 95\\% CI & control F1 & selectivity & "
         "$\\Delta$ \\\\",
@@ -144,7 +145,7 @@ def class_struct_table() -> str:
             / "class_struct/perturbation/summary.csv"
         )
         for row in summary:
-            delta = "---" if not row["delta_f1_vs_baseline"] else (
+            delta = "N/A" if not row["delta_f1_vs_baseline"] else (
                 f"{float(row['delta_f1_vs_baseline']):+.3f}"
             )
             lines.append(
@@ -158,12 +159,12 @@ def class_struct_table() -> str:
     lines += ["\\bottomrule", "\\end{tabular}}", "\\end{table}", ""]
 
     lines += [
-        "\\begin{table}[p]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Class/structure cross-language results. Transfer uses the "
-        "Python-selected layer; in-domain layers are selected separately. "
+        "Python-selected layer. In-domain layers are selected separately. "
         "Only languages present in the committed exports are shown.}",
         "\\label{tab:class-crosslang}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",
         "model & language & programs & in-domain layer & in-domain F1 & "
         "transfer accuracy & transfer F1 \\\\", "\\midrule",
@@ -174,10 +175,10 @@ def class_struct_table() -> str:
             / "class_struct/crosslang/crosslang.csv"
         )
         for row in cross:
-            transfer_acc = "---" if not row["transfer_acc_at_py_best"] else (
+            transfer_acc = "N/A" if not row["transfer_acc_at_py_best"] else (
                 f"{float(row['transfer_acc_at_py_best']):.3f}"
             )
-            transfer_f1 = "---" if not row["transfer_f1_at_py_best"] else (
+            transfer_f1 = "N/A" if not row["transfer_f1_at_py_best"] else (
                 f"{float(row['transfer_f1_at_py_best']):.3f}"
             )
             lines.append(
@@ -189,12 +190,12 @@ def class_struct_table() -> str:
     lines += ["\\bottomrule", "\\end{tabular}}", "\\end{table}", ""]
 
     lines += [
-        "\\begin{table}[p]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Layerwise class/structure robustness summaries. The F1 range "
-        "is taken over all committed layers; maximum cosine similarity is measured "
+        "is taken over all committed layers. Maximum cosine similarity is measured "
         "against the baseline activation direction for each renamed condition.}",
         "\\label{tab:class-layerwise}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrr}", "\\toprule",
         "model & strategy & minimum F1 & maximum F1 (layer) & "
         "maximum cosine (layer) \\\\", "\\midrule",
@@ -215,7 +216,7 @@ def class_struct_table() -> str:
             low = min(float(row["test_f1"]) for row in curve)
             high = max(curve, key=lambda row: float(row["test_f1"]))
             if strategy == "baseline":
-                cosine_cell = "---"
+                cosine_cell = "N/A"
             else:
                 c_row = cosine_by_strategy[strategy]
                 layer_values = [
@@ -234,84 +235,118 @@ def class_struct_table() -> str:
 
 
 def iterator_table() -> str:
-    configs = [
-        (
-            "Qwen2.5-Coder-1.5B",
-            ROOT / "results/iterator/Qwen2.5-Coder-1.5B Results",
-            "qwen_1.5B",
-        ),
-        (
-            "StarCoder2-7B",
-            ROOT / "results/iterator/Starcoder2-7B Results",
-            "starcoder2",
-        ),
+    model_paths = [
+        ("Qwen2.5-1.5B", "Qwen2.5-1.5B"),
+        ("Qwen2.5-Coder-1.5B", "Qwen2.5-Coder-1.5B"),
+        ("StarCoder2-7B", "starcoder2-7b"),
     ]
     lines = [
-        "\\begin{table}[p]\\centering\\small",
-        "\\caption{Complete iterator perturbation results. Each condition refits a "
-        "probe and selects its own best layer. These single-run summaries do not carry the "
-        "five-seed intervals used for the class/structure role.}",
+        "\\begin{table}[htbp]\\centering\\small",
+        "\\caption{Complete iterator perturbation results under the shared "
+        "five-seed protocol. Each condition refits a probe and selects its own layer "
+        "on validation data, so cross-condition deltas do not test a fixed direction.}",
         "\\label{tab:iterator-full}",
-        "\\resizebox{\\linewidth}{!}{%",
-        "\\begin{tabular}{llrrrr}", "\\toprule",
-        "model & strategy & best layer & accuracy & F1 & $\\Delta$ \\\\",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
+        "\\begin{tabular}{llrrrrrr}", "\\toprule",
+        "model & strategy & layer & F1 & 95\\% CI & control F1 & selectivity & "
+        "$\\Delta$ \\\\",
         "\\midrule",
     ]
-    for label, root, stem in configs:
-        summary = read_csv(root / "perturbation" / f"{stem}_summary.csv")
+    for label, folder in model_paths:
+        summary = read_csv(
+            ROOT / "results/modal/results" / folder
+            / "iterator/perturbation/summary.csv"
+        )
         for row in summary:
-            delta = "---" if not row["delta_f1_vs_baseline"] else (
+            delta = "N/A" if not row["delta_f1_vs_baseline"] else (
                 f"{float(row['delta_f1_vs_baseline']):+.3f}"
             )
             lines.append(
-                f"{label} & {esc(row['strategy'])} & L{int(row['best_layer'])} & "
-                f"{float(row['test_acc']):.3f} & {float(row['test_f1']):.3f} & "
-                f"{delta} \\\\"
+                f"{label} & {esc(row['strategy'])} & "
+                f"L{int(row['selected_layer'])} & "
+                f"{float(row['test_f1_mean']):.3f} & "
+                f"[{float(row['ci_low']):.3f}, {float(row['ci_high']):.3f}] & "
+                f"{float(row['control_f1']):.3f} & "
+                f"{float(row['selectivity']):+.3f} & {delta} \\\\"
             )
     lines += ["\\bottomrule", "\\end{tabular}}", "\\end{table}", ""]
 
+    blob = json.loads(
+        (
+            ROOT / "results/modal/results/Qwen2.5-1.5B/iterator"
+            / "surface_baseline/baselines.json"
+        ).read_text(encoding="utf-8")
+    )
+    surface_order = (
+        ("majority", "majority"),
+        ("covariates_only", "covariates"),
+        ("line_masked", "masked line"),
+        ("statement_masked", "masked statement"),
+        ("window_masked", "masked window"),
+        ("name_only", "name only"),
+    )
     lines += [
-        "\\begin{table}[p]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
+        "\\caption{Model-free iterator surface baselines on the same $427$ Python "
+        "programs. Scores are occurrence-level macro-F1 and are not a paired "
+        "probe-minus-surface interval.}",
+        "\\label{tab:iterator-baselines}",
+        "\\begin{tabular}{lr}", "\\toprule",
+        "comparator & macro-F1 \\\\", "\\midrule",
+    ]
+    for key, name in surface_order:
+        lines.append(f"{name} & {float(blob['aggregate'][key]['macro_f1']):.3f} \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
+
+    lines += [
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Complete iterator cross-language transfer results. "
         "Transfer columns use the Python-selected layer.}",
         "\\label{tab:iterator-crosslang}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrrrrr}", "\\toprule",
         "model & language & programs & in-domain layer & in-domain F1 & "
         "transfer accuracy & transfer F1 \\\\", "\\midrule",
     ]
-    for label, root, stem in configs:
-        transfer = read_csv(root / "crosslang" / f"{stem}_crosslang.csv")
+    for label, folder in model_paths:
+        transfer = read_csv(
+            ROOT / "results/modal/results" / folder
+            / "iterator/crosslang/crosslang.csv"
+        )
         for row in transfer:
-            transfer_acc = "---" if not row["transfer_acc_at_py_best"] else (
+            transfer_acc = "N/A" if not row["transfer_acc_at_py_best"] else (
                 f"{float(row['transfer_acc_at_py_best']):.3f}"
             )
-            transfer_f1 = "---" if not row["transfer_f1_at_py_best"] else (
+            transfer_f1 = "N/A" if not row["transfer_f1_at_py_best"] else (
                 f"{float(row['transfer_f1_at_py_best']):.3f}"
             )
             lines.append(
                 f"{label} & {LANG_DISPLAY[row['language']]} & "
-                f"{int(row['programs'])} & L{int(row['indomain_best_layer'])} & "
-                f"{float(row['indomain_test_f1']):.3f} & "
+                f"{int(row['programs'])} & L{int(row['indomain_selected_layer'])} & "
+                f"{float(row['indomain_test_f1_mean']):.3f} & "
                 f"{transfer_acc} & {transfer_f1} \\\\"
             )
     lines += ["\\bottomrule", "\\end{tabular}}", "\\end{table}", ""]
 
     lines += [
-        "\\begin{table}[p]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Layerwise iterator robustness summaries. F1 ranges cover every "
-        "committed layer; cosine similarity compares each perturbation direction "
+        "committed layer. Cosine similarity compares each perturbation direction "
         "with the baseline direction.}",
         "\\label{tab:iterator-layerwise}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{llrrr}", "\\toprule",
         "model & strategy & minimum F1 & maximum F1 (layer) & "
         "maximum cosine (layer) \\\\", "\\midrule",
     ]
-    for label, root, stem in configs:
-        per_layer = read_csv(root / "perturbation" / f"{stem}_per_layer.csv")
+    for label, folder in model_paths:
+        per_layer = read_csv(
+            ROOT / "results/modal/results" / folder
+            / "iterator/perturbation/per_layer.csv"
+        )
         cosine = read_csv(
-            root / "perturbation" / f"{stem}_cosine_vs_baseline.csv"
+            ROOT / "results/modal/results" / folder
+            / "iterator/perturbation/cosine_vs_baseline.csv"
         )
         cosine_by_strategy = {row["strategy"]: row for row in cosine}
         for strategy in sorted({row["strategy"] for row in per_layer}):
@@ -319,7 +354,7 @@ def iterator_table() -> str:
             low = min(float(row["test_f1"]) for row in curve)
             high = max(curve, key=lambda row: float(row["test_f1"]))
             if strategy == "baseline":
-                cosine_cell = "---"
+                cosine_cell = "N/A"
             else:
                 c_row = cosine_by_strategy[strategy]
                 layer_values = [
@@ -339,6 +374,11 @@ def iterator_table() -> str:
 
 def iterator_patching_tables() -> str:
     configs = [
+        (
+            "Qwen2.5-1.5B",
+            ROOT / "results/iterator/Qwen2.5-1.5B Results",
+            "qwen2.5-1.5B",
+        ),
         (
             "Qwen2.5-Coder-1.5B",
             ROOT / "results/iterator/Qwen2.5-Coder-1.5B Results",
@@ -369,11 +409,11 @@ def iterator_patching_tables() -> str:
                 key for key in data[0] if key.startswith("recovery_layer_")
             ]
             lines = [
-                "\\begin{table}[p]\\centering\\scriptsize",
+                "\\begin{table}[htbp]\\centering\\scriptsize",
                 f"\\caption{{Exploratory iterator activation-patching recovery for "
                 f"{label}, {scope}.}}",
                 f"\\label{{tab:iterator-patching-{stem}-{scope.split('-')[0].split()[0]}}}",
-                "\\resizebox{\\linewidth}{!}{%",
+                "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
                 f"\\begin{{tabular}}{{llrr{'r' * len(recovery_columns)}}}",
                 "\\toprule",
                 "condition & readout & pairs & clean/corrupt & "
@@ -393,7 +433,7 @@ def iterator_patching_tables() -> str:
                 for column in recovery_columns:
                     value = row[column]
                     recoveries.append(
-                        "---" if value.lower() == "nan" else f"{float(value):.3f}"
+                        "N/A" if value.lower() == "nan" else f"{float(value):.3f}"
                     )
                 lines.append(
                     f"{condition} & L{int(row['readout_layer'])} & "
@@ -405,6 +445,76 @@ def iterator_patching_tables() -> str:
     return "\n\n".join(blocks)
 
 
+def iterator_figures() -> str:
+    figures = [
+        (
+            "../results/iterator/probe_f1_layer_iterator.png",
+            "Iterator probe macro-F1 across layers on original names, with the "
+            "name-only surface baseline marked.",
+            "iterator-probe-curves",
+        ),
+        (
+            "../results/iterator/delta_f1_iterator.png",
+            "Iterator perturbation deltas relative to baseline.",
+            "iterator-renaming-deltas",
+        ),
+        (
+            "../results/iterator/cosine_vs_baseline_iterator.png",
+            "Iterator cosine similarity to the baseline direction.",
+            "iterator-cosine",
+        ),
+        (
+            "../results/iterator/cross_language_iterator.png",
+            "Available iterator cross-language transfer results.",
+            "iterator-crosslang",
+        ),
+        (
+            "../results/iterator/probe_vs_baselines_iterator.png",
+            "Iterator probe versus matched model-free surface baselines on the "
+            "same 427 Python programs.",
+            "iterator-surface",
+        ),
+        (
+            "../results/iterator/probe_f1_perturbations_iterator.png",
+            "Iterator probe macro-F1 across layers and renaming strategies.",
+            "iterator-perturbation-curves",
+        ),
+        (
+            "../results/iterator/summary_f1_ci_iterator.png",
+            "Iterator val-selected F1 by renaming strategy, with BCa 95\\% "
+            "intervals.",
+            "iterator-summary-ci",
+        ),
+        (
+            "../results/iterator/heatmap_iterator.png",
+            "Iterator probe F1 by strategy and layer.",
+            "iterator-heatmap",
+        ),
+        (
+            "../results/iterator/patching_recovery_iterator.png",
+            "Exploratory iterator activation-patching recovery under Python "
+            "name perturbations. The terminal layer is one by construction.",
+            "iterator-patching-recovery",
+        ),
+        (
+            "../results/iterator/crosslang_patching_recovery_iterator.png",
+            "Exploratory iterator activation-patching recovery under "
+            "cross-language transfer. C-language rows with zero pairs are omitted.",
+            "iterator-patching-crosslang",
+        ),
+    ]
+    blocks = []
+    for path, caption, label in figures:
+        blocks += [
+            "\\begin{figure}[htbp]\\centering",
+            f"\\includegraphics[width=0.78\\linewidth]{{\\detokenize{{{path}}}}}",
+            f"\\caption{{{caption}}}",
+            f"\\label{{fig:interp-{label}}}",
+            "\\end{figure}",
+        ]
+    return "\n".join(blocks)
+
+
 def class_causal_table() -> str:
     root = (
         ROOT / "results/modal/patching/class-struct-python-v1-20260819"
@@ -413,20 +523,20 @@ def class_causal_table() -> str:
     )
     rows = read_csv(root / "summary.csv")
     lines = [
-        "\\begin{table}[p]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Complete gate-specified class/structure patching summary in "
         "Qwen2.5-1.5B. The causal gate required mean effect at least $0.10$, "
         "a positive interval, separation from controls, and recovery at least $0.05$ "
         "in both directions.}",
         "\\label{tab:causal-full}",
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{rllllrrrr}", "\\toprule",
         "layer & span & direction & control & $n$ & mean effect & 95\\% CI & "
         "recovery & minus random \\\\", "\\midrule",
     ]
     for row in rows:
         minus_random = (
-            "---" if not row["minus_random"]
+            "N/A" if not row["minus_random"]
             else f"{float(row['minus_random']):+.4f}"
         )
         lines.append(
@@ -442,7 +552,7 @@ def class_causal_table() -> str:
     probe_movement = [abs(float(row["symmetric_probe_movement"])) for row in linked]
     behavior = [abs(float(row["symmetric_behavior"])) for row in linked]
     lines += [
-        "\\begin{table}[h]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Aggregate probe-link diagnostic for the class/structure "
         "evaluation pairs. Absolute values are reported because pair orientation "
         "is arbitrary. Large probe movement alongside small behavioral movement "
@@ -475,9 +585,9 @@ def class_causal_table() -> str:
     status = json.loads((patch_root / "status.json").read_text())
     function_d = -float(behavior_gate["neg_function_D"]["point"])
     lines += [
-        "\\begin{table}[h]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Class/structure gate and readout audit. Both prompt classes "
-        "favor \\texttt{True}; the pairwise gap remains separable, but the "
+        "favor \\texttt{True}. The pairwise gap remains separable, but the "
         "binary readout is not calibrated to distinguish function prompts.}",
         "\\label{tab:class-gate-audit}",
         "\\begin{tabular}{lrrr}", "\\toprule",
@@ -496,11 +606,11 @@ def class_causal_table() -> str:
         f"{behavior_gate['pair_gap_acc']['ci_high']:.3f}] & pass \\\\",
         f"query/declaration probe AUC & "
         f"{primary_gate['probe_ood']['query_auc']:.3f}/"
-        f"{primary_gate['probe_ood']['declaration_auc']:.3f} & --- & pass \\\\",
+        f"{primary_gate['probe_ood']['declaration_auc']:.3f} & N/A & pass \\\\",
         "\\bottomrule", "\\end{tabular}", "\\end{table}", "",
-        "\\begin{table}[h]\\centering\\small",
+        "\\begin{table}[htbp]\\centering\\small",
         "\\caption{Patching audit trail. Completeness establishes that the "
-        "scheduled Qwen evaluation finished; it does not turn the failed causal "
+        "scheduled Qwen evaluation finished. It does not turn the failed causal "
         "gate into positive evidence. The controller stopped before Coder and "
         "StarCoder2 after the Qwen null.}",
         "\\label{tab:class-patching-audit}",
@@ -544,12 +654,12 @@ def boolean_causal_tables() -> str:
     ]
     for mode in ("patch", "steer", "ablate"):
         lines = [
-            "\\begin{table}[p]\\centering\\small",
+            "\\begin{table}[htbp]\\centering\\small",
             f"\\caption{{Exploratory boolean {mode} diagnostics. "
             "Effect and specificity use the exporter definitions above. "
             "No uncertainty interval is available from the committed summary.}",
             f"\\label{{tab:boolean-{mode}}}",
-            "\\resizebox{\\linewidth}{!}{%",
+            "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
             "\\begin{tabular}{llrrrrr}", "\\toprule",
             "language & model & $n$ & peak layer & peak effect & "
             "spec. at peak & best spec. (layer) \\\\",
@@ -598,7 +708,7 @@ def boolean_causal_figures() -> str:
     for language in ("cpp", "java", "javascript", "php", "python"):
         for mode in ("patch", "steer", "ablate"):
             blocks += [
-                "\\begin{figure}[p]\\centering",
+                "\\begin{figure}[htbp]\\centering",
                 f"\\includegraphics[width=\\linewidth]{{../results/boolean/causal/"
                 f"layer_profile_{language}_{mode}.png}}",
                 f"\\caption{{Boolean {mode} layer profiles for {LANG[language]} "
@@ -611,42 +721,55 @@ def boolean_causal_figures() -> str:
 
 
 def boolean_probe_figures() -> str:
+    """2x2 galleries: one per model over the four languages, then the layer
+    curves, then the single committed renaming figure. Panel labels stay on
+    the subfigures so every figure keeps its own \\label and cross-reference."""
     blocks = [
         "\\paragraph{Boolean probe figures.} The baseline panels retain the "
         "individual surface comparators hidden by the best-baseline table. "
-        "Renaming is available only for Python; the absence of corresponding "
+        "Renaming is available only for Python. The absence of corresponding "
         "figures in other languages is a coverage hole."
     ]
-    for language in ("java", "javascript", "php", "python"):
-        for model in ("qwen2515b", "qwen25coder15b", "starcoder27b"):
+    langs = ("java", "javascript", "php", "python")
+    for model in ("qwen2515b", "qwen25coder15b", "starcoder27b"):
+        blocks.append("\\begin{figure}[htbp]\\centering")
+        for i, language in enumerate(langs):
             blocks += [
-                "\\begin{figure}[p]\\centering",
-                f"\\includegraphics[width=0.9\\linewidth]{{../results/boolean/"
+                "\\begin{subfigure}{0.49\\linewidth}\\centering",
+                f"\\includegraphics[width=\\linewidth]{{../results/boolean/"
                 f"probe_vs_baselines_{language}_train_{model}.png}}",
-                f"\\caption{{Boolean probe and model-free baselines for "
-                f"{LANG[language]}, {MODEL[model]}.}}",
+                f"\\caption{{{LANG[language]}}}",
                 f"\\label{{fig:boolean-probe-{language}-{model}}}",
-                "\\end{figure}",
+                "\\end{subfigure}" + ("\\hfill" if i % 2 == 0 else ""),
             ]
         blocks += [
-            "\\begin{figure}[p]\\centering",
-            f"\\includegraphics[width=0.9\\linewidth]{{../results/boolean/"
-            f"layer_curves_{language}_train.png}}",
-            f"\\caption{{Boolean probe layer curves for {LANG[language]} across "
-            "the three models.}",
-            f"\\label{{fig:boolean-layers-{language}}}",
+            f"\\caption{{Boolean probe and model-free baselines for "
+            f"{MODEL[model]} across the four committed languages.}}",
+            f"\\label{{fig:boolean-gallery-probe-{model}}}",
             "\\end{figure}",
         ]
-        blocks.append("\\clearpage")
+    blocks.append("\\begin{figure}[htbp]\\centering")
+    for i, language in enumerate(langs):
+        blocks += [
+            "\\begin{subfigure}{0.49\\linewidth}\\centering",
+            f"\\includegraphics[width=\\linewidth]{{../results/boolean/"
+            f"layer_curves_{language}_train.png}}",
+            f"\\caption{{{LANG[language]}}}",
+            f"\\label{{fig:boolean-layers-{language}}}",
+            "\\end{subfigure}" + ("\\hfill" if i % 2 == 0 else ""),
+        ]
     blocks += [
-        "\\begin{figure}[p]\\centering",
-        "\\includegraphics[width=0.9\\linewidth]{../results/boolean/"
+        "\\caption{Boolean probe layer curves per language across the three "
+        "models.}",
+        "\\label{fig:boolean-gallery-layers}",
+        "\\end{figure}",
+        "\\begin{figure}[htbp]\\centering",
+        "\\includegraphics[width=0.78\\linewidth]{../results/boolean/"
         "renaming_deltas_python_train.png}",
         "\\caption{Problem-paired boolean refit-performance deltas on Python. "
         "No corresponding committed renaming run exists for other languages.}",
         "\\label{fig:boolean-renaming-python}",
         "\\end{figure}",
-        "\\clearpage",
     ]
     return "\n".join(blocks)
 
@@ -767,8 +890,8 @@ def role_figures() -> str:
     ]
     for index, (path, caption, label) in enumerate(figures, start=1):
         blocks += [
-            "\\begin{figure}[p]\\centering",
-            f"\\includegraphics[width=0.9\\linewidth]{{\\detokenize{{{path}}}}}",
+            "\\begin{figure}[htbp]\\centering",
+            f"\\includegraphics[width=0.78\\linewidth]{{\\detokenize{{{path}}}}}",
             f"\\caption{{{caption}}}",
             f"\\label{{fig:interp-{label}}}",
             "\\end{figure}",
@@ -782,40 +905,66 @@ def role_figures() -> str:
 def coverage_holes() -> str:
     return "\n".join([
         "\\begin{itemize}",
-        "\\item Accumulator and index/key results use legacy exports; no committed "
+        "\\item Accumulator and index/key results use legacy exports. No committed "
         "problem-grouped, five-seed CSV reproduces those roles under the modern protocol.",
-        "\\item Iterator results are available for Qwen2.5-Coder-1.5B and "
-        "StarCoder2-7B, but not Qwen2.5-1.5B.",
+        "\\item Iterator has a model-free surface comparator. The "
+        "probe-minus-surface gap is not a paired clustered interval.",
         "\\item Class/structure transfer exports include Python, C++, JavaScript, "
         "and C, but not Java, C\\#, or PHP.",
-        "\\item Boolean probe exports include Python, Java, JavaScript, and PHP; "
+        "\\item Boolean probe exports include Python, Java, JavaScript, and PHP. "
         "C, C\\#, and C++ are absent, and renaming is available only for Python.",
         "\\item Gate-specified class/structure patching stopped after the Qwen2.5-1.5B "
-        "null; Coder, StarCoder2, and the all-layer core sweep were not attempted.",
+        "null. Coder, StarCoder2, and the all-layer core sweep were not attempted.",
         "\\item No matched model-free surface comparator is committed for the "
         "class/structure role.",
         "\\end{itemize}",
     ])
 
 
-content = "\n\n".join([
+# Every figure below is typeset [p], so it claims a page of its own. The
+# supplementary dumps therefore cost roughly a page each while carrying no
+# number that a table does not already carry, and no main-text claim or test
+# refers to any of them. They are omitted by default and regenerated with
+# --full-figures, which keeps the complete record reproducible from the same
+# committed artifacts.
+ap = argparse.ArgumentParser(description=__doc__)
+ap.add_argument("--full-figures", action="store_true",
+                help="include the supplementary figure dumps, roughly 35 extra "
+                     "pages, that the submission build omits")
+args = ap.parse_args()
+
+sections = [
     "% GENERATED by scripts/make_interp_appendix.py -- do not edit by hand.",
-    "\\section{Per-role control results}\n\\label{app:controls}",
+    "\\FloatBarrier\n\\Needspace{16\\baselineskip}\n\\section{Per-role control results}\n\\label{app:controls}",
     boolean_table(),
     boolean_probe_figures(),
     class_struct_table(),
     iterator_table(),
-    "\\section{Causal intervention details}\n\\label{app:causal}",
+    iterator_figures(),
+    "\\FloatBarrier\n\\Needspace{16\\baselineskip}\n\\section{Causal intervention details}\n\\label{app:causal}",
     class_causal_table(),
     iterator_patching_tables(),
-    "\\section{Exploratory boolean interventions}\n\\label{app:boolean-causal}",
+    "\\FloatBarrier\n\\Needspace{16\\baselineskip}\n\\section{Exploratory boolean interventions}\n\\label{app:boolean-causal}",
     boolean_causal_tables(),
-    boolean_causal_figures(),
-    "\\section{Committed role-analysis figures}\n\\label{app:role-figures}",
-    role_figures(),
-    "\\section{Explicit coverage holes}\n\\label{app:coverage-holes}",
+]
+if args.full_figures:
+    sections += [
+        boolean_causal_figures(),
+        "\\FloatBarrier\n\\Needspace{16\\baselineskip}\n\\section{Committed role-analysis figures}\n\\label{app:role-figures}",
+        role_figures(),
+    ]
+else:
+    sections.append(
+        "\\paragraph{Omitted figures.} Per-cell diagnostic plots for the "
+        "exploratory boolean interventions and the committed role analyses are "
+        "reproducible from the same artifacts with "
+        "\\texttt{make\\_interp\\_appendix.py --full-figures}. They visualize "
+        "the tables above and add no uncertainty estimate the exports lack."
+    )
+sections += [
+    "\\FloatBarrier\n\\Needspace{16\\baselineskip}\n\\section{Explicit coverage holes}\n\\label{app:coverage-holes}",
     coverage_holes(),
-]) + "\n"
+]
 
-OUT.write_text(content)
+OUT.write_text("\n\n".join(sections) + "\n")
 print(f"  wrote {OUT.relative_to(ROOT)}")

@@ -153,3 +153,7 @@ data/xlcost_renamed/
 **/hidden.npy
 **/labels.npy
 **/programs.npy
+
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store

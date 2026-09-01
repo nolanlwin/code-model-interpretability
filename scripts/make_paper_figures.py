@@ -205,8 +205,8 @@ def fig_masked():
         return st.mean(near), st.mean(far)
     series = [
         ("Surface $n$-gram, name masked",   cond("surface_window_masked"), ORANGE, "o", (0, ())),
-        ("Probe, span-pooled (reads name)", cond("qwen25coder15b"), BLUE, "s", (0, (5, 1.6))),
-        ("Probe, context-pooled (no name)", cond("qwen25coder15bpoolcontext16"), AQUA, "^", (0, (1.6, 1.6))),
+        ("Probe, span-pooled (includes occurrence)", cond("qwen25coder15b"), BLUE, "s", (0, (5, 1.6))),
+        ("Probe, occurrence-excluded", cond("qwen25coder15bpoolcontext16"), AQUA, "^", (0, (1.6, 1.6))),
         ("Untrained, context-pooled",       cond("qwen25coder15brandominits0poolcontext16"),
                                             VIOLET, "D", (0, (4, 1.4, 1, 1.4))),
     ]
