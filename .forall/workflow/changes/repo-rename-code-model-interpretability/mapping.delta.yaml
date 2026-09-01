@@ -1,0 +1,39 @@
+version: 1
+requirements:
+  - id: notebooks-name-the-repository-directly
+    capability: repository-references
+    requirement: "Notebooks name the repository directly"
+    verified: false
+    code:
+      file: notebooks/colab_export_results.ipynb
+      symbols: [notebook]
+    contract: |
+      Every hard-coded clone, push, and browse URL names
+      github.com/nolanlwin/code-model-interpretability, so no notebook depends
+      on a GitHub rename redirect. This notebook is the anchor because it both
+      clones and pushes.
+    claimcheck: false
+
+  - id: artifact-paths-are-preserved
+    capability: repository-references
+    requirement: "Artifact paths are preserved"
+    verified: false
+    code:
+      file: notebooks/colab_export_results.ipynb
+      symbols: [notebook]
+    contract: |
+      Google Drive roots under /content/drive/MyDrive/mech-interp/ name user
+      storage rather than the repository and are left unchanged.
+    claimcheck: false
+
+  - id: edited-notebooks-remain-loadable
+    capability: repository-references
+    requirement: "Edited notebooks remain loadable"
+    verified: false
+    code:
+      file: notebooks/colab_export_results.ipynb
+      symbols: [notebook]
+    contract: |
+      Each edited notebook parses as JSON after substitution and retains its
+      original cell count.
+    claimcheck: false
