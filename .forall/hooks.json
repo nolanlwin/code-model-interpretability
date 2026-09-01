@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/session-start.sh",
+            "command": "/Users/naingoolwin/Desktop/code-model-interpretability/.forall/hooks/session-start.sh",
             "timeout": 30,
             "statusMessage": "forall context"
           }
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/pre-tool-use.sh",
+            "command": "/Users/naingoolwin/Desktop/code-model-interpretability/.forall/hooks/pre-tool-use.sh",
             "timeout": 30,
             "statusMessage": "forall gate"
           }
@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/post-edit.sh",
+            "command": "/Users/naingoolwin/Desktop/code-model-interpretability/.forall/hooks/post-edit.sh",
             "timeout": 120,
             "statusMessage": "forall sync"
           }
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/post-tool-use-browser.sh",
+            "command": "/Users/naingoolwin/Desktop/code-model-interpretability/.forall/hooks/post-tool-use-browser.sh",
             "timeout": 15,
             "statusMessage": "forall browser evidence"
           }
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/naingoolwin/Desktop/mech-interp-coding-llms/.forall/hooks/stop.sh",
+            "command": "/Users/naingoolwin/Desktop/code-model-interpretability/.forall/hooks/stop.sh",
             "timeout": 300,
             "statusMessage": "forall check"
           }
