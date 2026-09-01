@@ -149,6 +149,12 @@ def main() -> int:
             and "named repository URL is omitted" in checklist
             and "github.com" not in checklist,
         ),
+        (
+            "checklist answers Yes on experimental setting",
+            r"Answer: \answerYes{}" in checklist.split(
+                r"Experimental setting/details", 1
+            )[1].split(r"Experiment statistical significance", 1)[0],
+        ),
     ]
 
     boolean_causal = rows(ROOT / "results/boolean/causal/summary.csv")

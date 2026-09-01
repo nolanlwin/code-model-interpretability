@@ -1,0 +1,13 @@
+version: 1
+requirements:
+  - id: item-6-is-yes
+    capability: checklist-experimental-setting
+    requirement: "Item 6 is Yes"
+    verified: false
+    code:
+      file: paper/interp_science_short/checklist.tex
+      symbols: [document]
+    contract: |
+      Checklist item 6 answers Yes. The study-design section and reproducibility
+      appendix specify the details needed to understand the results.
+    claimcheck: false
