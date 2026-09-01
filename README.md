@@ -159,7 +159,7 @@ Distinct properties of this path (see `docs/` for the analyses behind them):
 - **Gates before numbers**: per-token tokenizer-offset checks per model
   (`scripts/tokenizer_gate.py`), span-integrity and re-parse gates in
   extraction and renaming; failures are counted, never silent.
-- Colab entry point: [`notebooks/colab_results.ipynb`](https://colab.research.google.com/github/nolanlwin/mech-interp/blob/main/notebooks/colab_results.ipynb)
+- Colab entry point: [`notebooks/colab_results.ipynb`](https://colab.research.google.com/github/nolanlwin/code-model-interpretability/blob/main/notebooks/colab_results.ipynb)
   (Runtime -> GPU -> Run all; set `LANGUAGE` in cell 2; resumable, checkpoints
   to Drive after each model; several languages can run concurrently in
   separate tabs).

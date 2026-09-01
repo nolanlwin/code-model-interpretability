@@ -111,7 +111,7 @@ image = (
     )
     .env({"PATCHING_BASE_GIT_COMMIT": BASE_GIT_COMMIT})
     .add_local_dir(
-        str(REPO), remote_path="/root/mech-interp",
+        str(REPO), remote_path="/root/code-model-interpretability",
         ignore=[
             "**/.git/**", "**/.venv/**", "**/results/**", "**/notebooks/**",
             "**/XLCoST_data/**", "**/outputs/**", "**/.mypy_cache/**",
@@ -160,9 +160,9 @@ def _prep() -> None:
     os.environ["HF_HUB_CACHE"] = "/data/hf/hub"
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
     os.environ["HF_HUB_OFFLINE"] = "1"
-    os.chdir("/root/mech-interp")
-    if "/root/mech-interp" not in sys.path:
-        sys.path.insert(0, "/root/mech-interp")
+    os.chdir("/root/code-model-interpretability")
+    if "/root/code-model-interpretability" not in sys.path:
+        sys.path.insert(0, "/root/code-model-interpretability")
 
 
 def _run_dir(run_id: str) -> Path:

@@ -18,16 +18,37 @@ GitHub rename redirect.
 - **WHEN** a notebook's clone cell is read
 - **THEN** the URL is `https://github.com/nolanlwin/code-model-interpretability.git`
 
-### Requirement: Artifact paths are preserved
+### Requirement: Artifact root follows the renamed Drive folder
 
-Renaming the repository SHALL NOT move any path that names user storage rather
-than the repository, because those paths locate real artifacts that the rename
-does not touch.
+The Drive artifact root SHALL name the folder as it now exists in Drive, since
+a stale root fails silently rather than raising.
 
-#### Scenario: Drive artifact roots are inspected
+#### Scenario: Notebook resolves the artifact root
 
-- **WHEN** notebooks referencing `/content/drive/MyDrive/mech-interp/` are read
-- **THEN** those paths are unchanged by this change
+- **WHEN** a notebook computes its Drive artifact root
+- **THEN** the path is `/content/drive/MyDrive/code-model-interpretability`
+- **AND** the subfolders `xlcost`, `masked`, `causal`, `crosslang`, and `activations_java` are addressed beneath it
+
+#### Scenario: Laptop addresses the same folder over Drive sync
+
+- **WHEN** the macOS Google Drive sync candidates are read
+- **THEN** they name the same folder as the Colab mount path
+
+#### Scenario: No read path retains the retired root
+
+- **WHEN** the notebooks and scripts are searched for a retired artifact root
+- **THEN** the only surviving retired names are repository checkout fallbacks, never an artifact root
+
+### Requirement: Browse links name the current repository
+
+Links that address the repository through a third-party viewer SHALL use the
+current name, including forms that embed the owner and repository without the
+`github.com` host.
+
+#### Scenario: Colab badge is followed
+
+- **WHEN** the `colab.research.google.com/github/...` link in `README.md` is read
+- **THEN** it names `nolanlwin/code-model-interpretability`
 
 ### Requirement: Checkout discovery survives the rename
 

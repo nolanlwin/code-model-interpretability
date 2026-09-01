@@ -47,7 +47,7 @@ image = (
     )
     .add_local_dir(
         str(REPO),
-        remote_path="/root/mech-interp",
+        remote_path="/root/code-model-interpretability",
         ignore=[
             "**/.git/**",
             "**/.venv/**",
@@ -139,8 +139,8 @@ def _run_phase(mode: str, model: str, phase: str):
     import threading
 
     _prep_env()
-    os.chdir("/root/mech-interp")
-    sys.path.insert(0, "/root/mech-interp")
+    os.chdir("/root/code-model-interpretability")
+    sys.path.insert(0, "/root/code-model-interpretability")
     stop = threading.Event()
     _checkpoint_loop(stop)
     cmd = _experiment_cmd(mode, model, phase)

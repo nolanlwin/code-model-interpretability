@@ -28,11 +28,25 @@ the repository directly rather than depend on a redirect.
   cell next.
 - Extend, rather than replace, the Drive fallback list that
   `colab_activations_and_probing.ipynb` searches for a repository checkout.
-  A GitHub rename does not rename a folder already sitting in Drive, so the
-  retired names must keep resolving while a fresh checkout under the new name
-  also resolves.
-- Leave Drive paths that locate extracted activations and masked-probe stores
-  unchanged, for the same reason as the artifact roots above.
+  A repository checkout already sitting in Drive under a retired name keeps
+  that name, so the retired entries must keep resolving while a fresh checkout
+  under the current name also resolves.
+- Rewrite the Drive artifact root, now that the owner has renamed the Drive
+  folder holding `xlcost`, `masked`, `causal`, `crosslang`, and
+  `activations_java` to match the repository. This covers both the Colab
+  mount path and the macOS Google Drive sync paths that address the same
+  folder from a laptop.
+- Rewrite the Colab badge in `README.md`. It uses the
+  `colab.research.google.com/github/<owner>/<repo>` form, so it did not appear
+  in a search for `github.com/<owner>`.
+- Rename the remaining ephemeral checkout directories under `/content` and
+  `/root` so the whole tree agrees on one name.
+
+The Drive rewrite is the one edit here that can fail silently. A wrong artifact
+root does not raise: the restore step uses `cp -n`, which succeeds against a
+missing source, and probes would then run on absent stores. The root is
+therefore rewritten to a single confirmed name rather than guessed, and the
+retired name is left in no read path.
 
 ## Capabilities
 

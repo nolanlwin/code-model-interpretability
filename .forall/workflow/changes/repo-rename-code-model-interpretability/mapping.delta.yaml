@@ -14,16 +14,30 @@ requirements:
       clones and pushes.
     claimcheck: false
 
-  - id: artifact-paths-are-preserved
+  - id: artifact-root-follows-the-renamed-drive-folder
     capability: repository-references
-    requirement: "Artifact paths are preserved"
+    requirement: "Artifact root follows the renamed Drive folder"
     verified: false
     code:
       file: notebooks/colab_export_results.ipynb
       symbols: [notebook]
     contract: |
-      Google Drive roots under /content/drive/MyDrive/mech-interp/ name user
-      storage rather than the repository and are left unchanged.
+      The Drive artifact root names the folder as it now exists in Drive, from
+      both the Colab mount and macOS Drive sync. No retired name survives in a
+      read path except a repository checkout fallback.
+    claimcheck: false
+
+  - id: browse-links-name-the-current-repository
+    capability: repository-references
+    requirement: "Browse links name the current repository"
+    verified: false
+    code:
+      file: README.md
+      symbols: [document]
+    contract: |
+      The Colab badge uses the colab.research.google.com/github/<owner>/<repo>
+      form, which hides the repository name from a search for the github.com
+      host, and names the current repository.
     claimcheck: false
 
   - id: checkout-discovery-survives-the-rename
