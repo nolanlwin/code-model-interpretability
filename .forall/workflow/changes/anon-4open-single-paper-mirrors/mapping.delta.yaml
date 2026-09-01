@@ -1,0 +1,25 @@
+version: 1
+requirements:
+  - id: each-paper-cites-an-anonymous-code-url
+    capability: anon-4open-single-paper-mirrors
+    requirement: "Each paper cites an anonymous code URL"
+    verified: false
+    code:
+      file: paper/interp_science_short/checklist.tex
+      symbols: [document]
+    contract: |
+      Checklist items 5 and 13 stay Yes and name an anonymous.4open.science
+      URL. github.com and nolanlwin are absent from the manuscripts.
+    claimcheck: false
+
+  - id: snapshots-are-single-paper
+    capability: anon-4open-single-paper-mirrors
+    requirement: "Snapshots are single-paper"
+    verified: false
+    code:
+      file: paper/interp_science_short/checklist.tex
+      symbols: [document]
+    contract: |
+      Each anonymous snapshot contains only one paper and does not mention
+      the other workshop or the author GitHub handle.
+    claimcheck: false

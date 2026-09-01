@@ -29,6 +29,7 @@ def main() -> int:
     # running prose; a hook plus a descriptive second half is the naming
     # convention this venue's own literature uses.
     prose = re.sub(r"\\title\{[^}]*\}", "", prose)
+    prose = re.sub(r"\\(?:url|href)\{[^}]+\}", "", prose)
 
     checks.append((
         "title leads with the finding rather than a claim taxonomy",
@@ -146,8 +147,10 @@ def main() -> int:
             and r"Answer: \answerYes{}" in checklist.split(
                 r"Open access to data and code", 1
             )[1].split(r"Experimental setting/details", 1)[0]
-            and "named repository URL is omitted" in checklist
-            and "github.com" not in checklist,
+            and "anonymous.4open.science/r/SameScoreDifferentEvidence2026"
+            in checklist
+            and "github.com" not in checklist
+            and "nolanlwin" not in checklist,
         ),
         (
             "checklist answers Yes on experimental setting",
@@ -174,7 +177,10 @@ def main() -> int:
             and "outcome-aware record reduces that overclaim" in text
             and "name-based heuristics" in text
             and "dataset card documents" in text
-            and "github.com" not in text,
+            and "anonymous.4open.science/r/SameScoreDifferentEvidence2026"
+            in text
+            and "github.com" not in text
+            and "nolanlwin" not in text,
         ),
     ]
 

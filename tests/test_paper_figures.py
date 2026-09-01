@@ -54,6 +54,8 @@ def run() -> int:
         "",
         main_text + "\n" + appendix,
     )
+    prose = re.sub(r"\\(?:url|href)\{[^}]+\}", "", prose)
+    checklist = (ROOT / "paper" / "lp4fm_short" / "checklist.tex").read_text()
     cap = load(CAPPED, probe_only=True)
     orig = [r for r in load(CAPPED) if (r.get("condition") or "original") == "original"]
     unc = load(UNCAPPED)
@@ -83,6 +85,20 @@ def run() -> int:
             and "---" not in prose
             and ";" not in prose
             and ":" not in prose,
+        ),
+        (
+            "checklist and appendix cite an anonymous code snapshot",
+            "anonymous.4open.science/r/CrossLanguageProbeInvariance2026"
+            in checklist
+            and "anonymous.4open.science/r/CrossLanguageProbeInvariance2026"
+            in main_text
+            and "github.com" not in checklist
+            and "github.com" not in main_text
+            and "nolanlwin" not in checklist
+            and "nolanlwin" not in main_text
+            and "Interpretability as a Science" not in checklist
+            and "Interpretability as a Science" not in main_text
+            and "Same Score, Different Evidence" not in main_text,
         ),
         (
             "LP4FM appendix covers every committed result family",
