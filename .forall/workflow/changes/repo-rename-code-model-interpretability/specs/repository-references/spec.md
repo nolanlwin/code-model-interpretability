@@ -29,6 +29,23 @@ does not touch.
 - **WHEN** notebooks referencing `/content/drive/MyDrive/mech-interp/` are read
 - **THEN** those paths are unchanged by this change
 
+### Requirement: Checkout discovery survives the rename
+
+A notebook that searches Drive for an existing repository checkout SHALL accept
+both the current and the retired names, because renaming a repository on GitHub
+does not rename a folder already present in a user's Drive.
+
+#### Scenario: Drive holds a checkout under a retired name
+
+- **WHEN** `colab_activations_and_probing.ipynb` searches for a repository root
+- **THEN** the candidate list includes `code-model-interpretability`
+- **AND** the previously accepted retired names are still present
+
+#### Scenario: Scratch checkout directory is read
+
+- **WHEN** a notebook's ephemeral clone directory under `/content` is read
+- **THEN** it does not name a repository that no longer exists
+
 ### Requirement: Edited notebooks remain loadable
 
 Notebooks SHALL remain valid JSON after the substitution, since a malformed

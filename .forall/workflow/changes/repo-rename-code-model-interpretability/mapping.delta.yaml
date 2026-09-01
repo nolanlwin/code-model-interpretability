@@ -26,6 +26,19 @@ requirements:
       storage rather than the repository and are left unchanged.
     claimcheck: false
 
+  - id: checkout-discovery-survives-the-rename
+    capability: repository-references
+    requirement: "Checkout discovery survives the rename"
+    verified: false
+    code:
+      file: notebooks/colab_activations_and_probing.ipynb
+      symbols: [notebook]
+    contract: |
+      The Drive fallback list accepts the current repository name alongside the
+      retired ones, and the ephemeral clone directory under /content does not
+      name a repository that no longer exists.
+    claimcheck: false
+
   - id: edited-notebooks-remain-loadable
     capability: repository-references
     requirement: "Edited notebooks remain loadable"

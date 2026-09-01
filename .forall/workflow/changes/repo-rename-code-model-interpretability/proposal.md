@@ -21,9 +21,18 @@ the repository directly rather than depend on a redirect.
 - Leave Google Drive artifact paths under `/content/drive/MyDrive/mech-interp/`
   unchanged. Those name folders in the user's Drive, not the repository, and
   rewriting them would break notebooks that read committed artifacts.
-- Leave ephemeral checkout directories such as `/content/mech-interp` and
-  `/root/mech-interp` unchanged. They are scratch paths inside disposable
-  runtimes and carry no dependency on the repository name.
+- Rename the ephemeral checkout directories in the two notebooks that named the
+  repository after a retired name. Both pass an explicit target directory to
+  `git clone`, so neither was broken by the rename, but a scratch directory
+  named after a repository that no longer exists misleads whoever reads the
+  cell next.
+- Extend, rather than replace, the Drive fallback list that
+  `colab_activations_and_probing.ipynb` searches for a repository checkout.
+  A GitHub rename does not rename a folder already sitting in Drive, so the
+  retired names must keep resolving while a fresh checkout under the new name
+  also resolves.
+- Leave Drive paths that locate extracted activations and masked-probe stores
+  unchanged, for the same reason as the artifact roots above.
 
 ## Capabilities
 
