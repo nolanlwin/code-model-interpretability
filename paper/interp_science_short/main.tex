@@ -420,6 +420,34 @@ aggregate evidence because its aligned prediction inputs were not retained.
 The regression test checks manuscript-to-artifact consistency rather than
 reproducing activation extraction or probe fitting.
 
+\section{Broader impacts}
+\label{app:impacts}
+Positive effects are scientific. Probe scores near $0.98$ are easy to read as
+evidence that a model computed a role. If such claims later inform audits of
+coding assistants, an outcome-aware record reduces that overclaim.
+
+Negative effects follow from the same scores. A reporting matrix can be treated
+as permission to stop at decodability if the bound is ignored. Role labels
+derived from public competitive-programming solutions could be reused to train
+name-based heuristics that recover the label from the identifier. No new
+generative model is released. The source programs were already public.
+
+\section{Existing assets and licenses}
+\label{app:licenses}
+Source programs come from XLCoST under Apache 2.0~\citep{zhu2022xlcost}.
+Qwen2.5-1.5B and Qwen2.5-Coder-1.5B are used under Apache 2.0.
+StarCoder2-7B is used under the BigCode OpenRAIL-M license. Each release is
+cited by name and identifier. Derived role labels inherit Apache 2.0 from
+XLCoST.
+
+\section{New assets}
+\label{app:assets}
+The new assets are structurally labeled XLCoST variable-role data and the
+analysis scripts that produce the reported tables. A dataset card documents
+fields, extractors, splits, and the parent license. Committed result files
+carry artifact provenance. A named download URL is omitted from this
+double-blind PDF.
+
 \input{checklist.tex}
 
 \end{document}

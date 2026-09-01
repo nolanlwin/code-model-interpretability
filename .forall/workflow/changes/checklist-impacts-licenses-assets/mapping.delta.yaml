@@ -1,0 +1,37 @@
+version: 1
+requirements:
+  - id: broader-impacts-are-discussed
+    capability: checklist-impacts-licenses-assets
+    requirement: "Broader impacts are discussed"
+    verified: false
+    code:
+      file: paper/interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      Both manuscripts discuss a scientific benefit and a misuse path, so
+      checklist item 10 can be Yes.
+    claimcheck: false
+
+  - id: existing-asset-licenses-are-named
+    capability: checklist-impacts-licenses-assets
+    requirement: "Existing asset licenses are named"
+    verified: false
+    code:
+      file: paper/interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      XLCoST and the Qwen 1.5B releases are named as Apache 2.0. StarCoder2-7B
+      is named as BigCode OpenRAIL-M.
+    claimcheck: false
+
+  - id: new-assets-are-documented
+    capability: checklist-impacts-licenses-assets
+    requirement: "New assets are documented"
+    verified: false
+    code:
+      file: paper/interp_science_short/main.tex
+      symbols: [document]
+    contract: |
+      The labeled dataset, dataset card, and committed result files are
+      described. No GitHub URL is named.
+    claimcheck: false

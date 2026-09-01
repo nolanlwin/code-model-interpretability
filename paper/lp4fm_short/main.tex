@@ -317,6 +317,34 @@ occurrence or the $16$ tokens on each side. The surface baseline uses a
 logistic regression. Store identities record model initialization and pooling
 so conditions cannot be mixed silently.
 
+\section{Broader impacts}
+\label{app:impacts}
+Positive effects are scientific. A span-pooled probe that looks
+language-invariant can be read as evidence that a code model represents roles
+independently of programming language. If such claims later inform multilingual
+coding tools, a readout-matched comparator reduces that overclaim.
+
+Negative effects follow from the same scores. A flat transfer curve can be
+treated as invariance if the identifier remains in the readout. Role labels
+derived from public competitive-programming solutions could be reused to train
+name-based heuristics that recover the label from the identifier. No new
+generative model is released. The source programs were already public.
+
+\section{Existing assets and licenses}
+\label{app:licenses}
+Source programs come from XLCoST under Apache 2.0~\citep{zhu2022xlcost}.
+Qwen2.5-Coder-1.5B is used under Apache 2.0. StarCoder2-7B is used under the
+BigCode OpenRAIL-M license. Each release is cited by name and identifier.
+Derived role labels inherit Apache 2.0 from XLCoST.
+
+\section{New assets}
+\label{app:assets}
+The new assets are the analysis scripts and committed result files that
+produce the reported tables, together with structurally labeled XLCoST
+variable-role data used as input. A dataset card documents fields, extractors,
+splits, and the parent license. A named download URL is omitted from this
+double-blind PDF.
+
 \input{checklist.tex}
 
 \end{document}

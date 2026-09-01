@@ -135,8 +135,8 @@
 
 \item {\bf Broader impacts}
     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
-    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: The work is an analysis of how existing code models represent variable roles. We identify no societal impact specific to it beyond that of the public models and benchmark it studies.
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: Appendix~\ref{app:impacts} states a scientific benefit for more conservative cross-language claims and a misuse path if a flat transfer curve is treated as invariance while the identifier remains in the readout.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that there is no societal impact of the work performed.
@@ -150,7 +150,7 @@
 \item {\bf Safeguards}
     \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pre-trained language models, image generators, or scraped datasets)?
     \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: The paper releases no data or models. It analyses publicly available ones.
+    \item[] Justification: The labeled dataset is a derivative of a public competitive-programming benchmark. It does not release a high-risk generative model or scraped media that would require extra safeguards.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper poses no such risks.
@@ -161,8 +161,8 @@
 
 \item {\bf Licenses for existing assets}
     \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
-    \item[] Answer: \answerNo{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: XLCoST and the Qwen model releases are cited by name and identifier, but the manuscript does not enumerate their license names and terms.
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: Appendix~\ref{app:licenses} names Apache 2.0 for XLCoST and Qwen2.5-Coder-1.5B, and the BigCode OpenRAIL-M license for StarCoder2-7B. Derived labels inherit Apache 2.0. Each asset is cited.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not use existing assets.
@@ -177,8 +177,8 @@
 
 \item {\bf New assets}
     \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
-    \item[] Answer: \answerNo{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: The analysis scripts and result files have artifact provenance, but a complete user-facing release package and documentation are not yet included with the anonymous submission.
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: Appendix~\ref{app:assets} documents the labeled XLCoST variable-role data, the dataset card covering fields and the parent license, and committed analysis artifacts. A named URL is omitted from this double-blind PDF.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not release new assets.

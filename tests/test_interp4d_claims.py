@@ -155,6 +155,27 @@ def main() -> int:
                 r"Experimental setting/details", 1
             )[1].split(r"Experiment statistical significance", 1)[0],
         ),
+        (
+            "checklist answers Yes on impacts, licenses, and new assets",
+            r"Answer: \answerYes{}" in checklist.split(
+                r"Broader impacts", 1
+            )[1].split(r"Safeguards", 1)[0]
+            and r"Answer: \answerYes{}" in checklist.split(
+                r"Licenses for existing assets", 1
+            )[1].split(r"New assets", 1)[0]
+            and r"Answer: \answerYes{}" in checklist.split(
+                r"{\bf New assets}", 1
+            )[1].split(r"Crowdsourcing", 1)[0],
+        ),
+        (
+            "appendix names licenses and discusses impacts",
+            "Apache 2.0" in text
+            and "BigCode OpenRAIL-M" in text
+            and "outcome-aware record reduces that overclaim" in text
+            and "name-based heuristics" in text
+            and "dataset card documents" in text
+            and "github.com" not in text,
+        ),
     ]
 
     boolean_causal = rows(ROOT / "results/boolean/causal/summary.csv")
