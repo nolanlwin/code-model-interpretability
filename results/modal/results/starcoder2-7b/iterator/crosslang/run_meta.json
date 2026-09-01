@@ -1,0 +1,8 @@
+{
+ "git_commit": "",
+ "model": "bigcode/starcoder2-7b",
+ "role": "iterator",
+ "split": "train",
+ "max_programs": 300,
+ "protocol": "hash_split_70_10_20 | val-selected layer | 5 seeds | BCa CIs | control task"
+}

@@ -235,27 +235,50 @@ StarCoder2-7B & single\_chars & 0.529 & 0.962 (L3) & 0.467 (L6) \\
 \end{table}
 
 \begin{table}[p]\centering\small
-\caption{Complete iterator perturbation results. Each condition refits a probe and selects its own best layer. These single-run summaries do not carry the five-seed intervals used for the class/structure role.}
+\caption{Complete iterator perturbation results under the shared five-seed protocol. Each condition refits a probe and selects its own layer on validation data, so cross-condition deltas do not test a fixed direction.}
 \label{tab:iterator-full}
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{llrrrr}
+\begin{tabular}{llrrrrrr}
 \toprule
-model & strategy & best layer & accuracy & F1 & $\Delta$ \\
+model & strategy & layer & F1 & 95\% CI & control F1 & selectivity & $\Delta$ \\
 \midrule
-Qwen2.5-Coder-1.5B & baseline & L6 & 0.998 & 0.988 & --- \\
-Qwen2.5-Coder-1.5B & random\_nouns & L9 & 0.996 & 0.974 & -0.014 \\
-Qwen2.5-Coder-1.5B & single\_chars & L9 & 0.985 & 0.923 & -0.064 \\
-Qwen2.5-Coder-1.5B & all\_same & L26 & 1.000 & 1.000 & +0.012 \\
-Qwen2.5-Coder-1.5B & numeric\_vars & L23 & 0.978 & 0.924 & -0.064 \\
-Qwen2.5-Coder-1.5B & misleading\_iterator & L3 & 1.000 & 1.000 & +0.012 \\
-StarCoder2-7B & baseline & L5 & 0.999 & 0.990 & --- \\
-StarCoder2-7B & random\_nouns & L7 & 0.997 & 0.986 & -0.005 \\
-StarCoder2-7B & single\_chars & L5 & 0.993 & 0.961 & -0.029 \\
-StarCoder2-7B & all\_same & L4 & 1.000 & 1.000 & +0.009 \\
-StarCoder2-7B & numeric\_vars & L24 & 0.989 & 0.958 & -0.032 \\
-StarCoder2-7B & misleading\_iterator & L4 & 1.000 & 0.999 & +0.009 \\
+Qwen2.5-1.5B & baseline & L7 & 0.976 & [0.964, 0.982] & 0.424 & +0.552 & --- \\
+Qwen2.5-1.5B & random\_nouns & L11 & 0.961 & [0.951, 0.967] & 0.423 & +0.538 & -0.015 \\
+Qwen2.5-1.5B & single\_chars & L9 & 0.906 & [0.896, 0.917] & 0.428 & +0.479 & -0.069 \\
+Qwen2.5-1.5B & all\_same & L1 & 1.000 & [1.000, 1.000] & 0.456 & +0.544 & +0.024 \\
+Qwen2.5-1.5B & numeric\_vars & L23 & 0.910 & [0.899, 0.920] & 0.440 & +0.471 & -0.065 \\
+Qwen2.5-1.5B & misleading\_iterator & L0 & 0.999 & [0.998, 0.999] & 0.403 & +0.595 & +0.023 \\
+Qwen2.5-Coder-1.5B & baseline & L7 & 0.978 & [0.968, 0.983] & 0.429 & +0.549 & --- \\
+Qwen2.5-Coder-1.5B & random\_nouns & L12 & 0.956 & [0.946, 0.962] & 0.423 & +0.533 & -0.022 \\
+Qwen2.5-Coder-1.5B & single\_chars & L8 & 0.906 & [0.895, 0.916] & 0.426 & +0.480 & -0.072 \\
+Qwen2.5-Coder-1.5B & all\_same & L1 & 1.000 & [1.000, 1.000] & 0.459 & +0.541 & +0.022 \\
+Qwen2.5-Coder-1.5B & numeric\_vars & L22 & 0.911 & [0.896, 0.921] & 0.440 & +0.470 & -0.068 \\
+Qwen2.5-Coder-1.5B & misleading\_iterator & L0 & 0.998 & [0.997, 0.999] & 0.402 & +0.596 & +0.020 \\
+StarCoder2-7B & baseline & L11 & 0.987 & [0.981, 0.990] & 0.461 & +0.526 & --- \\
+StarCoder2-7B & random\_nouns & L6 & 0.975 & [0.967, 0.979] & 0.455 & +0.520 & -0.012 \\
+StarCoder2-7B & single\_chars & L6 & 0.941 & [0.933, 0.949] & 0.458 & +0.483 & -0.046 \\
+StarCoder2-7B & all\_same & L2 & 1.000 & [1.000, 1.000] & 0.460 & +0.540 & +0.013 \\
+StarCoder2-7B & numeric\_vars & L26 & 0.934 & [0.921, 0.941] & 0.454 & +0.480 & -0.053 \\
+StarCoder2-7B & misleading\_iterator & L0 & 0.998 & [0.997, 0.999] & 0.406 & +0.592 & +0.012 \\
 \bottomrule
 \end{tabular}}
+\end{table}
+
+\begin{table}[p]\centering\small
+\caption{Model-free iterator surface baselines on the same $427$ Python programs. Scores are occurrence-level macro-F1 and are not a paired probe-minus-surface interval.}
+\label{tab:iterator-baselines}
+\begin{tabular}{lr}
+\toprule
+comparator & macro-F1 \\
+\midrule
+majority & 0.363 \\
+covariates & 0.361 \\
+masked line & 0.844 \\
+masked statement & 0.842 \\
+masked window & 0.869 \\
+name only & 0.918 \\
+\bottomrule
+\end{tabular}
 \end{table}
 
 \begin{table}[p]\centering\small
@@ -266,20 +289,27 @@ StarCoder2-7B & misleading\_iterator & L4 & 1.000 & 0.999 & +0.009 \\
 \toprule
 model & language & programs & in-domain layer & in-domain F1 & transfer accuracy & transfer F1 \\
 \midrule
-Qwen2.5-Coder-1.5B & Python & 256 & L7 & 0.988 & --- & --- \\
-Qwen2.5-Coder-1.5B & Java & 188 & L12 & 0.996 & 0.991 & 0.950 \\
-Qwen2.5-Coder-1.5B & C++ & 191 & L7 & 0.994 & 0.994 & 0.967 \\
-Qwen2.5-Coder-1.5B & C & 191 & L12 & 0.991 & 0.988 & 0.936 \\
-Qwen2.5-Coder-1.5B & C\# & 189 & L13 & 0.998 & 0.992 & 0.957 \\
-Qwen2.5-Coder-1.5B & JavaScript & 266 & L12 & 0.992 & 0.995 & 0.978 \\
-Qwen2.5-Coder-1.5B & PHP & 253 & L8 & 0.995 & 0.997 & 0.983 \\
-StarCoder2-7B & Python & 256 & L10 & 0.991 & --- & --- \\
-StarCoder2-7B & Java & 188 & L3 & 0.997 & 0.989 & 0.929 \\
-StarCoder2-7B & C++ & 191 & L5 & 0.997 & 0.991 & 0.941 \\
-StarCoder2-7B & C & 191 & L16 & 0.992 & 0.984 & 0.906 \\
-StarCoder2-7B & C\# & 189 & L11 & 0.995 & 0.988 & 0.923 \\
-StarCoder2-7B & JavaScript & 266 & L16 & 0.998 & 0.986 & 0.931 \\
-StarCoder2-7B & PHP & 253 & L17 & 0.998 & 0.993 & 0.964 \\
+Qwen2.5-1.5B & Python & 256 & L9 & 0.971 & --- & --- \\
+Qwen2.5-1.5B & Java & 188 & L13 & 0.990 & 0.993 & 0.956 \\
+Qwen2.5-1.5B & C++ & 191 & L12 & 0.992 & 0.994 & 0.965 \\
+Qwen2.5-1.5B & C & 191 & L7 & 0.972 & 0.987 & 0.934 \\
+Qwen2.5-1.5B & C\# & 189 & L13 & 0.987 & 0.993 & 0.959 \\
+Qwen2.5-1.5B & JavaScript & 266 & L9 & 0.985 & 0.992 & 0.966 \\
+Qwen2.5-1.5B & PHP & 253 & L12 & 0.986 & 0.996 & 0.981 \\
+Qwen2.5-Coder-1.5B & Python & 256 & L10 & 0.978 & --- & --- \\
+Qwen2.5-Coder-1.5B & Java & 188 & L11 & 0.989 & 0.986 & 0.908 \\
+Qwen2.5-Coder-1.5B & C++ & 191 & L12 & 0.988 & 0.988 & 0.923 \\
+Qwen2.5-Coder-1.5B & C & 191 & L6 & 0.967 & 0.982 & 0.898 \\
+Qwen2.5-Coder-1.5B & C\# & 189 & L14 & 0.984 & 0.985 & 0.909 \\
+Qwen2.5-Coder-1.5B & JavaScript & 266 & L10 & 0.982 & 0.983 & 0.915 \\
+Qwen2.5-Coder-1.5B & PHP & 253 & L12 & 0.988 & 0.986 & 0.923 \\
+StarCoder2-7B & Python & 256 & L9 & 0.986 & --- & --- \\
+StarCoder2-7B & Java & 188 & L7 & 0.992 & 0.980 & 0.887 \\
+StarCoder2-7B & C++ & 191 & L6 & 0.989 & 0.984 & 0.906 \\
+StarCoder2-7B & C & 191 & L10 & 0.971 & 0.981 & 0.901 \\
+StarCoder2-7B & C\# & 189 & L8 & 0.987 & 0.980 & 0.889 \\
+StarCoder2-7B & JavaScript & 266 & L7 & 0.989 & 0.980 & 0.911 \\
+StarCoder2-7B & PHP & 253 & L12 & 0.989 & 0.987 & 0.938 \\
 \bottomrule
 \end{tabular}}
 \end{table}
@@ -292,18 +322,24 @@ StarCoder2-7B & PHP & 253 & L17 & 0.998 & 0.993 & 0.964 \\
 \toprule
 model & strategy & minimum F1 & maximum F1 (layer) & maximum cosine (layer) \\
 \midrule
-Qwen2.5-Coder-1.5B & all\_same & 1.000 & 1.000 (L26) & 0.334 (L0) \\
-Qwen2.5-Coder-1.5B & baseline & 0.905 & 0.988 (L6) & --- \\
-Qwen2.5-Coder-1.5B & misleading\_iterator & 0.991 & 1.000 (L3) & 0.187 (L15) \\
-Qwen2.5-Coder-1.5B & numeric\_vars & 0.556 & 0.924 (L23) & 0.253 (L19) \\
-Qwen2.5-Coder-1.5B & random\_nouns & 0.633 & 0.974 (L9) & 0.360 (L16) \\
-Qwen2.5-Coder-1.5B & single\_chars & 0.664 & 0.923 (L9) & 0.498 (L0) \\
-StarCoder2-7B & all\_same & 0.999 & 1.000 (L4) & 0.337 (L9) \\
-StarCoder2-7B & baseline & 0.898 & 0.990 (L5) & --- \\
-StarCoder2-7B & misleading\_iterator & 0.993 & 0.999 (L4) & 0.265 (L6) \\
-StarCoder2-7B & numeric\_vars & 0.552 & 0.958 (L24) & 0.248 (L13) \\
-StarCoder2-7B & random\_nouns & 0.613 & 0.986 (L7) & 0.396 (L8) \\
-StarCoder2-7B & single\_chars & 0.670 & 0.961 (L5) & 0.451 (L0) \\
+Qwen2.5-1.5B & all\_same & 0.999 & 1.000 (L0) & 0.200 (L15) \\
+Qwen2.5-1.5B & baseline & 0.893 & 0.979 (L11) & --- \\
+Qwen2.5-1.5B & misleading\_iterator & 0.988 & 0.999 (L8) & 0.129 (L7) \\
+Qwen2.5-1.5B & numeric\_vars & 0.550 & 0.913 (L23) & 0.255 (L19) \\
+Qwen2.5-1.5B & random\_nouns & 0.628 & 0.964 (L12) & 0.392 (L19) \\
+Qwen2.5-1.5B & single\_chars & 0.658 & 0.918 (L7) & 0.265 (L21) \\
+Qwen2.5-Coder-1.5B & all\_same & 0.999 & 1.000 (L0) & 0.227 (L18) \\
+Qwen2.5-Coder-1.5B & baseline & 0.893 & 0.979 (L10) & --- \\
+Qwen2.5-Coder-1.5B & misleading\_iterator & 0.979 & 0.999 (L4) & 0.179 (L20) \\
+Qwen2.5-Coder-1.5B & numeric\_vars & 0.550 & 0.913 (L23) & 0.277 (L19) \\
+Qwen2.5-Coder-1.5B & random\_nouns & 0.628 & 0.961 (L16) & 0.448 (L14) \\
+Qwen2.5-Coder-1.5B & single\_chars & 0.658 & 0.912 (L8) & 0.299 (L17) \\
+StarCoder2-7B & all\_same & 0.999 & 1.000 (L0) & 0.169 (L20) \\
+StarCoder2-7B & baseline & 0.890 & 0.988 (L6) & --- \\
+StarCoder2-7B & misleading\_iterator & 0.990 & 0.998 (L0) & 0.234 (L21) \\
+StarCoder2-7B & numeric\_vars & 0.549 & 0.937 (L24) & 0.271 (L25) \\
+StarCoder2-7B & random\_nouns & 0.603 & 0.975 (L5) & 0.385 (L10) \\
+StarCoder2-7B & single\_chars & 0.657 & 0.946 (L5) & 0.359 (L12) \\
 \bottomrule
 \end{tabular}}
 \end{table}
@@ -378,6 +414,41 @@ controller terminal state & \texttt{stopped\_qwen\_null} \\
 \end{table}
 
 \paragraph{Status.} The iterator recovery exports predate the gate-specified class/structure protocol. They report descriptive recovery curves without clustered confidence intervals or matched placebo/random controls. The terminal value is one by construction, and C-language cross-language rows with zero pairs are missing data rather than null effects.
+
+\begin{table}[p]\centering\scriptsize
+\caption{Exploratory iterator activation-patching recovery for Qwen2.5-1.5B, within-language perturbations.}
+\label{tab:iterator-patching-qwen2.5-1.5B-within}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llrrrrrrrrr}
+\toprule
+condition & readout & pairs & clean/corrupt & L1 & L2 & L3 & L4 & L5 & L6 & L7 \\
+\midrule
+random\_nouns & L7 & 150 & 0.999/0.307 & 0.993 & 0.963 & 0.994 & 0.994 & 0.995 & 0.999 & 1.000 \\
+single\_chars & L7 & 150 & 0.995/0.712 & 0.580 & 0.530 & 0.820 & 0.927 & 0.964 & 0.994 & 1.000 \\
+all\_same & L7 & 150 & 0.999/0.138 & 0.321 & 0.454 & 0.879 & 0.955 & 0.984 & 1.000 & 1.000 \\
+numeric\_vars & L7 & 150 & 0.999/0.211 & 0.949 & 0.927 & 0.976 & 0.986 & 0.989 & 1.000 & 1.000 \\
+misleading\_iterator & L7 & 150 & 0.998/0.324 & 0.869 & 0.900 & 0.970 & 0.985 & 0.988 & 1.000 & 1.000 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{table}[p]\centering\scriptsize
+\caption{Exploratory iterator activation-patching recovery for Qwen2.5-1.5B, cross-language transfer.}
+\label{tab:iterator-patching-qwen2.5-1.5B-cross}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llrrrrrrrrrrr}
+\toprule
+condition & readout & pairs & clean/corrupt & L1 & L2 & L3 & L4 & L5 & L6 & L7 & L8 & L9 \\
+\midrule
+Java & L9 & 20 & 0.998/0.768 & -0.409 & -0.044 & 0.165 & 0.416 & 0.767 & 0.625 & 0.544 & 0.505 & 1.000 \\
+C++ & L9 & 20 & 0.996/0.801 & -0.790 & -0.345 & 0.010 & 0.148 & 0.544 & 0.545 & 0.486 & 0.275 & 1.000 \\
+C & L9 & 0 & 0.000/0.000 & --- & --- & --- & --- & --- & --- & --- & --- & --- \\
+C\# & L9 & 30 & 0.993/0.801 & 0.059 & 0.374 & 0.514 & 0.657 & 0.809 & 0.734 & 0.680 & 0.681 & 1.000 \\
+JavaScript & L9 & 44 & 0.996/0.828 & -0.011 & 0.128 & 0.465 & 0.734 & 0.827 & 0.773 & 0.745 & 0.774 & 1.000 \\
+PHP & L9 & 12 & 0.987/0.810 & 0.427 & 0.437 & 0.521 & 0.571 & 0.586 & 0.325 & 0.353 & 0.437 & 1.000 \\
+\bottomrule
+\end{tabular}}
+\end{table}
 
 \begin{table}[p]\centering\scriptsize
 \caption{Exploratory iterator activation-patching recovery for Qwen2.5-Coder-1.5B, within-language perturbations.}
@@ -726,6 +797,58 @@ Python & StarCoder2-7B & 176 & L4 & 11.818 & 26.5$\times$ & 26.5$\times$ (L4) \\
 \label{fig:interp-class-crosslang}
 \end{figure}
 \clearpage
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/probe_f1_layer_iterator.png}}
+\caption{Iterator probe macro-F1 across layers on original names, with the name-only surface baseline marked.}
+\label{fig:interp-iterator-probe-curves}
+\end{figure}
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/delta_f1_iterator.png}}
+\caption{Iterator perturbation deltas relative to baseline.}
+\label{fig:interp-iterator-renaming-deltas}
+\end{figure}
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/cosine_vs_baseline_iterator.png}}
+\caption{Iterator cosine similarity to the baseline direction.}
+\label{fig:interp-iterator-cosine}
+\end{figure}
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/cross_language_iterator.png}}
+\caption{Available iterator cross-language transfer results.}
+\label{fig:interp-iterator-crosslang}
+\end{figure}
+\clearpage
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/probe_vs_baselines_iterator.png}}
+\caption{Iterator probe versus matched model-free surface baselines on the same 427 Python programs.}
+\label{fig:interp-iterator-surface}
+\end{figure}
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/probe_f1_perturbations_iterator.png}}
+\caption{Iterator probe macro-F1 across layers and renaming strategies.}
+\label{fig:interp-iterator-perturbation-curves}
+\end{figure}
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/summary_f1_ci_iterator.png}}
+\caption{Iterator val-selected F1 by renaming strategy, with BCa 95\% intervals.}
+\label{fig:interp-iterator-summary-ci}
+\end{figure}
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/heatmap_iterator.png}}
+\caption{Iterator probe F1 by strategy and layer.}
+\label{fig:interp-iterator-heatmap}
+\end{figure}
+\clearpage
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/patching_recovery_iterator.png}}
+\caption{Exploratory iterator activation-patching recovery under Python name perturbations. The terminal layer is one by construction.}
+\label{fig:interp-iterator-patching-recovery}
+\end{figure}
+\begin{figure}[p]\centering
+\includegraphics[width=0.9\linewidth]{\detokenize{../results/iterator/crosslang_patching_recovery_iterator.png}}
+\caption{Exploratory iterator activation-patching recovery under cross-language transfer. C-language rows with zero pairs are omitted.}
+\label{fig:interp-iterator-patching-crosslang}
+\end{figure}
 \clearpage
 
 \section{Explicit coverage holes}
@@ -733,7 +856,7 @@ Python & StarCoder2-7B & 176 & L4 & 11.818 & 26.5$\times$ & 26.5$\times$ (L4) \\
 
 \begin{itemize}
 \item Accumulator and index/key results use legacy exports; no committed problem-grouped, five-seed CSV reproduces those roles under the modern protocol.
-\item Iterator results are available for Qwen2.5-Coder-1.5B and StarCoder2-7B, but not Qwen2.5-1.5B.
+\item Iterator has a model-free surface comparator, but the probe-minus-surface gap is not a paired clustered interval.
 \item Class/structure transfer exports include Python, C++, JavaScript, and C, but not Java, C\#, or PHP.
 \item Boolean probe exports include Python, Java, JavaScript, and PHP; C, C\#, and C++ are absent, and renaming is available only for Python.
 \item Gate-specified class/structure patching stopped after the Qwen2.5-1.5B null; Coder, StarCoder2, and the all-layer core sweep were not attempted.

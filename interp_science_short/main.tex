@@ -31,7 +31,8 @@ from all seven programming languages in XLCoST, although coverage is not a
 complete model-by-language grid. High probe accuracy supports different
 conclusions under matched controls. Misleading names reduce index probe F1 by
 $0.272$ yet increase accumulator F1 by $0.079$; iterator probes can be refit
-after the same intervention in two models. On Python, boolean occurrence type is decodable at $0.981$--$0.988$ macro-F1,
+after the same intervention in three models, and exceed a name-only surface
+baseline of $0.918$. On Python, boolean occurrence type is decodable at $0.981$--$0.988$ macro-F1,
 but a masked source-line classifier reaches $0.983$ without a language model.
 Rerunning both predictors with aligned predictions gives paired
 problem-clustered deltas of $-0.003$ to $+0.002$ across the three models, with
@@ -77,10 +78,10 @@ what outcome would falsify each surviving claim.
 Our evidence covers five roles, three models, and the seven-language XLCoST
 corpus~\citep{zhu2022xlcost}. The experiment is intentionally reported as an
 uneven evidence matrix rather than a full factorial study. Qwen2.5-1.5B,
-Qwen2.5-Coder-1.5B, and StarCoder2-7B appear in the controlled boolean and
-class-reference experiments~\citep{qwen2024qwen25,hui2024qwencoder,
+Qwen2.5-Coder-1.5B, and StarCoder2-7B appear in the controlled boolean,
+class-reference, and iterator experiments~\citep{qwen2024qwen25,hui2024qwencoder,
 lozhkov2024starcoder2}. Earlier accumulator and index runs use one model and a
-weaker split protocol. Iterator runs cover two models and all seven languages.
+weaker split protocol. Iterator runs cover all three models and all seven languages.
 This is a methodological case study of evidential boundaries, not a validation
 of the matrix as a universal framework. Its heterogeneity separates replicated
 findings from leads that still require confirmation.
@@ -89,8 +90,8 @@ The central result is not that one representation type wins. It is that the
 same headline observation, high linear-probe F1, decomposes into at least four
 outcomes. Index probes depend strongly on names. Accumulator and iterator
 probes can be refit after misleading renames. A model-free classifier nearly
-matches boolean probe scores, with no retained paired uncertainty for the
-difference. Class-reference probes survive tested renames and a randomized-
+matches boolean probe scores. An iterator name-only classifier reaches $0.918$
+and does not match the probe. Class-reference probes survive tested renames and a randomized-
 label control but fail a gate-specified causal intervention at one site. A
 single accuracy number cannot identify among these explanations.
 
@@ -104,10 +105,10 @@ uses; boolean labels distinguish assignment, conditional, loop, and return
 uses; class/structure labels mark declared type names and references. Binary
 token probes label all other tokens negative. Heuristic AST and regular-
 expression extractors vary by language and lack a common multilingual gold
-set. Protocols also differ: accumulator, index, and iterator use legacy
+set. Protocols also differ: accumulator and index use legacy
 token-stratified splits and test-maximized layers; boolean mean-pools
-occurrences, groups splits by problem, and predicts usage type; class/structure
-uses token labels, problem groups, and five seeds. The modern pipelines select
+occurrences, groups splits by problem, and predicts usage type; iterator and
+class/structure use token labels, problem groups, and five seeds. The modern pipelines select
 layers on validation data. XLCoST contains C, C++, C\#, Java, JavaScript, PHP,
 and Python. Table~\ref{tab:scope} states actual coverage; scores across rows do
 not estimate one common task.
@@ -127,9 +128,9 @@ Accumulator & Qwen2.5-1.5B & Python plus Java, C++, C, C\# &
 Six name interventions, cross-language transfer \\
 Index or key & Qwen2.5-1.5B & Python, Java, JavaScript, C++, C, C\# &
 Misleading and collapsed names, cross-language transfer \\
-Iterator & Coder-1.5B, StarCoder2-7B &
+Iterator & All three &
 Python, Java, JavaScript, PHP, C++, C, C\# &
-Six name interventions, cross-language transfer \\
+Six name interventions, cross-language transfer, surface baselines\\
 Boolean & All three & Python, Java, JavaScript, PHP &
 Five refit renames, surface baselines, name-label control task \\
 Class or struct & All three & Python, C++, JavaScript, C &
@@ -148,7 +149,8 @@ direction is invariant. A model-free character classifier with the target name
 masked asks whether local source text already determines the label.
 Randomized-label controls ask whether the probe family can fit a specified null
 task. Their nulls differ: boolean assigns a random label per variable name,
-while class/structure permutes labels within programs. Activation patching asks
+while class/structure permutes labels within programs and iterator uses a
+Hewitt control. Activation patching asks
 whether replacing a residual state at a gate-specified site moves a behavioral
 logit readout~\citep{meng2022locating}.
 
@@ -161,11 +163,11 @@ feature. A causal intervention can ground a use claim only at its specified
 layer, span, direction, and readout.
 
 \paragraph{Evidence grades.}
-Boolean and class-reference experiments use problem-grouped splits,
-validation-selected layers, five seeds, and paired or clustered uncertainty.
-Iterator artifacts use two models but retain the legacy token-level split and
-test-maximized layer, without matched surface or capacity controls.
-Accumulator and index likewise use token-level splits, test-maximized layers,
+Boolean, iterator, and class-reference experiments use problem-grouped splits,
+validation-selected layers, five seeds, and BCa or clustered uncertainty.
+Iterator additionally reports a Hewitt control and a model-free name-only
+comparator; the probe-minus-surface difference is not a paired clustered
+interval. Accumulator and index use token-level splits, test-maximized layers,
 and whole-word renaming. We retain their large,
 opposite effects as a falsifiable hypothesis, not as a confirmed estimate of a
 population difference. A DeepSeek index run is excluded because a tokenizer
@@ -178,7 +180,8 @@ offset error invalidates its activation alignment.
 \small
 \setlength{\tabcolsep}{3.5pt}
 \caption{Probe results after the strongest available control. Values are
-macro-F1. Deltas compare the misleading-name condition with original names.}
+macro-F1. Renaming deltas compare the misleading-name condition with original
+names. Iterator also reports the strongest model-free surface score.}
 \label{tab:evidence}
 \begin{tabular}{p{0.13\linewidth}p{0.15\linewidth}p{0.17\linewidth}p{0.38\linewidth}}
 \toprule
@@ -188,8 +191,8 @@ Index & 0.959 & $\Delta=-0.272$ &
 Refit performance depends on names in the legacy Qwen run \\
 Accumulator & 0.893 & $\Delta=+0.079$ &
 Refit performance survives that rename in the legacy run \\
-Iterator & 0.988, 0.990 & $\Delta=+0.012,+0.009$ &
-Refit performance survives misleading names in two models \\
+Iterator & 0.976--0.987 & $\Delta=+0.012$ to $+0.023$; name-only $0.918$ &
+Refit recoverability in three models; probe exceeds name-only surface \\
 Boolean & 0.981--0.988 & paired $\Delta \in [-0.003,+0.002]$ &
 Probe advantage over masked local source excluded above $0.017$ \\
 Class or struct & 0.979--0.982 & $|\Delta|\leq0.004$ &
@@ -211,14 +214,20 @@ test-maximized layers, and refitting prevent a fixed-direction invariance
 interpretation. Its numerical magnitude is exploratory.
 
 Iterator provides a separate refit-robust result at near-ceiling baseline
-accuracy. Qwen2.5-Coder-1.5B and StarCoder2-7B reach baseline F1 of
-$0.988$ and $0.990$. Misleading iterator names change those scores by
-$+0.012$ and $+0.009$. Python-trained probes transfer across the other six
-XLCoST languages with F1 ranges of $0.936$--$0.983$ and $0.906$--$0.964$.
-These results support recoverability after the tested naming intervention.
-They do not establish feature invariance or abstraction because the probe and
-best layer are refit and the iterator runs lack a matched model-free surface
-comparator.
+accuracy. Qwen2.5-1.5B, Qwen2.5-Coder-1.5B, and StarCoder2-7B reach baseline F1
+of $0.976$, $0.978$, and $0.987$ (BCa $95\%$ intervals $[0.964,0.982]$,
+$[0.968,0.983]$, and $[0.981,0.990]$) at layers $7$, $7$, and $11$. Hewitt
+control selectivity is $+0.526$ to $+0.552$. Misleading iterator names change
+those scores by $+0.023$, $+0.020$, and $+0.012$, but those probes select
+embedding layers. Single-character and numeric names reduce F1 by
+$0.046$--$0.073$. A name-only classifier on the same $427$ Python programs
+reaches $0.918$; the probe remains higher by $0.058$--$0.069$, without a paired
+clustered interval on that difference. Python-trained probes transfer across
+the other six XLCoST languages with F1 ranges of $0.934$--$0.981$,
+$0.898$--$0.923$, and $0.887$--$0.938$. These results support recoverability
+after the tested naming intervention and a probe advantage over name-only
+surface form. They do not establish feature invariance or abstraction because
+the probe and layer are refit.
 
 \subsection{A model-free baseline resolves the boolean result}
 
@@ -310,8 +319,9 @@ random controls.
 No row entails the next. Boolean passes its name-label control and shows refit
 robustness, while masked local syntax remains sufficient. Class/structure
 passes a different permutation control, lacks a matched surface comparator,
-and fails the bidirectional causal gate at the selected site. Iterator shows refit
-robustness but lacks surface and capacity comparisons. Accumulator and index
+and fails the bidirectional causal gate at the selected site. Iterator shows
+refit robustness, Hewitt selectivity, and a name-only surface gap, without a
+paired clustered interval on that gap. Accumulator and index
 motivate a cue-type hypothesis but require modern replication before direct
 comparison.
 
@@ -358,8 +368,11 @@ that the required comparison has not been run under a matched protocol.}
 Interpretation & Evidence in this study & Status and decisive next test \\
 \midrule
 Legacy roles may use different cues &
-Opposite refit deltas in incommensurate pipelines, plus iterator stability &
-Exploratory. Repeat with problem groups, scope-aware renaming, and intervals \\
+Opposite acc/index refit deltas in incommensurate pipelines &
+Exploratory. Repeat accumulator and index with problem groups and intervals \\
+Iterator refit performance survives misleading names &
+Three-model BCa F1 $0.976$--$0.987$, name-only $0.918$ &
+Supported as recoverability. Pair probe and surface on one occurrence sample \\
 Boolean exceeds Python local syntax &
 Paired reruns, three models, $915$ problem clusters &
 Resolved negative: intervals exclude advantages above $0.014$--$0.017$ \\
@@ -379,14 +392,15 @@ Open. Apply one extractor and control battery to a complete language grid \\
 \section{Limitations}
 
 The study covers three models, five roles, and all seven XLCoST languages
-collectively, but not a complete $3\times5\times7$ design: boolean and
-class-reference are three-model, iterator two, accumulator and index one, and
+collectively, but not a complete $3\times5\times7$ design: boolean,
+class-reference, and iterator are three-model, accumulator and index one, and
 language coverage and extractors differ by role.
 
 Protocol quality is uneven. The accumulator-index dissociation predates
 problem-grouped splits and scope-aware renaming; function overlap, textual
-replacement, test-maximized layers, and refitting may inflate it. Iterator
-lacks matched surface and control-task baselines. Boolean's local labels are nearly surface-predictable, and the paired rerun
+replacement, test-maximized layers, and refitting may inflate it. Iterator has
+a name-only comparator and a Hewitt control, but not a paired
+probe-minus-surface interval. Boolean's local labels are nearly surface-predictable, and the paired rerun
 bounds any probe advantage below $0.017$. Class-reference patching covers one model, layer, token site, and readout;
 stopping after the Qwen null was not registered in advance.
 
@@ -407,7 +421,7 @@ that models represent abstract roles.
 The appendix is generated from committed boolean, iterator, class-reference,
 and patching artifacts by \texttt{scripts/make\_interp\_appendix.py}. Modern
 probe conditions use frozen problem hashes, validation-selected layers, and
-five seeds where stated; iterator summaries are single-run. The
+five seeds where stated. The
 class-reference intervention records model and dataset
 revisions, prompt and configuration hashes, all $4{,}032$ primary rows, and
 clustered intervals. A regression test checks source traces for the headline
