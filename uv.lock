@@ -1072,7 +1072,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mech-interp-coding-llms"
+name = "code-model-interpretability"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

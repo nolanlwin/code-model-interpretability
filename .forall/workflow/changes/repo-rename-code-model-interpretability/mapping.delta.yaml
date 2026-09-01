@@ -23,8 +23,8 @@ requirements:
       symbols: [notebook]
     contract: |
       The Drive artifact root names the folder as it now exists in Drive, from
-      both the Colab mount and macOS Drive sync. No retired name survives in a
-      read path except a repository checkout fallback.
+      both the Colab mount and macOS Drive sync. No retired artifact-root name
+      survives in a notebook or script.
     claimcheck: false
 
   - id: browse-links-name-the-current-repository
@@ -40,17 +40,17 @@ requirements:
       host, and names the current repository.
     claimcheck: false
 
-  - id: checkout-discovery-survives-the-rename
+  - id: project-identifiers-use-the-current-name
     capability: repository-references
-    requirement: "Checkout discovery survives the rename"
+    requirement: "Project identifiers use the current name"
     verified: false
     code:
-      file: notebooks/colab_activations_and_probing.ipynb
-      symbols: [notebook]
+      file: pyproject.toml
+      symbols: [project]
     contract: |
-      The Drive fallback list accepts the current repository name alongside the
-      retired ones, and the ephemeral clone directory under /content does not
-      name a repository that no longer exists.
+      The Python project name, the matching uv.lock entry, and every Drive
+      checkout candidate use code-model-interpretability. No retired repository
+      name remains outside historical workflow documents.
     claimcheck: false
 
   - id: edited-notebooks-remain-loadable

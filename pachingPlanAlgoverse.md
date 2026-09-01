@@ -14,7 +14,7 @@ Models:
 2. `Qwen/Qwen2.5-Coder-1.5B`
 3. `bigcode/starcoder2-7b`
 
-The existing perturbation and cross-language experiments will not be rerun. Patching will be a separate pipeline; [run_experiment.py](/Users/randylim/mech-interp-coding-llms/pipeline/run_experiment.py) will remain limited to `perturbation` and `crosslang`.
+The existing perturbation and cross-language experiments will not be rerun. Patching will be a separate pipeline; [run_experiment.py](pipeline/run_experiment.py) will remain limited to `perturbation` and `crosslang`.
 
 The causal question is:
 

@@ -37,7 +37,7 @@ a stale root fails silently rather than raising.
 #### Scenario: No read path retains the retired root
 
 - **WHEN** the notebooks and scripts are searched for a retired artifact root
-- **THEN** the only surviving retired names are repository checkout fallbacks, never an artifact root
+- **THEN** no retired artifact-root name survives in a notebook or script
 
 ### Requirement: Browse links name the current repository
 
@@ -50,17 +50,22 @@ current name, including forms that embed the owner and repository without the
 - **WHEN** the `colab.research.google.com/github/...` link in `README.md` is read
 - **THEN** it names `nolanlwin/code-model-interpretability`
 
-### Requirement: Checkout discovery survives the rename
+### Requirement: Project identifiers use the current name
 
-A notebook that searches Drive for an existing repository checkout SHALL accept
-both the current and the retired names, because renaming a repository on GitHub
-does not rename a folder already present in a user's Drive.
+Every committed identifier that names this project SHALL use
+`code-model-interpretability`, including the Python project name and any
+Drive checkout candidate that is not a historical workflow document.
 
-#### Scenario: Drive holds a checkout under a retired name
+#### Scenario: Project metadata is read
+
+- **WHEN** `pyproject.toml` and `uv.lock` are read
+- **THEN** the project name is `code-model-interpretability`
+
+#### Scenario: Checkout candidates are read
 
 - **WHEN** `colab_activations_and_probing.ipynb` searches for a repository root
-- **THEN** the candidate list includes `code-model-interpretability`
-- **AND** the previously accepted retired names are still present
+- **THEN** every Drive candidate names `code-model-interpretability`
+- **AND** no candidate names a retired repository
 
 #### Scenario: Scratch checkout directory is read
 

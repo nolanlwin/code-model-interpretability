@@ -41,6 +41,15 @@ the repository directly rather than depend on a redirect.
   in a search for `github.com/<owner>`.
 - Rename the remaining ephemeral checkout directories under `/content` and
   `/root` so the whole tree agrees on one name.
+- Drop the retired `mech-interp-coding-llms` checkout fallbacks. The Drive
+  folder has been renamed, and the owner asked for a full cleanup.
+- Rename the Python project in `pyproject.toml` and the matching virtual
+  package in `uv.lock`. The project is not installed (`package = false`), so
+  this is a name only.
+- Replace the dead absolute path in `pachingPlanAlgoverse.md` with a
+  repository-relative link.
+- Set the GitHub repository description so the field name is not the only
+  signal in a listing.
 
 The Drive rewrite is the one edit here that can fail silently. A wrong artifact
 root does not raise: the restore step uses `cp -n`, which succeeds against a
