@@ -65,7 +65,7 @@ ALL & Python pairs $-$ close pair & -0.114 & [-0.147, -0.081] & 432 \\
 \end{table}
 
 \begin{table}[htbp]\centering
-\caption{Probe transfer per model, averaged within each group. The untrained network shares Qwen2.5-1.5B's architecture and tokenizer with randomly initialised weights. It is the floor a representational claim must clear, and it is itself flat.}
+\caption{Probe transfer per model, averaged within each group. Qwen2.5-1.5B is the base checkpoint from which Coder was continued-pretrained; it appears here as a diagnostic. The untrained row uses Qwen2.5-1.5B's architecture with randomly initialised weights and is the floor a representational claim must clear.}
 \label{tab:models}
 \begin{tabular}{lrrrr}
 \toprule
@@ -407,17 +407,17 @@ layer & $|r|$ & EVR & layer & $|r|$ & EVR \\
 \paragraph{Reading the heatmaps.} Rows are source languages and columns are target languages. These plots retain the complete available transfer matrices, including cells excluded from matched-pair inference because problem overlap is too small.
 \begin{figure}[htbp]\centering
 \begin{subfigure}{0.32\linewidth}\centering
-\includegraphics[width=\linewidth]{../../results/lp4fm/heatmap_accumulator.png}
+\includegraphics[width=\linewidth]{figures/heatmap_accumulator.png}
 \caption{accumulator}
 \label{fig:lp4fm-accumulator}
 \end{subfigure}\hfill
 \begin{subfigure}{0.32\linewidth}\centering
-\includegraphics[width=\linewidth]{../../results/lp4fm/heatmap_index_key.png}
+\includegraphics[width=\linewidth]{figures/heatmap_index_key.png}
 \caption{index/key}
 \label{fig:lp4fm-index_key}
 \end{subfigure}\hfill
 \begin{subfigure}{0.32\linewidth}\centering
-\includegraphics[width=\linewidth]{../../results/lp4fm/heatmap_iterator.png}
+\includegraphics[width=\linewidth]{figures/heatmap_iterator.png}
 \caption{iterator}
 \label{fig:lp4fm-iterator}
 \end{subfigure}

@@ -17,7 +17,7 @@
 \usepackage{placeins}
 \usepackage{needspace}
 
-\title{Cross-Language Probe Invariance Depends on Readout Choice}
+\title{Apparent Cross-Language Invariance Reflects Shared Identifiers in Parallel Programs}
 
 \workshoptitle{Linguistic Principles for Foundation Models (LP4FM)}
 
@@ -33,27 +33,23 @@
 \maketitle
 
 \begin{abstract}
-Cross-language probe transfer is often interpreted as evidence that a code
-model represents program semantics independently of programming language. We
-test this interpretation for variable roles in Qwen2.5-Coder-1.5B and
-StarCoder2-7B using parallel Python, JavaScript, and PHP solutions. A masked character $n$-gram
-classifier loses $0.126$ macro-F1 on transfers involving Python relative to
-JavaScript$\leftrightarrow$PHP. A residual-stream probe differs by only
-$-0.012$ ($95\%$ problem-clustered interval $[-0.034,0.020]$), which appears
-to support language-invariant role encoding. This probe mean-pools the
-occurrence's own tokens, whereas the surface classifier masks the identifier.
-Excluding the occurrence from the readout reduces mean transfer from $0.844$
-to $0.589$ and changes the boundary effect to $-0.060$
-$[-0.088,-0.030]$. The shift is $-0.048$ $[-0.088,-0.016]$. Context-matched untrained networks show boundaries of $-0.064$ and $-0.035$
-across two weight initializations. Neither comparison supports a reliably
-flatter trained boundary. StarCoder2-7B reproduces the reversal on the same items with a
-larger separation, moving from $-0.014$ $[-0.036,0.018]$ span-pooled to
-$-0.147$ $[-0.186,-0.092]$ occurrence-excluded. Its
-trained-minus-untrained boundary difference is $-0.068$
-$[-0.114,-0.009]$, so its trained boundary is reliably steeper. Thus the original invariance is not identified
-independently of the readout, while the restricted readout still contains
-training-dependent role information. We make the implementation of our methods
-accessible at
+Cross-language probe transfer is often taken as evidence that a code model
+represents variable roles independently of programming language. We show that
+this conclusion depends on whether the readout includes the identifier tokens,
+which parallel programs systematically preserve. A span-pooled residual probe
+on Qwen2.5-Coder-1.5B looks flat across the language contrast
+($-0.012$, $95\%$ problem-clustered $[-0.034,0.020]$), while a model-free
+surface classifier that masks the identifier loses $0.126$ macro-F1 on the same
+contrast. Excluding the occurrence from the probe readout changes the boundary
+to $-0.060$ $[-0.088,-0.030]$, a shift of $-0.048$ $[-0.088,-0.016]$, in
+line with context-matched untrained controls; the surface baseline outperforms
+the context-pooled probe in $14$ of $18$ matched cells. StarCoder2-7B
+reproduces the reversal more sharply, moving from $-0.014$ span-pooled to
+$-0.147$ $[-0.186,-0.092]$ occurrence-excluded, with a trained-minus-untrained
+boundary difference of $-0.068$ $[-0.114,-0.009]$ that excludes zero. The
+original invariance is therefore not identified independently of the readout,
+while the restricted readout still contains training-dependent role information.
+We make the implementation accessible at
 \href{https://anonymous.4open.science/r/CrossLanguageProbeInvariance2026}{\nolinkurl{anonymous.4open.science/r/CrossLanguageProbeInvariance2026}}.
 \end{abstract}
 
@@ -130,9 +126,11 @@ compared with the floor using the same readout.
 
 Models are Qwen2.5-Coder-1.5B~\citep{hui2024qwencoder} and
 StarCoder2-7B~\citep{lozhkov2024starcoder2}. Their untrained controls use the
-corresponding architectures and tokenizers. Qwen2.5-Coder is
-continued-pretrained from Qwen2.5~\citep{qwen2024qwen25}. Reported uncertainty
-resamples complete problems rather than individual occurrences.
+corresponding architectures and tokenizers with randomly initialised weights.
+Qwen2.5-Coder is continued-pretrained from Qwen2.5~\citep{qwen2024qwen25};
+we also run the Qwen2.5 base checkpoint as a diagnostic, reported in
+Appendix~\ref{app:complete-transfer}. Reported uncertainty resamples complete
+problems rather than individual occurrences.
 
 \section{Surface transfer tracks the language contrast}
 
@@ -226,10 +224,10 @@ cross-language decodability.
 The remaining occurrence-excluded margin supports training-dependent role
 information in this readout, but not a language-independent mechanism. In
 Qwen the training lift is similar on both sides of the boundary.
-The surface baseline
-outperforms the context-pooled probe in $14$ of $18$ matched cells with
-problem-clustered intervals below zero for the paired difference. This shows
-surface sufficiency on the same prediction items. It is not a decomposition of
+The surface baseline outperforms the context-pooled probe in $14$ of $18$
+matched cells with problem-clustered intervals below zero for the paired
+difference (Table~\ref{tab:paired-deltas}). This shows surface sufficiency on
+the same prediction items. It is not a decomposition of
 the model signal, because the model still processes unmasked source code.
 
 \section{Discussion}
