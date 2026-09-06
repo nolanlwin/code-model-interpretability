@@ -477,13 +477,27 @@ def heatmap_figures() -> str:
         "\\label{fig:lp4fm-heatmap-gallery}",
         "\\end{figure}",
     ]
+    # The two slope charts answer the same question on different samples, so
+    # they are shown together rather than pages apart.
     out += [
         "\\begin{figure}[htbp]\\centering",
-        "\\includegraphics[width=0.72\\linewidth]{figures/transfer_slope.pdf}",
-        "\\caption{Span-pooled transfer contrast for the two trained models and "
-        "the architecture-matched random-initialization floor. This capped-sample "
-        "diagnostic is distinct from the intersection-sample context-pooled analysis.}",
+        "\\begin{subfigure}{0.49\\linewidth}\\centering",
+        "\\includegraphics[width=\\linewidth]{figures/masked_slope.pdf}",
+        "\\caption{intersection sample, four readout conditions}",
+        "\\label{fig:slopes}",
+        "\\end{subfigure}\\hfill",
+        "\\begin{subfigure}{0.49\\linewidth}\\centering",
+        "\\includegraphics[width=\\linewidth]{figures/transfer_slope.pdf}",
+        "\\caption{capped sample, span-pooled probes and floor}",
         "\\label{fig:lp4fm-transfer-slope}",
+        "\\end{subfigure}",
+        "\\caption{Cross-language transfer contrasts. Left, the surface comparator, "
+        "the span-pooled and occurrence-excluded probes, and the context-matched "
+        "untrained floor on the intersection sample. Right, the span-pooled "
+        "contrast for both trained models against the architecture-matched "
+        "random-initialization floor. This capped-sample diagnostic is distinct "
+        "from the intersection-sample context-pooled analysis.}",
+        "\\label{fig:slope-pair}",
         "\\end{figure}",
     ]
     return "\n".join(out)

@@ -83,6 +83,19 @@ ablation localizes the instability to the readout support. It does not, by
 itself, identify lexical identity as the cause because pooling support and
 token position change together.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.88\linewidth]{figures/readout_overview.pdf}
+\caption{\textbf{The cross-language boundary depends on where the probe reads.}
+Parallel programs preserve the identifier across languages, so a readout that
+pools the occurrence can transfer for lexical rather than representational
+reasons. Probes are fitted on the source language and evaluated on the target, and
+the boundary is mean macro-F1 on Python transfers minus
+JavaScript$\leftrightarrow$PHP transfers, with problem-clustered intervals.
+StarCoder2-7B reproduces the reversal more sharply, $-0.014$ to $-0.147$.}
+\label{fig:readout}
+\end{figure}
+
 \section{Setup}
 
 \paragraph{Corpus.}
@@ -169,15 +182,6 @@ cells contain only ten minority examples. We therefore treat the surface
 contrast as descriptive evidence for this extracted sample, not as a clean
 estimate of a language-family effect.
 
-\begin{figure}[t]
-\centering
-\includegraphics{figures/masked_slope.pdf}
-\caption{For Qwen2.5-Coder-1.5B, the surface baseline changes across the
-language contrast. The span-pooled probe appears flat but includes the
-occurrence tokens. Excluding the occurrence lowers transfer and yields a slope
-close to the matched untrained control.}
-\label{fig:masked}
-\end{figure}
 
 \section{The inferred boundary depends on readout support}
 
@@ -187,7 +191,7 @@ result that would normally be interpreted as language-independent role
 decodability.
 
 Excluding the occurrence from the readout lowers mean transfer from $0.844$ to
-$0.589$ (Figure~\ref{fig:masked}). The context-matched untrained model reaches
+$0.589$ (Figure~\ref{fig:slopes}). The context-matched untrained model reaches
 $0.485$. The boundary changes to $-0.060$ $[-0.088,-0.030]$. The
 readout-induced shift is $-0.048$ $[-0.088,-0.016]$. The original flat
 boundary is therefore not robust to where activations are read.
@@ -284,15 +288,15 @@ checks before invariance is attributed to a representation.
 The study uses two models ($1.5$B and $7$B), three languages, three roles,
 and one context width. Python supplies the sole broad contrast. Role coverage
 varies after extraction, so composition may affect group means. Iterator
-extractors differ across languages and carry most of the surface effect. No
+extractors differ across languages and carry most of the surface effect, and no
 multilingual hand-audit quantifies extractor error. The untrained controls use
-two probe seeds rather than five and use two Qwen weight initializations but
-only one StarCoder2 initialization. The Qwen boundary varies across
+two probe seeds rather than five, with two Qwen weight initializations but only
+one for StarCoder2. The Qwen boundary varies across
 initializations ($-0.064$, $-0.035$), while its level does not ($0.485$,
 $0.497$). The cross-model comparison therefore rests on one StarCoder2 draw.
 Occurrence exclusion may retain correlated nearby uses and changes pooling
-support rather than lexical identity alone. These results concern decodability,
-not model use.
+support rather than lexical identity alone, and these results concern
+decodability, not model use.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
