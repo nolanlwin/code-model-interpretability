@@ -42,7 +42,7 @@ on Qwen2.5-Coder-1.5B looks flat across the language contrast
 surface classifier that masks the identifier loses $0.126$ macro-F1 on the same
 contrast. Excluding the occurrence from the probe readout changes the boundary
 to $-0.060$ $[-0.088,-0.030]$, a shift of $-0.048$ $[-0.088,-0.016]$, in
-line with context-matched untrained controls; the surface baseline outperforms
+line with context-matched untrained controls. The surface baseline outperforms
 the context-pooled probe in $14$ of $18$ matched cells. StarCoder2-7B
 reproduces the reversal more sharply, moving from $-0.014$ span-pooled to
 $-0.147$ $[-0.186,-0.092]$ occurrence-excluded, with a trained-minus-untrained
@@ -82,6 +82,14 @@ parallel implementations often preserve~\citep{kargaran2025programming}. This
 ablation localizes the instability to the readout support. It does not, by
 itself, identify lexical identity as the cause because pooling support and
 token position change together.
+
+The point generalises past code. Whenever linguistic or symbolic form is
+manipulated, the instrument must not retain a feature the manipulation
+preserves, and parallel corpora concentrate such features. In
+Figure~\ref{fig:readout} the identifier survives translation, so a readout that
+pools it reports invariance belonging to the corpus rather than the model. A
+model-free comparator and a matched readout ablation are inexpensive checks
+against that.
 
 \begin{figure}[t]
 \centering
@@ -140,7 +148,7 @@ compared with the floor using the same readout.
 Models are Qwen2.5-Coder-1.5B~\citep{hui2024qwencoder} and
 StarCoder2-7B~\citep{lozhkov2024starcoder2}. Their untrained controls use the
 corresponding architectures and tokenizers with randomly initialised weights.
-Qwen2.5-Coder is continued-pretrained from Qwen2.5~\citep{qwen2024qwen25};
+Qwen2.5-Coder is continued-pretrained from Qwen2.5~\citep{qwen2024qwen25}, and
 we also run the Qwen2.5 base checkpoint as a diagnostic, reported in
 Appendix~\ref{app:complete-transfer}. Reported uncertainty resamples complete
 problems rather than individual occurrences.
@@ -276,13 +284,6 @@ steepened rather than flattened. The interpretation would weaken
 further if same-readout identifier replacement preserved the flat transfer
 curve, or if a parallel corpus without shared naming conventions produced the
 original span-pooled invariance.
-
-\paragraph{Implication for linguistic medium studies.}
-When linguistic or symbolic form is manipulated, the measurement instrument
-must not retain a feature the manipulation preserves. Parallel corpora
-concentrate such features, including names, entities, and numbers. A feature-restricted
-model-free comparator and a matched readout ablation are two inexpensive
-checks before invariance is attributed to a representation.
 
 \paragraph{Limitations.}
 The study uses two models ($1.5$B and $7$B), three languages, three roles,
