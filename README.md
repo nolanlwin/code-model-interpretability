@@ -20,7 +20,7 @@ Official repository for two NeurIPS 2026 workshop papers on what a linear probe 
 </p>
 
 <p align="center">
-  <img src="paper/interp_science_short/figures/masked_slope.png" width="720" alt="Cross-lingual macro-F1 by readout. Span-pooled probes look language-invariant. A name-masked surface classifier and a context-pooled probe do not.">
+  <img src="paper/lp4fm_short/figures/readout_overview.png" width="720" alt="Readout overview comparing span pooling over an identifier occurrence with context pooling that drops the occurrence from the residual-stream readout.">
 </p>
 <p align="center">
   <em>The same transfer task supports opposite conclusions once the readout stops reading the identifier name. Figure from the LP4FM paper.</em>
