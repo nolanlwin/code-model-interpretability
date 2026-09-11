@@ -20,7 +20,7 @@ Official repository for two NeurIPS 2026 workshop papers on what a linear probe 
 </p>
 
 <p align="center">
-  <img src="paper/lp4fm_short/figures/readout_overview.png" width="720" alt="Readout overview comparing span pooling over an identifier occurrence with context pooling that drops the occurrence from the residual-stream readout.">
+  <img src="paper/lp4fm_short/figures/readout_overview.png" width="720" alt="Readout overview with equal-width residual-stream token columns, comparing span pooling over an identifier occurrence with context pooling that drops the occurrence.">
 </p>
 <p align="center">
   <em>The same transfer task supports opposite conclusions once the readout stops reading the identifier name. Figure from the LP4FM paper.</em>
