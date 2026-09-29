@@ -9,7 +9,7 @@ Official repository for two NeurIPS 2026 workshop papers on what a linear probe 
 </p>
 
 <p align="center">
-  <a href="paper/lp4fm_short/main.pdf"><b>Cross-Language Probe Invariance Depends on Readout Choice</b></a><br>
+  <a href="paper/lp4fm_short/main.pdf"><b>Apparent Cross-Language Invariance Reflects Shared Identifiers in Parallel Programs</b></a><br>
   <em>Linguistic Principles for Foundation Models (LP4FM)</em>
 </p>
 
@@ -44,9 +44,9 @@ Three cases report probe scores near 0.98 and license three different conclusion
 
 The study covers three models and five identifier targets, collectively across all seven XLCoST languages, without a complete factorial design. The paper binds each claim to an estimand, comparator, matching unit, uncertainty statement, outcome, and falsifier.
 
-### Cross-Language Probe Invariance Depends on Readout Choice
+### Apparent Cross-Language Invariance Reflects Shared Identifiers in Parallel Programs
 
-[Manuscript (PDF)](paper/lp4fm_short/main.pdf) · LP4FM, NeurIPS 2026
+[Manuscript (PDF)](paper/lp4fm_short/main.pdf) · Accepted at LP4FM, NeurIPS 2026
 
 A span-pooled residual probe looks language-invariant on parallel Python, JavaScript, and PHP solutions. A name-masked character *n*-gram classifier does not. Excluding the occurrence from the probe readout reverses the trained boundary relative to the surface classifier, and untrained networks show a comparable or steeper trained boundary depending on the model. The original invariance is not identified independently of the readout.
 
