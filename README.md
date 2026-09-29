@@ -122,9 +122,10 @@ Resumable Colab entry point: [`notebooks/colab_results.ipynb`](https://colab.res
 
 ## Citation
 
-The submissions are anonymous. Please cite the manuscripts as:
+Please cite the manuscripts as:
 
 ```bibtex
+% Interpretability as a Science submission, still under review
 @inproceedings{anonymous2026samescore,
   title     = {Same Score, Different Evidence: Decodability, Surface Sufficiency, and Causal Relevance in Code Models},
   author    = {Anonymous},
@@ -133,12 +134,12 @@ The submissions are anonymous. Please cite the manuscripts as:
   note      = {Under review}
 }
 
-@inproceedings{anonymous2026readout,
-  title     = {Cross-Language Probe Invariance Depends on Readout Choice},
-  author    = {Anonymous},
+@inproceedings{lwin2026apparent,
+  title     = {Apparent Cross-Language Invariance Reflects Shared Identifiers in Parallel Programs},
+  author    = {Lwin, Naing Oo and Nimmagadda, Sree Dhyuti and Dutt, Ark and Ji, Michael
+               and Lim, Randy and Blondin, Cole and Vaidheeswaran, Archana},
   booktitle = {Workshop on Linguistic Principles for Foundation Models at NeurIPS},
-  year      = {2026},
-  note      = {Under review}
+  year      = {2026}
 }
 ```
 

@@ -87,19 +87,18 @@ def run() -> int:
             and ":" not in prose,
         ),
         (
-            "checklist, appendix, and abstract cite an anonymous code snapshot",
-            "anonymous.4open.science/r/CrossLanguageProbeInvariance2026"
-            in checklist
-            and "anonymous.4open.science/r/CrossLanguageProbeInvariance2026"
-            in main_text
-            and "anonymous.4open.science/r/CrossLanguageProbeInvariance2026"
+            # LP4FM is accepted, so the camera-ready cites the real repository.
+            # The cross-paper checks stay: this manuscript must not leak the
+            # other submission, which is still under review.
+            "checklist and abstract cite the public repository",
+            "github.com/nolanlwin/code-model-interpretability" in checklist
+            and "github.com/nolanlwin/code-model-interpretability" in main_text
+            and "github.com/nolanlwin/code-model-interpretability"
             in main_text.split(r"\begin{abstract}", 1)[1].split(
                 r"\end{abstract}", 1
             )[0]
-            and "github.com" not in checklist
-            and "github.com" not in main_text
-            and "nolanlwin" not in checklist
-            and "nolanlwin" not in main_text
+            and "anonymous.4open.science" not in checklist
+            and "anonymous.4open.science" not in main_text
             and "Interpretability as a Science" not in checklist
             and "Interpretability as a Science" not in main_text
             and "Same Score, Different Evidence" not in main_text,
