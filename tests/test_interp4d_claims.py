@@ -147,6 +147,8 @@ def main() -> int:
             and "primary rows" not in text,
         ),
         (
+            # Interpretability as a Science is accepted, so the camera-ready
+            # cites the real repository instead of the anonymous mirror.
             "checklist answers Yes on reproducibility and open access",
             "Experimental result reproducibility" in checklist
             and r"Answer: \answerYes{}" in checklist.split(
@@ -155,10 +157,8 @@ def main() -> int:
             and r"Answer: \answerYes{}" in checklist.split(
                 r"Open access to data and code", 1
             )[1].split(r"Experimental setting/details", 1)[0]
-            and "anonymous.4open.science/r/SameScoreDifferentEvidence2026"
-            in checklist
-            and "github.com" not in checklist
-            and "nolanlwin" not in checklist,
+            and "github.com/nolanlwin/code-model-interpretability" in checklist
+            and "anonymous.4open.science" not in checklist,
         ),
         (
             "checklist answers Yes on experimental setting",
@@ -184,15 +184,13 @@ def main() -> int:
             and "BigCode OpenRAIL-M" in text
             and "outcome-aware record reduces that overclaim" in text
             and "name-based heuristics" in text
-            and "dataset card documents" in text
-            and "anonymous.4open.science/r/SameScoreDifferentEvidence2026"
-            in text
-            and "anonymous.4open.science/r/SameScoreDifferentEvidence2026"
+            and "A dataset card records the fields" in text
+            and "github.com/nolanlwin/code-model-interpretability" in text
+            and "github.com/nolanlwin/code-model-interpretability"
             in text.split(r"\begin{abstract}", 1)[1].split(
                 r"\end{abstract}", 1
             )[0]
-            and "github.com" not in text
-            and "nolanlwin" not in text,
+            and "anonymous.4open.science" not in text,
         ),
     ]
 

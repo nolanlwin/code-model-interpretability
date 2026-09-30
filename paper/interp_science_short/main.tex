@@ -1,5 +1,5 @@
 \documentclass{article}
-\usepackage[dblblindworkshop]{neurips_2026}
+\usepackage[dblblindworkshop, final]{neurips_2026}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -25,7 +25,35 @@
 
 \workshoptitle{Interpretability as a Science}
 
-\author{Anonymous Author(s)}
+\author{%
+  Naing Oo Lwin \\
+  Astrio Labs \\
+  {\small\texttt{nolan.lwin@astriolabs.com}} \\
+  \And
+  Sree Dhyuti Nimmagadda \\
+  Northwestern University \\
+  {\small\texttt{dhyuti@u.northwestern.edu}} \\
+  \And
+  Ark Dutt \\
+  Boston Consulting Group \\
+  {\small\texttt{dutt.ark@bcg.com}} \\
+  \AND
+  Michael Ji \\
+  University of Waterloo \\
+  {\small\texttt{m2ji@uwaterloo.ca}} \\
+  \And
+  Randy Lim \\
+  New York University \\
+  {\small\texttt{randylim@nyu.edu}} \\
+  \AND
+  Cole Blondin \\
+  Algoverse AI Research \\
+  {\small\texttt{cole@algoverseairesearch.org}} \\
+  \And
+  Archana Vaidheeswaran \\
+  Algoverse AI Research \\
+  {\small\texttt{archana@algoverseairesearch.org}} \\
+}
 
 \begin{document}
 
@@ -51,9 +79,8 @@ third case exposes a failed control. Role-conditioned iterator renaming yields
 $0.998$--$0.999$ F1 at embedding layer zero, consistent with a lexical code
 introduced by the intervention rather than semantic robustness. Decodability,
 capacity control, cue sensitivity, surface sufficiency, and site-state causal
-relevance therefore require separate, outcome-aware records. We make the
-implementation of our methods accessible at
-\href{https://anonymous.4open.science/r/SameScoreDifferentEvidence2026}{\nolinkurl{anonymous.4open.science/r/SameScoreDifferentEvidence2026}}.
+relevance therefore require separate, outcome-aware records. Code and data
+are at \href{https://github.com/nolanlwin/code-model-interpretability}{\nolinkurl{github.com/nolanlwin/code-model-interpretability}}.
 \end{abstract}
 
 \section{Introduction}
@@ -385,7 +412,6 @@ Full-residual patching covers one model, layer, site, and readout. The gate and 
 registered in advance. These cases motivate the reporting matrix rather than
 validate it.
 
-\clearpage
 \bibliographystyle{plainnat}
 \bibliography{refs}
 
@@ -429,14 +455,16 @@ StarCoder2-7B is used under the BigCode OpenRAIL-M license. Each release is
 cited by name and identifier. Derived role labels inherit Apache 2.0 from
 XLCoST.
 
-\section{New assets}
+\section{Code and data}
 \label{app:assets}
-The new assets are structurally labeled XLCoST variable-role data and the
-analysis scripts that produce the reported tables. A dataset card documents
-fields, extractors, splits, and the parent license. Committed result files
-carry artifact provenance. An anonymized snapshot is at
-\url{https://anonymous.4open.science/r/SameScoreDifferentEvidence2026}.
+Everything needed to reproduce the paper is at
+\url{https://github.com/nolanlwin/code-model-interpretability}. The repository holds
+the structurally labeled XLCoST variable-role data and the analysis scripts
+behind every reported table, and the committed result files carry artifact
+provenance. A dataset card records the fields, the extractors, the splits, and
+the parent license.
 
-\input{checklist.tex}
+% Checklist omitted from the camera-ready, as is the norm for this
+% workshop's accepted papers. checklist.tex is kept as the submission record.
 
 \end{document}

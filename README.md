@@ -32,7 +32,7 @@ A high probe score establishes decodability under a particular readout. It does 
 
 ### Same Score, Different Evidence
 
-[Manuscript (PDF)](paper/interp_science_short/main.pdf) · Interpretability as a Science, NeurIPS 2026
+[Manuscript (PDF)](paper/interp_science_short/main.pdf) · Accepted at Interpretability as a Science, NeurIPS 2026
 
 Three cases report probe scores near 0.98 and license three different conclusions.
 
@@ -125,13 +125,12 @@ Resumable Colab entry point: [`notebooks/colab_results.ipynb`](https://colab.res
 Please cite the manuscripts as:
 
 ```bibtex
-% Interpretability as a Science submission, still under review
-@inproceedings{anonymous2026samescore,
+@inproceedings{lwin2026samescore,
   title     = {Same Score, Different Evidence: Decodability, Surface Sufficiency, and Causal Relevance in Code Models},
-  author    = {Anonymous},
+  author    = {Lwin, Naing Oo and Nimmagadda, Sree Dhyuti and Dutt, Ark and Ji, Michael
+               and Lim, Randy and Blondin, Cole and Vaidheeswaran, Archana},
   booktitle = {Workshop on Interpretability as a Science at NeurIPS},
-  year      = {2026},
-  note      = {Under review}
+  year      = {2026}
 }
 
 @inproceedings{lwin2026apparent,

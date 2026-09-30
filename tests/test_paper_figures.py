@@ -88,8 +88,8 @@ def run() -> int:
         ),
         (
             # LP4FM is accepted, so the camera-ready cites the real repository.
-            # The cross-paper checks stay: this manuscript must not leak the
-            # other submission, which is still under review.
+            # The cross-paper checks stay: the two manuscripts share a repo and
+            # a generator, so neither may absorb the other's title or results.
             "checklist and abstract cite the public repository",
             "github.com/nolanlwin/code-model-interpretability" in checklist
             and "github.com/nolanlwin/code-model-interpretability" in main_text
