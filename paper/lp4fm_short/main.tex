@@ -56,6 +56,12 @@
 \begin{document}
 
 \maketitle
+% The affiliation footnote leaves page 1 one line short of holding the
+% opening paragraph, whose five-key citation then lands on the page
+% break. pdfTeX cannot split a hyperlink across pages, so that run
+% aborts, and the layout oscillates between runs. One extra line keeps
+% the paragraph, and the citation, on page 1.
+\enlargethispage{\baselineskip}
 
 \begin{abstract}
 Cross-language probe transfer is often taken as evidence that a code model
@@ -78,11 +84,6 @@ Code and data are at
 \href{https://github.com/nolanlwin/code-model-interpretability}{\nolinkurl{github.com/nolanlwin/code-model-interpretability}}.
 \end{abstract}
 
-% The affiliation footnote leaves page 1 almost exactly full, and the
-% opening paragraph ends in a five-key citation. A page break inside
-% that citation splits its hyperlink across pages, which is fatal to
-% pdfTeX. Keep the heading and the paragraph together.
-\Needspace*{14\baselineskip}
 \section{Introduction}
 
 Linear probes measure whether a label is decodable from a representation, not
