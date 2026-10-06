@@ -102,6 +102,16 @@ def build(paper: Path, out: Path) -> int:
             tail = "\n".join(proc.stdout.splitlines()[-25:])
             sys.exit(f"the bundle does not compile:\n{tail}")
 
+        # A hyperlink split across a page break aborts pdfTeX part-way and
+        # leaves a truncated PDF behind. The page-count check below catches
+        # that too, but only after a confusing failure, so name it here.
+        if "pdfendlink" in proc.stdout:
+            sys.exit(
+                "a hyperlink straddles a page break, so pdfTeX wrote a "
+                "truncated PDF. Keep the offending citation or URL on one "
+                "page, for example with \\Needspace before its paragraph."
+            )
+
         built = page_count(stage / "main.pdf")
         expected = page_count(paper / "main.pdf")
         if built != expected:

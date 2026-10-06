@@ -31,7 +31,7 @@
   {\small\texttt{dhyuti@u.northwestern.edu}} \\
   \And
   Ark Dutt \\
-  Boston Consulting Group \\
+  Boston Consulting Group\thanks{Ark Dutt is currently employed by Boston Consulting Group. He was not employed there when this work was prepared, and Boston Consulting Group is not connected to this work.} \\
   {\small\texttt{dutt.ark@bcg.com}} \\
   \AND
   Michael Ji \\
@@ -78,6 +78,11 @@ Code and data are at
 \href{https://github.com/nolanlwin/code-model-interpretability}{\nolinkurl{github.com/nolanlwin/code-model-interpretability}}.
 \end{abstract}
 
+% The affiliation footnote leaves page 1 almost exactly full, and the
+% opening paragraph ends in a five-key citation. A page break inside
+% that citation splits its hyperlink across pages, which is fatal to
+% pdfTeX. Keep the heading and the paragraph together.
+\Needspace*{14\baselineskip}
 \section{Introduction}
 
 Linear probes measure whether a label is decodable from a representation, not
