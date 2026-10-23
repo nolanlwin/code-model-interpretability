@@ -10,8 +10,11 @@ The bundle is compiled in a scratch directory before it is written out, and
 the page count is compared against the paper's own PDF. A bundle that does
 not reproduce the paper is an error, not a warning.
 
+The archive format follows the output extension. arXiv accepts both .zip
+and .tar.gz.
+
 Usage:
-    python3 scripts/make_arxiv_bundle.py paper/lp4fm_short out/lp4fm_arxiv.tar.gz
+    python3 scripts/make_arxiv_bundle.py paper/lp4fm_short out/lp4fm_arxiv.zip
 """
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -118,21 +122,35 @@ def build(paper: Path, out: Path) -> int:
         # Only the built main.pdf and the LaTeX by-products are dropped. PDF
         # figures must travel, so the exclusion cannot be by suffix alone.
         byproducts = {".aux", ".log", ".out", ".fls", ".fdb_latexmk", ".blg"}
-        with tarfile.open(out, "w:gz") as tar:
-            for item in sorted(stage.rglob("*")):
-                if not item.is_file() or item.suffix in byproducts:
-                    continue
-                if item.parent == stage and item.name == "main.pdf":
-                    continue
-                tar.add(item, arcname=str(item.relative_to(stage)))
+        payload = []
+        for item in sorted(stage.rglob("*")):
+            if not item.is_file() or item.suffix in byproducts:
+                continue
+            if item.parent == stage and item.name == "main.pdf":
+                continue
+            payload.append((item, str(item.relative_to(stage))))
+
+        as_zip = out.suffix.lower() == ".zip"
+        if as_zip:
+            with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+                for item, arcname in payload:
+                    zf.write(item, arcname)
+        else:
+            with tarfile.open(out, "w:gz") as tar:
+                for item, arcname in payload:
+                    tar.add(item, arcname=arcname)
 
         # Compile what actually ships, not what was staged. An earlier version
         # checked the staging directory and so missed a figure the tar step
         # was dropping.
         check = Path(tmp) / "unpacked"
         check.mkdir()
-        with tarfile.open(out) as tar:
-            tar.extractall(check)
+        if as_zip:
+            with zipfile.ZipFile(out) as zf:
+                zf.extractall(check)
+        else:
+            with tarfile.open(out) as tar:
+                tar.extractall(check)
         for _ in range(3):
             proc = subprocess.run(
                 ["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
@@ -158,7 +176,7 @@ def build(paper: Path, out: Path) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("paper", type=Path, help="paper directory, e.g. paper/lp4fm_short")
-    ap.add_argument("out", type=Path, help="output .tar.gz path")
+    ap.add_argument("out", type=Path, help="output .zip or .tar.gz path")
     args = ap.parse_args()
     return build(args.paper, args.out)
 
