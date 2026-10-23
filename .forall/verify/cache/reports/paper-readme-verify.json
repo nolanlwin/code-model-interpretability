@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "strict": false,
+  "root": "/Users/naingoolwin/Desktop/code-model-interpretability",
+  "change": "paper-readme",
+  "phases": {
+    "intent": "skip",
+    "mapping": "pass",
+    "proofs": "pass",
+    "property-tests": "skip",
+    "scenario-tests": "skip",
+    "scenarios": "skip",
+    "structure": "pass"
+  },
+  "issues": [
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "readme-leads-with-the-papers",
+      "message": "requirement 'README leads with the papers' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "claims-stay-inside-the-manuscripts",
+      "message": "requirement 'Claims stay inside the manuscripts' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "reproduction-commands-survive",
+      "message": "requirement 'Reproduction commands survive the rewrite' has no scenarios in spec"
+    }
+  ],
+  "verifiedFiles": [],
+  "verificationSummary": {
+    "totalRequirements": 3,
+    "provedRequirements": 0,
+    "propertyTestedRequirements": 0,
+    "specTrackedRequirements": 3
+  }
+}

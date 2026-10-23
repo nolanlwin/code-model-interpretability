@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "strict": false,
+  "root": "/Users/naingoolwin/Desktop/mech-interp-coding-llms",
+  "change": "interp-science-cfp-calibration-edits",
+  "phases": {
+    "intent": "skip",
+    "mapping": "pass",
+    "proofs": "pass",
+    "property-tests": "skip",
+    "scenario-tests": "skip",
+    "scenarios": "skip",
+    "structure": "pass"
+  },
+  "issues": [
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "comparator-scoped-boolean-reporting",
+      "message": "requirement 'Comparator-scoped boolean reporting' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "estimator-consistent-causal-interpretation",
+      "message": "requirement 'Estimator-consistent causal interpretation' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "artifact-accurate-provenance-statements",
+      "message": "requirement 'Artifact-accurate provenance statements' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "verified-bibliography-entries",
+      "message": "requirement 'Verified bibliography entries' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "preserved-submission-budget",
+      "message": "requirement 'Preserved submission budget' has no scenarios in spec"
+    }
+  ],
+  "verifiedFiles": [],
+  "verificationSummary": {
+    "totalRequirements": 5,
+    "provedRequirements": 0,
+    "propertyTestedRequirements": 0,
+    "specTrackedRequirements": 5
+  }
+}

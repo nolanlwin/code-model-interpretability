@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "strict": false,
+  "root": "/Users/naingoolwin/Desktop/code-model-interpretability",
+  "change": "cleanup-public-repo-junk",
+  "phases": {
+    "intent": "skip",
+    "mapping": "pass",
+    "proofs": "pass",
+    "property-tests": "skip",
+    "scenario-tests": "skip",
+    "scenarios": "skip",
+    "structure": "pass"
+  },
+  "issues": [
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "named-junk-files-are-absent",
+      "message": "requirement 'Named junk files are absent' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "superseded-drafts-are-absent",
+      "message": "requirement 'Superseded drafts are absent' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "manuscripts-and-entry-points-remain",
+      "message": "requirement 'Manuscripts and entry points remain' has no scenarios in spec"
+    }
+  ],
+  "verifiedFiles": [],
+  "verificationSummary": {
+    "totalRequirements": 3,
+    "provedRequirements": 0,
+    "propertyTestedRequirements": 0,
+    "specTrackedRequirements": 3
+  }
+}

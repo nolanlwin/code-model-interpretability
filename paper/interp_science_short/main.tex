@@ -1,4 +1,7 @@
 \documentclass{article}
+% arXiv's AutoTeX tries the DVI path first, which cannot handle the
+% PDF and PNG figures this paper uses. Force pdfLaTeX.
+\pdfoutput=1
 \usepackage[dblblindworkshop, final]{neurips_2026}
 
 \usepackage[utf8]{inputenc}
@@ -26,7 +29,7 @@
 \workshoptitle{Interpretability as a Science}
 
 \author{%
-  Naing Oo Lwin\thanks{Equal contribution. $^{\#}$\,Work done prior to joining Boston Consulting Group, which is not connected to this work.} \\
+  Naing Oo Lwin\thanks{Equal contribution. $^{\dagger}$\,Work done prior to joining Boston Consulting Group, which is not connected to this work.} \\
   Astrio Labs \\
   {\small\texttt{nolan.lwin@astriolabs.com}} \\
   \And
@@ -35,7 +38,7 @@
   {\small\texttt{dhyuti@u.northwestern.edu}} \\
   \And
   Ark Dutt\footnotemark[1] \\
-  Boston Consulting Group\textsuperscript{\#} \\
+  Boston Consulting Group\textsuperscript{\dag} \\
   {\small\texttt{arksdutt@gmail.com}} \\
   \AND
   Michael Ji\footnotemark[1] \\

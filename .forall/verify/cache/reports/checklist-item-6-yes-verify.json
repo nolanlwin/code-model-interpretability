@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "strict": false,
+  "root": "/Users/naingoolwin/Desktop/code-model-interpretability",
+  "change": "checklist-item-6-yes",
+  "phases": {
+    "intent": "skip",
+    "mapping": "pass",
+    "proofs": "pass",
+    "property-tests": "skip",
+    "scenario-tests": "skip",
+    "scenarios": "skip",
+    "structure": "pass"
+  },
+  "issues": [
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "item-6-is-yes",
+      "message": "requirement 'Item 6 is Yes' has no scenarios in spec"
+    }
+  ],
+  "verifiedFiles": [],
+  "verificationSummary": {
+    "totalRequirements": 1,
+    "provedRequirements": 0,
+    "propertyTestedRequirements": 0,
+    "specTrackedRequirements": 1
+  }
+}

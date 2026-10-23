@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "strict": false,
+  "root": "/Users/naingoolwin/Desktop/mech-interp-coding-llms",
+  "change": "repo-rename-code-model-interpretability",
+  "phases": {
+    "intent": "skip",
+    "mapping": "pass",
+    "proofs": "pass",
+    "property-tests": "skip",
+    "scenario-tests": "skip",
+    "scenarios": "skip",
+    "structure": "pass"
+  },
+  "issues": [
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "notebooks-name-the-repository-directly",
+      "message": "requirement 'Notebooks name the repository directly' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "artifact-root-follows-the-renamed-drive-folder",
+      "message": "requirement 'Artifact root follows the renamed Drive folder' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "browse-links-name-the-current-repository",
+      "message": "requirement 'Browse links name the current repository' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "project-identifiers-use-the-current-name",
+      "message": "requirement 'Project identifiers use the current name' has no scenarios in spec"
+    },
+    {
+      "severity": "WARNING",
+      "phase": "scenarios",
+      "requirementId": "edited-notebooks-remain-loadable",
+      "message": "requirement 'Edited notebooks remain loadable' has no scenarios in spec"
+    }
+  ],
+  "verifiedFiles": [],
+  "verificationSummary": {
+    "totalRequirements": 5,
+    "provedRequirements": 0,
+    "propertyTestedRequirements": 0,
+    "specTrackedRequirements": 5
+  }
+}

@@ -112,20 +112,44 @@ def build(paper: Path, out: Path) -> int:
                 "page, for example with \\Needspace before its paragraph."
             )
 
-        built = page_count(stage / "main.pdf")
         expected = page_count(paper / "main.pdf")
-        if built != expected:
-            sys.exit(
-                f"the bundle builds {built} pages but the paper has {expected}"
-            )
 
         out.parent.mkdir(parents=True, exist_ok=True)
+        # Only the built main.pdf and the LaTeX by-products are dropped. PDF
+        # figures must travel, so the exclusion cannot be by suffix alone.
+        byproducts = {".aux", ".log", ".out", ".fls", ".fdb_latexmk", ".blg"}
         with tarfile.open(out, "w:gz") as tar:
             for item in sorted(stage.rglob("*")):
-                if item.is_file() and item.suffix not in {
-                    ".aux", ".log", ".out", ".pdf", ".fls", ".fdb_latexmk", ".blg"
-                }:
-                    tar.add(item, arcname=str(item.relative_to(stage)))
+                if not item.is_file() or item.suffix in byproducts:
+                    continue
+                if item.parent == stage and item.name == "main.pdf":
+                    continue
+                tar.add(item, arcname=str(item.relative_to(stage)))
+
+        # Compile what actually ships, not what was staged. An earlier version
+        # checked the staging directory and so missed a figure the tar step
+        # was dropping.
+        check = Path(tmp) / "unpacked"
+        check.mkdir()
+        with tarfile.open(out) as tar:
+            tar.extractall(check)
+        for _ in range(3):
+            proc = subprocess.run(
+                ["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
+                cwd=check,
+                capture_output=True,
+                text=True,
+            )
+        if proc.returncode != 0 or not (check / "main.pdf").exists():
+            out.unlink(missing_ok=True)
+            tail = "\n".join(proc.stdout.splitlines()[-25:])
+            sys.exit(f"the packed bundle does not compile:\n{tail}")
+        built = page_count(check / "main.pdf")
+        if built != expected:
+            out.unlink(missing_ok=True)
+            sys.exit(
+                f"the packed bundle builds {built} pages but the paper has {expected}"
+            )
 
         print(f"{out}  ({built} pages, {len(copied)} figures pulled in from results/)")
     return 0
